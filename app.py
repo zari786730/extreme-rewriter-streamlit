@@ -409,6 +409,15 @@ st.markdown("""
     .danger-button button:hover {
         background: linear-gradient(45deg, #FF9800, #FF5722) !important;
     }
+    
+    .humanized-box {
+        background: linear-gradient(45deg, #FF9800, #FF5722);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin: 1rem 0;
+        animation: pulse 2s infinite;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -434,13 +443,16 @@ for i in range(15):
 
 st.markdown(bubbles_html, unsafe_allow_html=True)
 
-# Header
+# Header with Zariab's name
 st.markdown(
     """
     <div class="main-container">
         <h1 class="header-animation" style='text-align:center; font-size:3rem; margin-bottom:0.5rem;'>💥 Extreme Rewriter Pro</h1>
-        <p style='text-align:center; color:#666; font-size:1.2rem; margin-bottom:2rem;'>
+        <p style='text-align:center; color:#666; font-size:1.2rem; margin-bottom:1rem;'>
             GUARANTEED <span style="color:#FF5722; font-weight:bold;">&lt;20% SIMILARITY</span> through radical text transformation
+        </p>
+        <p style='text-align:center; color:#888; font-size:1rem;'>
+            Developed with ❤️ by <span style="color:#00B4D8; font-weight:bold;">Zariab</span>
         </p>
     </div>
     """,
@@ -525,4 +537,97 @@ with st.container():
                     <strong>AI Detection Risk:</strong> {"LOW RISK" if similarity < 20 else "MODERATE RISK"}
                     </div>
                     """,
-                    unsafe_allow_html=True)
+                    unsafe_allow_html=True
+                )
+                
+                # Display original and rewritten text in TWO SEPARATE WINDOWS
+                colA, colB = st.columns(2)
+                
+                with colA:
+                    st.markdown("### 📘 Original Text")
+                    st.markdown('<div class="text-box">', unsafe_allow_html=True)
+                    st.text_area("Original Text", input_text, height=250, key="original", label_visibility="collapsed")
+                    st.markdown('</div>', unsafe_allow_html=True)
+                
+                with colB:
+                    st.markdown("### ✨ Extreme Rewrite")
+                    st.markdown('<div class="text-box">', unsafe_allow_html=True)
+                    st.text_area("Rewritten Text", rewritten, height=250, key="rewritten", label_visibility="collapsed")
+                    st.markdown('</div>', unsafe_allow_html=True)
+                
+                # HUMANIZED TEXT SECTION - SECOND WINDOW
+                st.markdown("---")
+                st.markdown(
+                    f"""
+                    <div class="humanized-box">
+                    <h3>🎭 Humanized Transformation Applied</h3>
+                    <p>Your text has been transformed with natural human writing patterns:</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                
+                # Show humanized features applied
+                colC, colD = st.columns(2)
+                
+                with colC:
+                    st.markdown("#### 🔍 Human Writing Patterns Added:")
+                    st.markdown("""
+                    - **Conversational openings**: "Interestingly,..."
+                    - **Reflective phrases**: "Upon reflection,..."  
+                    - **Comparative language**: "By comparison,..."
+                    - **Academic caution**: "It appears that..."
+                    - **Emphatic statements**: "Notably,..."
+                    - **Contextual framing**: "In this context,..."
+                    """)
+                
+                with colD:
+                    st.markdown("#### 🎯 Extreme Techniques Used:")
+                    st.markdown("""
+                    - Nuclear vocabulary replacement
+                    - Radical sentence restructuring
+                    - Dramatic length manipulation  
+                    - Human writing pattern injection
+                    - Question/statement format variation
+                    - Academic framing with different perspectives
+                    """)
+                
+                # Techniques applied in detail
+                st.markdown(
+                    """
+                    <div style="background: #fff3cd; padding: 1.5rem; border-radius: 15px; margin-top: 1rem;">
+                    <h4>🔧 Detailed Transformation Analysis:</h4>
+                    • <strong>Vocabulary Changes:</strong> Core words replaced with academic synonyms<br>
+                    • <strong>Sentence Structure:</strong> Complete restructuring while maintaining meaning<br>
+                    • <strong>Human Touch:</strong> Natural academic phrasing patterns added<br>
+                    • <strong>Format Variation:</strong> Mixed question/statement formats<br>
+                    • <strong>Length Optimization:</strong> Dramatic compression/expansion for uniqueness
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+    
+    with col3:
+        st.markdown('<div class="danger-button">', unsafe_allow_html=True)
+        if st.button("🧹 **Clear All**", use_container_width=True):
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Footer with Zariab's name
+st.markdown("---")
+st.markdown(
+    """
+    <div style='text-align:center; color:#666; padding:1rem;'>
+        <p style='font-size:1.1rem; margin-bottom:0.5rem;'>
+            ⚙️ Powered by <span style="color:#00B4D8; font-weight:bold;">Streamlit</span> | 
+            💥 Developed by <span style="color:#FF5722; font-weight:bold;">Zariab</span>
+        </p>
+        <p style='font-size:0.9rem; color:#999;'>
+            ✨ Guaranteed low similarity through radical text transformation ✨
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
