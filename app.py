@@ -159,7 +159,7 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
 
 
 # =========================
-# FRONTEND (BEAUTIFUL DNA WATER UI — DARK MODE ONLY + CONTINUOUS BUBBLES)
+# FRONTEND (DNA WATER UI — DARK MODE ONLY + LIGHT-BLACK TEXTBOX + CONTINUOUS BUBBLES)
 # =========================
 
 import streamlit as st
@@ -173,7 +173,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Force Streamlit to use custom dark styling regardless of user theme
+# --- FORCE DARK MODE (disable Streamlit theme controls) ---
 st.markdown("""
 <style>
 :root {
@@ -186,7 +186,7 @@ html, body, [class*="stAppViewContainer"], [class*="stApp"] {
 </style>
 """, unsafe_allow_html=True)
 
-# --- CSS STYLES ---
+# --- CUSTOM STYLING ---
 st.markdown("""
 <style>
 body {
@@ -287,12 +287,12 @@ h1.title {
   transform: translateY(-2px);
 }
 
-/* Textarea */
+/* Textarea — LIGHTER BLACK BACKGROUND */
 .stTextArea textarea {
   border-radius: 15px;
   border: 1px solid rgba(0,180,255,0.3);
-  background: rgba(255,255,255,0.08);
-  color: #eafcff;
+  background: rgba(20,25,35,0.85) !important;  /* 👈 soft light-black tone */
+  color: #eafcff !important;
   font-size: 1rem;
   padding: 1rem;
   resize: vertical;
@@ -312,14 +312,14 @@ h1.title {
   to { text-shadow: 0 0 20px #00ffff; }
 }
 
-/* Hide Streamlit default theme toggle and toolbar */
+/* Hide Streamlit toolbar and theme toggle */
 [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], [data-testid="stHeader"] {
   display: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# --- CONTINUOUS BUBBLES (ALWAYS ON) ---
+# --- CONTINUOUS BUBBLES ---
 if "bubble_html" not in st.session_state:
     bubble_html = '<div id="bubble-layer">'
     for i in range(60):
@@ -355,7 +355,7 @@ target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
 
 col1, col2 = st.columns(2)
 
-# --- Dummy rewriting function (replace with your logic) ---
+# --- Dummy rewriting function (replace with your real logic) ---
 def guarantee_low_similarity(text, target_similarity):
     return f"[Rewritten version of]: {text}", target_similarity
 
@@ -371,7 +371,7 @@ if col1.button("🚀 Rewrite Now"):
             <h3 style="color:#00eaff;">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
             <textarea readonly rows="10" style="
                 width:100%;
-                background:rgba(0,10,20,0.6);
+                background:rgba(15,20,25,0.85);
                 color:#eafcff;
                 border-radius:15px;
                 border:1px solid rgba(0,180,255,0.2);
