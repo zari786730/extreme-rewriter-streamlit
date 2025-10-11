@@ -159,7 +159,7 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
 
 
 # =========================
-# FRONTEND (BEAUTIFUL DNA WATER UI — FIXED)
+# FRONTEND (BEAUTIFUL DNA WATER UI — FIXED & CONTINUOUS BUBBLES)
 # =========================
 
 import streamlit as st
@@ -179,7 +179,7 @@ body {
   color: #d9f6ff;
 }
 
-/* BUBBLES ALWAYS FLOATING */
+/* ===== CONTINUOUS BUBBLES ===== */
 #bubble-layer {
   position: fixed; 
   top: 0; 
@@ -204,7 +204,6 @@ body {
   opacity: 0;
 }
 
-/* Fixed smooth continuous bubble motion */
 @keyframes rise {
   0%   { transform: translateY(0) scale(0.6); opacity: 0; }
   10%  { opacity: 0.6; }
@@ -299,14 +298,15 @@ h1.title {
 </style>
 """, unsafe_allow_html=True)
 
-# --- BUBBLE GENERATION (ALWAYS PRESENT & SMOOTH) ---
+# --- CONTINUOUS BUBBLE GENERATION ---
+# Bubbles stay alive even when Streamlit reruns (e.g., after button press)
 if "bubble_html" not in st.session_state:
     bubble_html = '<div id="bubble-layer">'
-    for i in range(40):
+    for i in range(50):  # slightly more bubbles for continuous feel
         size = random.randint(10, 35)
         left = random.randint(0, 95)
-        duration = random.randint(15, 28)
-        delay = random.uniform(0, 8)
+        duration = random.randint(18, 30)
+        delay = random.uniform(0, 10)
         bubble_html += f"""
         <div class="dna-bubble" style="
             left:{left}vw; 
@@ -316,9 +316,10 @@ if "bubble_html" not in st.session_state:
             animation-duration:{duration}s;
         "></div>"""
     bubble_html += '</div><div class="wave-bg"></div>'
-    st.session_state.bubble_html = bubble_html
+    st.session_state["bubble_html"] = bubble_html
 
-st.markdown(st.session_state.bubble_html, unsafe_allow_html=True)
+# Render bubbles every time (persistent animation)
+st.markdown(st.session_state["bubble_html"], unsafe_allow_html=True)
 
 # --- HEADER ---
 st.markdown("""
@@ -335,7 +336,7 @@ target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
 
 col1, col2 = st.columns(2)
 
-# --- PLACEHOLDER REWRITE FUNCTION (ADD YOUR OWN LOGIC) ---
+# --- PLACEHOLDER REWRITE FUNCTION (replace with real logic) ---
 def guarantee_low_similarity(text, target_similarity):
     return f"[Rewritten version of]: {text}", target_similarity
 
