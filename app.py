@@ -159,7 +159,7 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
 
 
 # =========================
-# FRONTEND (BEAUTIFUL DNA WATER UI — ALWAYS FLOATING BUBBLES)
+# FRONTEND (BEAUTIFUL DNA WATER UI — CONTINUOUS BUBBLES + ADAPTIVE TEXT)
 # =========================
 
 import streamlit as st
@@ -170,16 +170,34 @@ st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide
 # --- CSS STYLES ---
 st.markdown("""
 <style>
+:root {
+  --text-color: #f5faff;
+  --subtext-color: #c9eaff;
+  --accent-color: #00eaff;
+  --box-bg: rgba(255,255,255,0.07);
+  --border-color: rgba(0,255,255,0.15);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --text-color: #001015;
+    --subtext-color: #333333;
+    --accent-color: #007acc;
+    --box-bg: rgba(255,255,255,0.5);
+    --border-color: rgba(0,120,255,0.2);
+  }
+}
+
 body {
   margin: 0;
   overflow: hidden;
   background: radial-gradient(ellipse at bottom, #00111a 0%, #000000 100%);
   height: 100vh;
   font-family: 'Poppins', sans-serif;
-  color: #d9f6ff;
+  color: var(--text-color);
 }
 
-/* ===== ALWAYS FLOATING BUBBLES ===== */
+/* ===== CONTINUOUS BUBBLES ===== */
 #bubble-layer {
   position: fixed; 
   top: 0; 
@@ -201,11 +219,11 @@ body {
 }
 
 @keyframes rise {
-  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
   10% { opacity: 0.8; }
   40% { transform: translateY(-40vh) scale(1.1); opacity: 1; }
-  80% { transform: translateY(-100vh) scale(0.9); opacity: 0.8; }
-  100% { transform: translateY(-120vh) scale(0.8); opacity: 0; }
+  80% { transform: translateY(-100vh) scale(0.9); opacity: 0.6; }
+  100% { transform: translateY(-130vh) scale(0.7); opacity: 0; }
 }
 
 /* Wave animation */
@@ -227,11 +245,12 @@ body {
 /* Main glass box */
 .glass-box {
   backdrop-filter: blur(20px);
-  background: rgba(255,255,255,0.05);
+  background: var(--box-bg);
   border-radius: 25px;
   padding: 2rem;
-  border: 2px solid rgba(0,255,255,0.15);
+  border: 2px solid var(--border-color);
   margin-top: 2rem;
+  color: var(--text-color);
 }
 
 /* Header */
@@ -254,7 +273,7 @@ h1.title {
 /* Buttons */
 .stButton>button {
   background: linear-gradient(135deg, #00b4ff, #0077ff);
-  color: white;
+  color: #ffffff;
   border: none;
   border-radius: 50px;
   font-size: 1.1rem;
@@ -271,8 +290,8 @@ h1.title {
 .stTextArea textarea {
   border-radius: 15px;
   border: 1px solid rgba(0,180,255,0.3);
-  background: rgba(255,255,255,0.05);
-  color: #c6faff;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-color);
   font-size: 1rem;
   padding: 1rem;
   resize: vertical;
@@ -282,7 +301,7 @@ h1.title {
 .footer {
   text-align:center;
   margin-top:3rem;
-  color:#66dfff;
+  color: var(--subtext-color);
   font-size:1.1rem;
   padding-bottom:2rem;
   animation: glow 3s ease-in-out infinite alternate;
@@ -294,15 +313,14 @@ h1.title {
 </style>
 """, unsafe_allow_html=True)
 
-# --- CONTINUOUS BUBBLES ---
-# Create once and persist across reruns so they are always visible
+# --- CONTINUOUS BUBBLES (ALWAYS ON) ---
 if "bubble_html" not in st.session_state:
     bubble_html = '<div id="bubble-layer">'
-    for i in range(50):  # more bubbles for a full effect
+    for i in range(55):  # many bubbles for constant stream
         size = random.randint(10, 35)
         left = random.randint(0, 95)
-        duration = random.randint(15, 30)
-        delay = random.uniform(0, 15)
+        duration = random.randint(15, 28)
+        delay = random.uniform(0, 20)
         bubble_html += f"""
         <div class="dna-bubble" style="
             left:{left}vw; 
@@ -314,14 +332,13 @@ if "bubble_html" not in st.session_state:
     bubble_html += '</div><div class="wave-bg"></div>'
     st.session_state["bubble_html"] = bubble_html
 
-# Always render them (persistent, always animating)
 st.markdown(st.session_state["bubble_html"], unsafe_allow_html=True)
 
 # --- HEADER ---
 st.markdown("""
 <h1 class="title">💧 Extreme Rewriter</h1>
-<p style="text-align:center; color:#a0e4ff; font-size:1.2rem;">
-Transform your text into a <span style="color:#00eaff;">uniquely rewritten</span> version.
+<p style="text-align:center; color:var(--subtext-color); font-size:1.2rem;">
+Transform your text into a <span style="color:var(--accent-color);">uniquely rewritten</span> version.
 </p>
 """, unsafe_allow_html=True)
 
@@ -332,7 +349,7 @@ target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
 
 col1, col2 = st.columns(2)
 
-# --- PLACEHOLDER FUNCTION (replace later) ---
+# Dummy rewriting logic for demo
 def guarantee_low_similarity(text, target_similarity):
     return f"[Rewritten version of]: {text}", target_similarity
 
@@ -344,12 +361,12 @@ if col1.button("🚀 Rewrite Now"):
         with st.spinner("Rewriting your text..."):
             rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
         st.markdown(f"""
-        <div class="glass-box" style="border:1px solid rgba(0,255,255,0.3);">
-            <h3 style="color:#00eaff;">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
+        <div class="glass-box" style="border:1px solid var(--border-color);">
+            <h3 style="color:var(--accent-color);">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
             <textarea readonly rows="10" style="
                 width:100%;
                 background:rgba(0,10,20,0.6);
-                color:#bdfdff;
+                color:var(--text-color);
                 border-radius:15px;
                 border:1px solid rgba(0,180,255,0.2);
                 padding:1rem;
@@ -368,7 +385,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 # --- FOOTER ---
 st.markdown("""
 <div class="footer">
-💻 Developed with 💙 by <strong style="color:#00ffff;">Zariab</strong><br>
+💻 Developed with 💙 by <strong style="color:var(--accent-color);">Zariab</strong><br>
 🌊 Inspired by DNA & Biotechnology — Powered by Streamlit
 </div>
 """, unsafe_allow_html=True)
