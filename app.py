@@ -158,118 +158,296 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=8):
 # =========================
 
 import streamlit as st
-from extreme_rewriter import extreme_rewrite_any_text  # keep your backend import
+import random
 
-# --- PAGE CONFIG ---
-st.set_page_config(
-    page_title="BioWrite - AI Text Rewriter",
-    page_icon="🧬",
-    layout="wide"
-)
-
-# --- CUSTOM STYLING ---
+# Custom CSS for animations and styling
 st.markdown("""
-    <style>
-    /* General Background */
-    body {
-        background: linear-gradient(135deg, #E0F2F1, #F1F8E9);
-        font-family: 'Helvetica Neue', sans-serif;
+<style>
+    @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(180deg); }
     }
-
-    .main {
-        background-color: #ffffff;
+    
+    @keyframes wave {
+        0% { transform: translateX(0); }
+        50% { transform: translateX(-30px); }
+        100% { transform: translateX(0); }
+    }
+    
+    @keyframes bubble {
+        0% { 
+            transform: translateY(100vh) scale(0.5); 
+            opacity: 0;
+        }
+        50% { 
+            opacity: 0.7;
+        }
+        100% { 
+            transform: translateY(-100px) scale(1.2); 
+            opacity: 0;
+        }
+    }
+    
+    .bubble {
+        position: fixed;
+        bottom: -50px;
+        width: 40px;
+        height: 40px;
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(0,180,216,0.4));
+        border-radius: 50%;
+        animation: bubble linear infinite;
+        z-index: -1;
+    }
+    
+    .wave-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100px;
+        z-index: -1;
+        overflow: hidden;
+    }
+    
+    .wave {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 200%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+            rgba(0,180,216,0.3) 0%, 
+            rgba(32,201,151,0.4) 25%, 
+            rgba(255,193,7,0.3) 50%, 
+            rgba(255,87,34,0.4) 75%, 
+            rgba(156,39,176,0.3) 100%);
+        animation: wave 10s linear infinite;
+        border-radius: 50% 50% 0 0;
+    }
+    
+    .wave:nth-child(2) {
+        animation-duration: 15s;
+        opacity: 0.5;
+        background: linear-gradient(90deg, 
+            rgba(156,39,176,0.3) 0%, 
+            rgba(255,87,34,0.4) 25%, 
+            rgba(255,193,7,0.3) 50%, 
+            rgba(32,201,151,0.4) 75%, 
+            rgba(0,180,216,0.3) 100%);
+    }
+    
+    .main-container {
+        background: rgba(255, 255, 255, 0.95);
         border-radius: 20px;
-        padding: 2rem 3rem;
-        box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin: 1rem 0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 3px solid transparent;
+        background-clip: padding-box;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .main-container::before {
+        content: '';
+        position: absolute;
+        top: -3px; left: -3px; right: -3px; bottom: -3px;
+        background: linear-gradient(45deg, #00B4D8, #20C997, #FFC107, #FF5722, #9C27B0);
+        border-radius: 23px;
+        z-index: -1;
+        animation: gradientShift 8s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+        0%, 100% { filter: hue-rotate(0deg); }
+        50% { filter: hue-rotate(180deg); }
+    }
+    
+    .stButton button {
+        background: linear-gradient(45deg, #00B4D8, #20C997);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 50px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0,180,216,0.4);
+    }
+    
+    .stButton button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,180,216,0.6);
+        background: linear-gradient(45deg, #20C997, #00B4D8);
+    }
+    
+    .stTextArea textarea {
+        border-radius: 15px;
+        border: 2px solid #00B4D8;
+        padding: 1rem;
+        font-size: 1rem;
         transition: all 0.3s ease;
     }
-
-    h1, h2, h3 {
-        color: #004D40;
-        text-align: center;
-        font-weight: 800;
+    
+    .stTextArea textarea:focus {
+        border-color: #FF5722;
+        box-shadow: 0 0 0 2px rgba(255,87,34,0.2);
     }
-
-    h1 {
-        font-size: 2.4rem;
+    
+    .slider-container {
+        background: linear-gradient(45deg, #E3F2FD, #F3E5F5);
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin: 1rem 0;
     }
-
-    h2 {
-        color: #00796B;
-        margin-top: -10px;
-    }
-
-    textarea {
-        border-radius: 10px !important;
-        border: 1px solid #80CBC4 !important;
-        background-color: #FAFAFA !important;
-    }
-
-    .stButton>button {
-        background: linear-gradient(90deg, #26A69A, #00796B);
+    
+    .success-box {
+        background: linear-gradient(45deg, #4CAF50, #8BC34A);
         color: white;
-        font-weight: bold;
-        border-radius: 12px;
-        height: 3em;
-        width: 100%;
-        border: none;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        transition: all 0.2s ease;
-    }
-
-    .stButton>button:hover {
-        background: linear-gradient(90deg, #00796B, #004D40);
-        transform: scale(1.03);
-    }
-
-    .output-box {
-        background-color: #E0F2F1;
-        border-radius: 12px;
-        padding: 1.2rem;
-        box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
-    }
-
-    footer {
+        padding: 1rem;
+        border-radius: 15px;
         text-align: center;
-        color: #555;
-        margin-top: 2rem;
-        font-size: 0.9rem;
+        animation: pulse 2s infinite;
     }
-    </style>
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+    
+    .header-animation {
+        background: linear-gradient(45deg, #00B4D8, #FF5722, #9C27B0, #FFC107);
+        background-size: 400% 400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gradientText 6s ease infinite;
+    }
+    
+    @keyframes gradientText {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+</style>
 """, unsafe_allow_html=True)
 
-# --- HEADER ---
-st.markdown("<h1>🧬 BioWrite</h1>", unsafe_allow_html=True)
-st.markdown("<h2>Rewrite Your Text with Biotech Precision</h2>", unsafe_allow_html=True)
-st.write("Welcome to **BioWrite**, an AI-powered text rewriting engine inspired by biotechnology — transforming your words with precision and originality. 💡")
+# Create bubbles
+bubbles_html = ""
+for i in range(15):
+    size = random.randint(20, 60)
+    left = random.randint(0, 95)
+    duration = random.randint(10, 30)
+    delay = random.randint(0, 10)
+    bubbles_html += f"""
+    <div class="bubble" style="
+        left: {left}vw; 
+        width: {size}px; 
+        height: {size}px; 
+        animation-duration: {duration}s;
+        animation-delay: {delay}s;
+        background: radial-gradient(circle at 30% 30%, 
+            rgba({random.randint(200,255)},{random.randint(200,255)},{random.randint(200,255)},0.8), 
+            rgba({random.randint(0,180)},{random.randint(100,216)},{random.randint(150,255)},0.4));
+    "></div>
+    """
 
-# --- LAYOUT ---
-col1, col2 = st.columns(2)
+# Create waves
+waves_html = """
+<div class="wave-container">
+    <div class="wave"></div>
+    <div class="wave"></div>
+</div>
+"""
 
-with col1:
-    user_text = st.text_area("🔬 Paste your text below:", height=250, placeholder="Enter text to rewrite...")
+# Inject bubbles and waves
+st.markdown(bubbles_html + waves_html, unsafe_allow_html=True)
 
-    rewrite_button = st.button("⚗️ Rewrite Now")
+# Main content
+st.markdown(
+    """
+    <div class="main-container">
+        <h1 class="header-animation" style='text-align:center; font-size:3rem; margin-bottom:0.5rem;'>💥 Extreme Rewriter</h1>
+        <p style='text-align:center; color:#666; font-size:1.2rem; margin-bottom:2rem;'>
+            Transform any text into a unique version with <span style="color:#FF5722; font-weight:bold;"><20% similarity</span>
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-    if rewrite_button:
-        if user_text.strip():
-            with st.spinner("🧠 Analyzing and rewriting your text..."):
-                result = extreme_rewrite_any_text(user_text)
-            st.session_state["output"] = result
-        else:
-            st.warning("Please enter some text first!")
+# Input section in main container
+with st.container():
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+    
+    input_text = st.text_area(
+        "✏️ **Enter your text here:**", 
+        height=180, 
+        placeholder="Paste or type your text...",
+        help="Enter the text you want to rewrite with low similarity"
+    )
 
-with col2:
-    st.markdown("### 🧫 Rewritten Output")
-    if "output" in st.session_state:
-        st.markdown(f"<div class='output-box'>{st.session_state['output']}</div>", unsafe_allow_html=True)
-    else:
-        st.info("Output will appear here after rewriting.")
+    st.markdown('<div class="slider-container">', unsafe_allow_html=True)
+    target_similarity = st.slider(
+        "🎯 **Target Similarity (%)**", 
+        5, 50, 20, step=1,
+        help="Set your desired maximum similarity percentage"
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- FOOTER ---
-st.markdown("""
-    <footer>
-        <p>🧬 <b>BioWrite</b> — Built with AI & Biotechnology-inspired precision.<br>
-        Designed by Zari © 2025</p>
-    </footer>
-""", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    
+    with col2:
+        if st.button("🚀 **Rewrite Now**", use_container_width=True):
+            if not input_text.strip():
+                st.warning("⚠️ **Please enter some text first!**")
+            else:
+                with st.spinner("🔮 **Rewriting your text with magic...**"):
+                    # Your backend function call remains the same
+                    rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
+                
+                if similarity <= target_similarity:
+                    st.markdown(
+                        f'<div class="success-box">'
+                        f'<h3>🎉 Success! Achieved Similarity: {similarity:.1f}%</h3>'
+                        f'<p>Your text has been transformed below target! ✨</p>'
+                        f'</div>', 
+                        unsafe_allow_html=True
+                    )
+                else:
+                    st.markdown(
+                        f"<h4 style='color:#FF9800; text-align:center;'>"
+                        f"⚠️ Similarity: {similarity:.1f}% (Target: {target_similarity}%)"
+                        f"</h4>", 
+                        unsafe_allow_html=True
+                    )
+                
+                colA, colB = st.columns(2)
+                with colA:
+                    st.subheader("📘 Original Text")
+                    st.text_area("Original", input_text, height=200, key="original")
+                with colB:
+                    st.subheader("✨ Rewritten Text")
+                    st.text_area("Rewritten", rewritten, height=200, key="rewritten")
+    
+    with col3:
+        if st.button("🧹 **Clear All**", use_container_width=True):
+            st.experimental_rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Footer
+st.markdown("---")
+st.markdown(
+    """
+    <div style='text-align:center; color:#666; padding:1rem;'>
+        <p style='font-size:1.1rem; margin-bottom:0.5rem;'>
+            ⚙️ Powered by <span style="color:#00B4D8; font-weight:bold;">Streamlit</span> | 
+            🎨 Developed by <span style="color:#FF5722; font-weight:bold;">Zari's AI Lab</span>
+        </p>
+        <p style='font-size:0.9rem; color:#999;'>
+            ✨ Magical text transformation with animated wonders! ✨
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
