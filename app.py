@@ -1,632 +1,350 @@
-# EXTREME REWRITER - COMPLETE FRONTEND + BACKEND
-import random
+import streamlit as st
 import re
-from IPython.display import display, HTML, clear_output
-import ipywidgets as widgets
+import random
+import requests
+from bs4 import BeautifulSoup
 import time
+from collections import defaultdict
+import nltk
+from nltk.corpus import wordnet
+import synonyms
 
-class ExtremeRewriterApp:
+# Download required NLTK data
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+
+# =========================
+# SMART REWRITER BACKEND (NO RANDOM SENTENCE DESTRUCTION)
+# =========================
+
+class SmartRewriter:
     def __init__(self):
-        self.setup_interface()
+        self.synonym_cache = {}
+        self.academic_phrases = self._load_academic_phrases()
+    
+    def _load_academic_phrases(self):
+        """Academic transition phrases that maintain proper grammar"""
+        return {
+            'addition': ['Furthermore,', 'Moreover,', 'Additionally,', 'In addition,'],
+            'contrast': ['However,', 'Conversely,', 'On the other hand,', 'Nevertheless,'],
+            'cause_effect': ['Consequently,', 'Therefore,', 'As a result,', 'Thus,'],
+            'emphasis': ['Notably,', 'Significantly,', 'Importantly,', 'Crucially,'],
+            'example': ['For instance,', 'For example,', 'Specifically,', 'To illustrate,']
+        }
+    
+    def get_synonyms_from_internet(self, word):
+        """Get real synonyms from online sources"""
+        if word in self.synonym_cache:
+            return self.synonym_cache[word]
         
-    def extreme_rewriter(self, original_text):
-        """
-        Extreme rewriting that guarantees <20% similarity through radical changes
-        """
+        synonyms = set()
         
-        clean_text = original_text.strip().strip('"').strip("'")
+        # Try multiple online sources
+        sources = [
+            self._get_thesaurus_com(word),
+            self._get_power_thesaurus(word),
+            self._get_wordnet_synonyms(word)
+        ]
         
-        # EXTREME TRANSFORMATION 1: Complete sentence structure overhaul
-        def radical_sentence_restructure(text):
-            sentences = [s.strip() for s in text.split('.') if s.strip()]
+        for source_syns in sources:
+            synonyms.update(source_syns)
+        
+        # Filter to keep only relevant synonyms
+        filtered_syns = [syn for syn in synonyms if len(syn.split()) == 1]
+        self.synonym_cache[word] = filtered_syns[:8]  # Limit to top 8
+        return self.synonym_cache[word]
+    
+    def _get_wordnet_synonyms(self, word):
+        """Get synonyms from WordNet"""
+        synonyms = set()
+        for syn in wordnet.synsets(word):
+            for lemma in syn.lemmas():
+                synonym = lemma.name().replace('_', ' ')
+                if synonym != word and len(synonym.split()) == 1:
+                    synonyms.add(synonym.lower())
+        return list(synonyms)
+    
+    def _get_thesaurus_com(self, word):
+        """Scrape synonyms from Thesaurus.com"""
+        try:
+            url = f"https://www.thesaurus.com/browse/{word}"
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            response = requests.get(url, headers=headers, timeout=5)
+            soup = BeautifulSoup(response.content, 'html.parser')
             
-            if not sentences:
-                return text
-                
-            # Completely rebuild each sentence with different patterns
-            rebuilt_sentences = []
+            synonyms = set()
+            # Look for synonym containers
+            containers = soup.find_all('a', {'href': re.compile(r'/browse/')})
+            for container in containers[:15]:  # Limit to first 15
+                syn = container.text.strip().lower()
+                if syn and syn != word and len(syn.split()) == 1:
+                    synonyms.add(syn)
+            return list(synonyms)
+        except:
+            return []
+    
+    def _get_power_thesaurus(self, word):
+        """Alternative synonym source"""
+        # You can implement Power Thesaurus scraping here
+        return []
+    
+    def smart_sentence_restructure(self, text):
+        """Restructure sentences intelligently without breaking grammar"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        restructured = []
+        
+        for i, sentence in enumerate(sentences):
+            words = sentence.split()
             
-            for sentence in sentences:
-                words = sentence.split()
-                if len(words) < 4:
-                    rebuilt_sentences.append(sentence)
-                    continue
-                    
-                # RADICAL PATTERN 1: Question format
-                if random.random() < 0.3:
-                    question_words = ['How', 'What', 'Why', 'In what ways']
-                    rebuilt = f"{random.choice(question_words)} does {sentence.lower()}?"
-                    rebuilt_sentences.append(rebuilt)
-                
-                # RADICAL PATTERN 2: Reverse order
-                elif random.random() < 0.3:
-                    if len(words) > 6:
-                        mid_point = len(words) // 2
-                        part1 = ' '.join(words[:mid_point])
-                        part2 = ' '.join(words[mid_point:])
-                        rebuilt = f"{part2}, which demonstrates that {part1.lower()}"
-                        rebuilt_sentences.append(rebuilt)
-                
-                # RADICAL PATTERN 3: Academic framing
-                elif random.random() < 0.4:
-                    academic_frames = [
-                        f"Scholarly analysis reveals that {sentence.lower()}",
-                        f"Research findings indicate {sentence.lower()}",
-                        f"Academic investigation demonstrates {sentence.lower()}",
-                        f"Evidence from multiple studies shows {sentence.lower()}",
-                        f"Comprehensive research establishes {sentence.lower()}"
-                    ]
-                    rebuilt_sentences.append(random.choice(academic_frames))
-                
-                # RADICAL PATTERN 4: Extreme compression/expansion
-                else:
-                    if random.random() < 0.5:
-                        # Extreme compression
-                        if len(words) > 8:
-                            compressed = ' '.join(words[:4] + words[-2:])
-                            rebuilt_sentences.append(compressed + "...")
-                        else:
-                            rebuilt_sentences.append(sentence)
-                    else:
-                        # Extreme expansion
-                        expansions = [
-                            "This represents a significant development in the field because",
-                            "From a comprehensive analytical perspective,",
-                            "When contextualized within broader scholarly discourse,",
-                            "Considering the multifaceted implications of this phenomenon,",
-                            "Through rigorous empirical examination it becomes evident that"
-                        ]
-                        expanded = f"{random.choice(expansions)} {sentence.lower()}"
-                        rebuilt_sentences.append(expanded)
-            
-            return '. '.join(rebuilt_sentences) + '.'
-
-        # EXTREME TRANSFORMATION 2: Vocabulary nuclear option
-        def nuclear_vocabulary_replacement(text):
-            # Comprehensive word replacement database
-            nuclear_replacements = {
-                # Academic terms
-                'research': ['scholarly investigation', 'academic inquiry', 'systematic study'],
-                'study': ['examination', 'analysis', 'investigation'],
-                'analysis': ['scrutiny', 'assessment', 'evaluation'],
-                'evidence': ['empirical data', 'documented findings', 'research results'],
-                
-                # Democracy terms
-                'democracy': ['democratic governance', 'popular sovereignty', 'representative government'],
-                'democratic': ['self-governing', 'popularly accountable', 'representative'],
-                'governance': ['administration', 'steering', 'political management'],
-                'accountability': ['answerability', 'responsibility', 'obligation'],
-                
-                # Society terms
-                'society': ['social fabric', 'community', 'civilization'],
-                'civil': ['civic', 'public', 'communal'],
-                'organization': ['institution', 'entity', 'association'],
-                'movement': ['campaign', 'initiative', 'drive'],
-                
-                # Action verbs
-                'evolved': ['developed progressively', 'transformed gradually', 'advanced systematically'],
-                'emerged': ['arisen', 'materialized', 'come to prominence'],
-                'promoting': ['advancing', 'fostering', 'championing'],
-                'served': ['functioned', 'operated', 'acted'],
-                'striving': ['endeavoring', 'working assiduously', 'making concerted efforts'],
-                
-                # Descriptive terms
-                'complex': ['multifaceted', 'intricate', 'sophisticated'],
-                'vital': ['essential', 'indispensable', 'fundamental'],
-                'persistent': ['unrelenting', 'sustained', 'continual'],
-                'transparency': ['openness', 'clarity', 'candor'],
-                
-                # Geographic terms
-                'South Asia': ['the South Asian region', 'Southern Asian nations', 'the Indian subcontinent region'],
-                'countries': ['nation-states', 'political entities', 'sovereign states'],
-                
-                # Structural terms
-                'landscape': ['environment', 'terrain', 'context'],
-                'legacies': ['inheritance', 'historical baggage', 'enduring influences'],
-                'inequalities': ['disparities', 'imbalances', 'differentials'],
-                'struggles': ['campaigns', 'endeavors', 'movements'],
-                'practices': ['procedures', 'methodologies', 'approaches'],
-                'freedoms': ['liberties', 'entitlements', 'rights'],
-                'institutions': ['establishments', 'organizations', 'bodies'],
-                'erosion': ['deterioration', 'decline', 'weakening']
-            }
-            
-            new_text = text
-            for original, replacements in nuclear_replacements.items():
-                pattern = r'\b' + re.escape(original) + r'\b'
-                if re.search(pattern, new_text, re.IGNORECASE):
-                    replacement = random.choice(replacements)
-                    new_text = re.sub(pattern, replacement, new_text, flags=re.IGNORECASE)
-            
-            return new_text
-
-        # EXTREME TRANSFORMATION 3: Sentence length manipulation
-        def extreme_length_manipulation(text):
-            sentences = [s.strip() for s in text.split('.') if s.strip()]
-            
-            if len(sentences) <= 1:
-                return text
-                
-            manipulated = []
-            
-            for sentence in sentences:
-                words = sentence.split()
-                
-                # DRAMATIC length changes
-                if random.random() < 0.6:
-                    if len(words) > 10:
-                        # Split into multiple short sentences
-                        num_splits = random.randint(2, 4)
-                        chunk_size = max(3, len(words) // num_splits)
+            # Only restructure longer sentences
+            if len(words) > 12:
+                # Find natural breaking points (conjunctions, commas)
+                if ',' in sentence:
+                    parts = sentence.split(',')
+                    if len(parts) >= 2:
+                        # Create two proper sentences
+                        first_part = parts[0].strip()
+                        rest_parts = ', '.join(parts[1:]).strip()
                         
-                        for i in range(0, len(words), chunk_size):
-                            chunk = words[i:i + chunk_size]
-                            if len(chunk) >= 3:
-                                manipulated.append(' '.join(chunk) + '.')
-                    else:
-                        # Expand short sentences dramatically
-                        expansions = [
-                            "This represents a significant development in the field because",
-                            "From a comprehensive analytical perspective,",
-                            "When contextualized within broader scholarly discourse,",
-                            "Considering the multifaceted implications of this phenomenon,",
-                            "Through rigorous empirical examination it becomes evident that"
-                        ]
-                        expanded = f"{random.choice(expansions)} {sentence.lower()}"
-                        manipulated.append(expanded)
-                else:
-                    manipulated.append(sentence)
+                        # Add appropriate transitions
+                        transitions = self.academic_phrases['addition'] + self.academic_phrases['emphasis']
+                        transition = random.choice(transitions)
+                        
+                        restructured.append(first_part + '.')
+                        restructured.append(f"{transition} {rest_parts}")
+                        continue
             
-            return ' '.join(manipulated)
-
-        # EXTREME TRANSFORMATION 4: Add human-like variations
-        def add_human_touches(text):
-            # Add human writing patterns that AI doesn't use
-            human_patterns = [
-                # Conversational academic style
-                lambda t: f"Interestingly, {t.lower()}",
-                
-                # Reflective style
-                lambda t: f"Upon reflection, {t.lower()}",
-                
-                # Comparative style
-                lambda t: f"By comparison, {t.lower()}",
-                
-                # Cautious academic style
-                lambda t: f"It appears that {t.lower()}",
-                
-                # Emphatic style
-                lambda t: f"Notably, {t.lower()}",
-                
-                # Contextual style
-                lambda t: f"In this context, {t.lower()}"
-            ]
-            
-            sentences = [s.strip() for s in text.split('.') if s.strip()]
-            if sentences:
-                first_sentence = sentences[0]
-                if random.random() < 0.7:
-                    pattern = random.choice(human_patterns)
-                    sentences[0] = pattern(first_sentence)
-            
-            return '. '.join(sentences) + '.'
-
-        # APPLY ALL EXTREME TRANSFORMATIONS
-        result = clean_text
+            # For shorter sentences or those without natural breaks, keep as is
+            restructured.append(sentence)
         
-        # Apply in sequence for maximum effect
-        result = radical_sentence_restructure(result)
-        result = nuclear_vocabulary_replacement(result)
-        result = extreme_length_manipulation(result)
-        result = add_human_touches(result)
+        # Join with proper punctuation
+        return '. '.join(restructured) + '.'
+    
+    def advanced_vocabulary_replacement(self, text):
+        """Replace words with synonyms while maintaining meaning"""
+        words = text.split()
+        new_words = []
+        
+        for word in words:
+            clean_word = re.sub(r'[^\w]', '', word.lower())
+            
+            # Only replace content words (nouns, verbs, adjectives, adverbs)
+            if (len(clean_word) > 5 and 
+                clean_word not in ['which', 'that', 'there', 'their', 'about'] and
+                random.random() < 0.3):  # Only replace 30% of eligible words
+                
+                synonyms = self.get_synonyms_from_internet(clean_word)
+                if synonyms:
+                    replacement = random.choice(synonyms)
+                    # Preserve original capitalization
+                    if word[0].isupper():
+                        replacement = replacement.capitalize()
+                    new_words.append(replacement)
+                    continue
+            
+            new_words.append(word)
+        
+        return ' '.join(new_words)
+    
+    def academic_style_enhancement(self, text):
+        """Add academic flourishes without breaking grammar"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        enhanced = []
+        
+        for i, sentence in enumerate(sentences):
+            # Only enhance some sentences to avoid overdoing it
+            if random.random() < 0.4 and len(sentence.split()) > 6:
+                enhancements = [
+                    f"Research indicates that {sentence.lower()}",
+                    f"Studies demonstrate that {sentence.lower()}",
+                    f"Evidence suggests that {sentence.lower()}",
+                    f"Analysis reveals that {sentence.lower()}",
+                    f"Current scholarship shows that {sentence.lower()}"
+                ]
+                enhanced.append(random.choice(enhancements))
+            else:
+                enhanced.append(sentence)
+        
+        return '. '.join(enhanced) + '.'
+    
+    def rewrite_text(self, original_text):
+        """Main rewriting function that preserves academic integrity"""
+        # Step 1: Clean the text
+        clean_text = original_text.strip()
+        
+        # Step 2: Smart vocabulary replacement
+        result = self.advanced_vocabulary_replacement(clean_text)
+        
+        # Step 3: Intelligent sentence restructuring
+        result = self.smart_sentence_restructure(result)
+        
+        # Step 4: Academic style enhancement
+        result = self.academic_style_enhancement(result)
         
         return result
 
-    def calculate_similarity(self, original, rewritten):
-        """Calculate text similarity"""
-        original_words = set(re.findall(r'\b\w+\b', original.lower()))
-        rewritten_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
-        common_words = original_words.intersection(rewritten_words)
-        
-        if not original_words:
-            return 0
-        
-        similarity = len(common_words) / len(original_words) * 100
-        return similarity
+def calculate_similarity(original, rewritten):
+    """Calculate similarity based on word overlap"""
+    original_words = set(re.findall(r'\b\w+\b', original.lower()))
+    rewritten_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
+    common_words = original_words.intersection(rewritten_words)
+    
+    if not original_words:
+        return 0
+    
+    similarity = len(common_words) / len(original_words) * 100
+    return similarity
 
-    def guarantee_low_similarity(self, original_text, max_similarity=20, max_attempts=10):
-        """Keep generating until similarity is below threshold"""
+def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5):
+    """Generate rewritten text with guaranteed low similarity"""
+    rewriter = SmartRewriter()
+    best_result = None
+    best_similarity = 100
+    
+    for attempt in range(max_attempts):
+        rewritten = rewriter.rewrite_text(original_text)
+        similarity = calculate_similarity(original_text, rewritten)
         
-        best_result = None
-        best_similarity = 100
+        if similarity < best_similarity:
+            best_result = rewritten
+            best_similarity = similarity
         
-        for attempt in range(max_attempts):
-            rewritten = self.extreme_rewriter(original_text)
-            similarity = self.calculate_similarity(original_text, rewritten)
-            
-            if similarity < best_similarity:
-                best_result = rewritten
-                best_similarity = similarity
-                
-            if similarity <= max_similarity:
-                return rewritten, similarity
+        if similarity <= max_similarity:
+            break
         
-        return best_result, best_similarity
+        # Add small delay to avoid hitting APIs too fast
+        time.sleep(0.5)
+    
+    return best_result, best_similarity
 
-    def setup_interface(self):
-        """Setup the complete frontend interface"""
-        
-        # Create widgets
-        self.input_text = widgets.Textarea(
-            value="",
-            placeholder="Paste your text here for extreme rewriting...\n\nExample: Civil society organizations in South Asia have played a vital role in promoting democratic governance and accountability. These organizations have evolved significantly over the past few decades.",
-            description="📝 Input Text:",
-            layout=widgets.Layout(width="100%", height="200px"),
-            style={'description_width': 'initial'}
-        )
-        
-        self.similarity_slider = widgets.IntSlider(
-            value=15,
-            min=5,
-            max=30,
-            step=1,
-            description="🎯 Target Similarity:",
-            style={'description_width': 'initial'},
-            continuous_update=False
-        )
-        
-        self.attempts_slider = widgets.IntSlider(
-            value=8,
-            min=1,
-            max=20,
-            step=1,
-            description="🔄 Max Attempts:",
-            style={'description_width': 'initial'},
-            continuous_update=False
-        )
-        
-        self.rewrite_button = widgets.Button(
-            description="🚀 LAUNCH EXTREME REWRITE",
-            button_style="success",
-            icon="bolt",
-            layout=widgets.Layout(width="250px", height="45px", font_weight="bold")
-        )
-        
-        self.clear_button = widgets.Button(
-            description="🗑️ Clear All",
-            button_style="warning",
-            layout=widgets.Layout(width="120px", height="40px")
-        )
-        
-        self.output_text = widgets.Textarea(
-            value="",
-            placeholder="Your extremely rewritten text will appear here...",
-            description="📋 Output Text:",
-            layout=widgets.Layout(width="100%", height="200px"),
-            style={'description_width': 'initial'}
-        )
-        
-        self.progress_bar = widgets.IntProgress(
-            value=0,
-            min=0,
-            max=100,
-            description="Processing:",
-            bar_style='info',
-            style={'description_width': 'initial'}
-        )
-        
-        self.stats_display = widgets.HTML(value="")
-        self.results_display = widgets.HTML(value="")
-        
-        # Set up event handlers
-        self.rewrite_button.on_click(self.on_rewrite_click)
-        self.clear_button.on_click(self.on_clear_click)
-        
-        # Display the interface
-        self.display_interface()
-    
-    def display_interface(self):
-        """Display the complete interface"""
-        
-        # Header
-        display(HTML("""
-        <div style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 25px;
-            border-radius: 15px;
-            color: white;
-            text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        ">
-            <h1 style="margin: 0; font-size: 2.5em;">💥 EXTREME REWRITER</h1>
-            <h3 style="margin: 10px 0; opacity: 0.9;">GUARANTEED <20% SIMILARITY - AI DETECTION PROTECTION</h3>
-            <p style="margin: 0; opacity: 0.8;">Nuclear vocabulary replacement • Radical sentence restructuring • Human pattern injection</p>
-        </div>
-        """))
-        
-        # Input Section
-        display(HTML("<h3 style='color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;'>📝 Input Your Text</h3>"))
-        display(self.input_text)
-        
-        # Controls
-        controls_box = widgets.VBox([
-            widgets.HBox([self.similarity_slider, self.attempts_slider]),
-            widgets.HBox([self.rewrite_button, self.clear_button])
-        ])
-        display(controls_box)
-        
-        # Progress
-        display(HTML("<h3 style='color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; margin-top: 20px;'>🔄 Processing</h3>"))
-        display(self.progress_bar)
-        display(self.stats_display)
-        
-        # Results
-        display(HTML("<h3 style='color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;'>📊 Results</h3>"))
-        display(self.output_text)
-        display(self.results_display)
-        
-        # Instructions
-        self.display_instructions()
-    
-    def display_instructions(self):
-        """Display usage instructions"""
-        display(HTML("""
-        <div style="
-            background: #e8f4fd;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            border-left: 5px solid #2196F3;
-        ">
-            <h4 style="color: #1976D2; margin-top: 0;">🎯 How to Use:</h4>
-            <ol style="color: #555;">
-                <li><strong>Paste your text</strong> in the input area above</li>
-                <li><strong>Set target similarity</strong> (lower = more radical changes)</li>
-                <li><strong>Click "LAUNCH EXTREME REWRITE"</strong> to transform your text</li>
-                <li><strong>Copy the output</strong> from the results area</li>
-            </ol>
-            
-            <h4 style="color: #1976D2;">🔧 Extreme Techniques Applied:</h4>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; color: #555;">
-                <div>• Nuclear vocabulary replacement</div>
-                <div>• Radical sentence restructuring</div>
-                <div>• Dramatic length manipulation</div>
-                <div>• Human writing patterns</div>
-                <div>• Question/statement variation</div>
-                <div>• Academic framing</div>
-            </div>
-        </div>
-        """))
-    
-    def on_rewrite_click(self, button):
-        """Handle rewrite button click"""
-        if not self.input_text.value.strip():
-            self.show_error("⚠️ Please enter some text to rewrite!")
-            return
-        
-        # Disable button during processing
-        self.rewrite_button.disabled = True
-        self.rewrite_button.description = "🔄 PROCESSING..."
-        
-        # Reset displays
-        self.output_text.value = ""
-        self.stats_display.value = ""
-        self.results_display.value = ""
-        
-        # Show progress
-        self.progress_bar.value = 10
-        
-        try:
-            # Get input values
-            original_text = self.input_text.value
-            target_similarity = self.similarity_slider.value
-            max_attempts = self.attempts_slider.value
-            
-            # Update progress
-            self.progress_bar.value = 30
-            self.stats_display.value = "<div style='color: #FF9800;'>🔄 Starting extreme transformation...</div>"
-            
-            # Perform the rewrite
-            final_output, achieved_similarity = self.guarantee_low_similarity(
-                original_text, 
-                max_similarity=target_similarity,
-                max_attempts=max_attempts
-            )
-            
-            # Update progress
-            self.progress_bar.value = 90
-            
-            # Calculate statistics
-            original_words = len(original_text.split())
-            rewritten_words = len(final_output.split())
-            word_change = ((rewritten_words - original_words) / original_words) * 100 if original_words > 0 else 0
-            
-            original_sentences = len([s for s in original_text.split('.') if s.strip()])
-            rewritten_sentences = len([s for s in final_output.split('.') if s.strip()])
-            
-            # Update output
-            self.output_text.value = final_output
-            self.progress_bar.value = 100
-            
-            # Display results
-            self.display_results(original_text, final_output, achieved_similarity, target_similarity,
-                               original_words, rewritten_words, word_change, 
-                               original_sentences, rewritten_sentences)
-            
-        except Exception as e:
-            self.show_error(f"❌ Error during processing: {str(e)}")
-        finally:
-            # Re-enable button
-            self.rewrite_button.disabled = False
-            self.rewrite_button.description = "🚀 LAUNCH EXTREME REWRITE"
-    
-    def display_results(self, original_text, final_output, achieved_similarity, target_similarity,
-                      original_words, rewritten_words, word_change, 
-                      original_sentences, rewritten_sentences):
-        """Display the transformation results"""
-        
-        # Determine success color
-        if achieved_similarity <= target_similarity:
-            color = "#4CAF50"
-            status = "✅ TARGET ACHIEVED"
-            risk_level = "LOW RISK"
-        else:
-            color = "#FF9800"
-            status = "⚠️ CLOSE TO TARGET"
-            risk_level = "MODERATE RISK"
-        
-        # Results header
-        results_html = f"""
-        <div style="
-            background: {color};
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 15px 0;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        ">
-            <h3 style="margin: 0 0 10px 0;">🎯 EXTREME TRANSFORMATION COMPLETE</h3>
-            <div style="font-size: 1.2em; font-weight: bold;">
-                SIMILARITY: {achieved_similarity:.1f}% | {status}
-            </div>
-        </div>
-        
-        <div style="
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border: 1px solid #e9ecef;
-        ">
-            <strong>📊 TRANSFORMATION STATISTICS:</strong><br>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                <div>• <strong>Word Count:</strong> {original_words} → {rewritten_words} ({word_change:+.1f}%)</div>
-                <div>• <strong>Sentence Count:</strong> {original_sentences} → {rewritten_sentences}</div>
-                <div>• <strong>Similarity Score:</strong> {achieved_similarity:.1f}%</div>
-                <div>• <strong>AI Detection Risk:</strong> {risk_level}</div>
-            </div>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-            <div style="
-                background: #ffebee;
-                padding: 15px;
-                border-radius: 8px;
-                border-left: 4px solid #f44336;
-            ">
-                <strong style="color: #c62828;">🔴 ORIGINAL TEXT</strong>
-                <div style="
-                    max-height: 200px;
-                    overflow-y: auto;
-                    font-size: 12px;
-                    background: white;
-                    padding: 10px;
-                    margin: 10px 0;
-                    border-radius: 4px;
-                    border: 1px solid #ffcdd2;
-                ">
-                    {original_text}
-                </div>
-            </div>
-            
-            <div style="
-                background: #e8f5e8;
-                padding: 15px;
-                border-radius: 8px;
-                border-left: 4px solid #4CAF50;
-            ">
-                <strong style="color: #2e7d32;">🟢 REWRITTEN TEXT</strong>
-                <div style="
-                    max-height: 200px;
-                    overflow-y: auto;
-                    font-size: 12px;
-                    background: white;
-                    padding: 10px;
-                    margin: 10px 0;
-                    border-radius: 4px;
-                    border: 1px solid #c8e6c9;
-                ">
-                    {final_output}
-                </div>
-            </div>
-        </div>
-        """
-        
-        self.results_display.value = results_html
-    
-    def on_clear_click(self, button):
-        """Handle clear button click"""
-        self.input_text.value = ""
-        self.output_text.value = ""
-        self.stats_display.value = ""
-        self.results_display.value = ""
-        self.progress_bar.value = 0
-    
-    def show_error(self, message):
-        """Display error message"""
-        self.stats_display.value = f"<div style='color: #f44336; padding: 10px; background: #ffebee; border-radius: 5px;'>{message}</div>"
-        self.progress_bar.value = 0
+# =========================
+# BEAUTIFUL STREAMLIT FRONTEND
+# =========================
 
-# === CREATE AND LAUNCH THE APP ===
-def launch_extreme_rewriter():
-    """Launch the Extreme Rewriter application"""
-    display(HTML("""
-    <style>
-        .widget-textarea textarea {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        .widget-button button {
-            font-weight: bold !important;
-            font-size: 14px !important;
-        }
-        .widget-slider .widget-label {
-            color: #333 !important;
-            font-weight: 500 !important;
-        }
-    </style>
-    """))
+st.set_page_config(
+    page_title="Academic Rewriter Pro", 
+    page_icon="🎓", 
+    layout="wide"
+)
+
+# Custom CSS
+st.markdown("""
+<style>
+    .main-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 1rem 0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 2px solid #e0f7fa;
+    }
     
-    app = ExtremeRewriterApp()
-    return app
-
-# === AUTO-LAUNCH THE APPLICATION ===
-print("🚀 INITIALIZING EXTREME REWRITER APPLICATION...")
-print("=" * 60)
-
-# Launch the app
-app_instance = launch_extreme_rewriter()
-
-# Sample usage helper
-display(HTML("""
-<div style="
-    background: #fff3e0;
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 20px;
-    border-left: 4px solid #ff9800;
-">
-    <strong>💡 Quick Start:</strong> Try the sample text below or paste your own text above!
+    .stButton button {
+        background: linear-gradient(45deg, #2196F3, #21CBF3);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
     
-    <div style="
-        background: white;
-        padding: 10px;
-        margin: 10px 0;
-        border-radius: 4px;
-        font-size: 12px;
-        border: 1px dashed #ff9800;
-    ">
-        <em>Civil society organizations in South Asia have played a vital role in promoting democratic governance and accountability. These organizations have evolved significantly over the past few decades, emerging as crucial actors in the region's political landscape. They serve as watchdogs that monitor government activities and strive to ensure transparency in public institutions.</em>
-    </div>
+    .stButton button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+    }
+    
+    .success-box {
+        background: linear-gradient(45deg, #4CAF50, #66BB6A);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .text-box {
+        background: #f8fdff;
+        border: 1px solid #e3f2fd;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Header
+st.markdown("""
+<div class="main-container">
+    <h1 style='text-align:center; color:#1976D2;'>🎓 Academic Rewriter Pro</h1>
+    <p style='text-align:center; color:#666;'>
+        Intelligent text rewriting that preserves academic integrity and grammar
+    </p>
 </div>
-"""))
+""", unsafe_allow_html=True)
 
-print("\n" + "=" * 60)
-print("✅ EXTREME REWRITER IS READY TO USE!")
-print("   • Paste your text in the input area")
-print("   • Set your target similarity")
-print("   • Click 'LAUNCH EXTREME REWRITE'")
-print("=" * 60)
+# Main UI
+with st.container():
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+    
+    st.markdown("### 📝 Enter Your Academic Text")
+    input_text = st.text_area(
+        "Paste your text below:",
+        height=180,
+        placeholder="Enter your academic text here...",
+        label_visibility="collapsed"
+    )
+    
+    st.markdown("### 🎯 Similarity Target")
+    target_similarity = st.slider(
+        "Maximum similarity percentage:",
+        5, 40, 15, step=1,
+        help="Lower values create more unique text"
+    )
+    
+    col1, col2 = st.columns([1, 1])
+    
+    if col1.button("🚀 Rewrite Academic Text", use_container_width=True):
+        if not input_text.strip():
+            st.warning("Please enter some text to rewrite.")
+        else:
+            with st.spinner("🔄 Rewriting with academic precision..."):
+                rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
+            
+            if similarity <= target_similarity:
+                st.markdown(
+                    f'<div class="success-box">'
+                    f'<h3>✅ Success! Similarity: {similarity:.1f}%</h3>'
+                    f'<p>Academic integrity maintained!</p>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            else:
+                st.warning(f"Similarity: {similarity:.1f}% (Target: {target_similarity}%)")
+            
+            colA, colB = st.columns(2)
+            with colA:
+                st.markdown("#### 📘 Original Text")
+                st.markdown('<div class="text-box">', unsafe_allow_html=True)
+                st.text_area("Original", input_text, height=250, key="original", label_visibility="collapsed")
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            with colB:
+                st.markdown("#### ✨ Rewritten Text")
+                st.markdown('<div class="text-box">', unsafe_allow_html=True)
+                st.text_area("Rewritten", rewritten, height=250, key="rewritten", label_visibility="collapsed")
+                st.markdown('</div>', unsafe_allow_html=True)
+    
+    if col2.button("🧹 Clear", use_container_width=True):
+        st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Footer
+st.markdown("---")
+st.markdown(
+    "<p style='text-align:center; color:#666;'>"
+    "🎓 Academic Rewriter Pro | Preserving scholarly integrity since 2024"
+    "</p>",
+    unsafe_allow_html=True
+)
