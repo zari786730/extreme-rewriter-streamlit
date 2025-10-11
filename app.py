@@ -110,61 +110,100 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=8):
 # STREAMLIT FRONTEND
 # =========================
 
-# --- PAGE CONFIG ---
 st.set_page_config(
     page_title="Extreme Rewriter",
     page_icon="💥",
     layout="wide"
 )
 
-# --- STYLING ---
+# --- CSS: Dark theme + bubbles + droplets ---
 st.markdown("""
 <style>
 body {
-    background: radial-gradient(circle at 20% 20%, #e0f7fa, #f1f8e9);
+    background: radial-gradient(circle at 20% 20%, #00111a, #000000);
     overflow: hidden;
+    color: #e6faff;
 }
-#bubbles {
+#bubble-layer, #droplet-layer {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    overflow: hidden;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: -1; overflow: hidden;
 }
+/* Rising bubbles */
 .bubble {
     position: absolute;
     bottom: -100px;
-    background: rgba(0, 200, 255, 0.3);
+    background: rgba(0,200,255,0.3);
     border-radius: 50%;
-    animation: rise 15s infinite ease-in;
+    box-shadow: 0 0 10px rgba(0,200,255,0.5);
+    animation: rise linear infinite;
 }
 @keyframes rise {
-    0% { transform: translateY(0) scale(1); opacity: 1; }
-    100% { transform: translateY(-110vh) scale(1.5); opacity: 0; }
+    0% { transform: translateY(0) scale(0.6); opacity: 0.8; }
+    50% { opacity: 1; }
+    100% { transform: translateY(-120vh) scale(1.2); opacity: 0; }
 }
-h1 { text-align: center; color: #00B4D8; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); font-size: 2.8rem; }
-h3 { text-align: center; color: #0077B6; }
+/* Water droplets */
+.droplet {
+    position: absolute;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(255,255,255,0.05));
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(0,200,255,0.2);
+    animation: shimmer 4s ease-in-out infinite alternate;
+}
+@keyframes shimmer {
+    0% { transform: translateY(0) scale(0.7); opacity: 0.6; }
+    50% { transform: translateY(3px) scale(1); opacity: 0.9; }
+    100% { transform: translateY(0) scale(0.8); opacity: 0.7; }
+}
+h1 { text-align: center; color: #00B4D8; font-size: 2.8rem; }
+h3 { text-align: center; color: #00eaff; }
 .stButton>button {
     background: linear-gradient(90deg, #00B4D8, #0077B6);
     color: white; border: none; border-radius: 12px; padding: 0.8rem 1.5rem;
     font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: all 0.3s ease;
 }
 .stButton>button:hover { background: linear-gradient(90deg, #0077B6, #023E8A); transform: scale(1.05); }
-textarea { border-radius: 10px !important; border: 1px solid #90E0EF !important; background-color: #FAFAFA !important; }
-.output-box { background: rgba(240, 248, 255, 0.8); border: 1px solid #CAF0F8; border-radius: 12px; padding: 1rem; }
-footer { text-align: center; color: #555; margin-top: 2rem; font-size: 0.9rem; }
+/* Textareas light black */
+textarea { 
+    border-radius: 10px !important; border: 1px solid #90E0EF !important; 
+    background-color: #101820 !important; color: #e6faff !important; 
+}
+footer { text-align: center; color: #aaa; margin-top: 2rem; font-size: 0.9rem; }
 </style>
-<div id="bubbles">
-""" + ''.join([f"<div class='bubble' style='left:{i*5}%; width:{20+i*2}px; height:{20+i*2}px; animation-delay:{i}s;'></div>" for i in range(1, 20)]) + "</div>", unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# --- HEADER ---
-st.markdown("<h1>💥 Extreme Rewriter</h1>", unsafe_allow_html=True)
-st.markdown("<h3>Transform any text into a unique version with <20% similarity</h3>", unsafe_allow_html=True)
+# --- Generate bubbles and droplets ---
+if "bubble_html" not in st.session_state:
+    bh = '<div id="bubble-layer">'
+    for i in range(35):
+        size = random.randint(8, 30)
+        left = random.randint(0, 95)
+        duration = random.randint(12, 28)
+        delay = random.uniform(0, 10)
+        bh += f"<div class='bubble' style='left:{left}vw; width:{size}px; height:{size}px; animation-duration:{duration}s; animation-delay:{delay}s;'></div>"
+    bh += "</div>"
+    st.session_state["bubble_html"] = bh
+
+if "droplet_html" not in st.session_state:
+    dh = '<div id="droplet-layer">'
+    for i in range(25):
+        size = random.randint(4, 14)
+        top = random.randint(0, 90)
+        left = random.randint(0, 95)
+        delay = random.uniform(0, 5)
+        dh += f"<div class='droplet' style='top:{top}vh; left:{left}vw; width:{size}px; height:{size}px; animation-delay:{delay}s;'></div>"
+    dh += "</div>"
+    st.session_state["droplet_html"] = dh
+
+st.markdown(st.session_state["bubble_html"] + st.session_state["droplet_html"], unsafe_allow_html=True)
+
+# --- Header ---
+st.markdown("<h1>💧 Extreme Rewriter</h1>", unsafe_allow_html=True)
+st.markdown("<h3>Transform text into a unique version with <20% similarity</h3>", unsafe_allow_html=True)
 st.write("Welcome to **Extreme Rewriter** — re-engineer your text with radical rewriting and low similarity.")
 
-# --- MAIN UI ---
+# --- Main UI ---
 st.markdown("### ✏️ Input Text")
 input_text = st.text_area("Paste or type your text:", height=180, placeholder="Enter your original text here...")
 target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
@@ -178,7 +217,7 @@ if col1.button("🚀 Rewrite Now"):
         with st.spinner("🧠 Running extreme rewriting algorithm..."):
             rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
         color = "#4CAF50" if similarity <= target_similarity else "#FF9800"
-        st.markdown(f"<h4 style='color:{color};text-align:center;'>✅ Done! Achieved Similarity: {similarity:.1f}%</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{color};text-align:center;'>✅ Done! Similarity: {similarity:.1f}%</h4>", unsafe_allow_html=True)
         colA, colB = st.columns(2)
         with colA:
             st.subheader("📘 Original Text")
@@ -190,4 +229,4 @@ elif col2.button("🧹 Clear All"):
     st.experimental_rerun()
 
 st.markdown("---")
-st.markdown("<footer>⚙️ Powered by Streamlit | Developed with 💙 at Zari's AI Lab</footer>", unsafe_allow_html=True)
+st.markdown("<footer>⚙️ Powered by Streamlit | Developed with 💙 by Zariab</footer>", unsafe_allow_html=True)
