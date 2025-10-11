@@ -12,53 +12,99 @@ import random
 
 def extreme_rewriter(original_text):
     clean_text = original_text.strip().strip('"').strip("'")
-
-    # Radical sentence restructuring
+    
+    # More aggressive sentence splitting
+    def split_sentences(text):
+        # Split by multiple sentence endings
+        sentences = re.split(r'[.!?]+', text)
+        return [s.strip() for s in sentences if s.strip()]
+    
+    # More radical sentence restructuring
     def radical_sentence_restructure(text):
-        sentences = [s.strip() for s in text.split('.') if s.strip()]
+        sentences = split_sentences(text)
+        if not sentences:
+            return text
+            
         rebuilt_sentences = []
+        
         for sentence in sentences:
             words = sentence.split()
-            if len(words) < 4:
+            if len(words) < 3:
                 rebuilt_sentences.append(sentence)
                 continue
+                
+            # More aggressive restructuring options
             r = random.random()
-            if r < 0.3:
-                question_words = ['How', 'What', 'Why', 'In what ways']
-                rebuilt = f"{random.choice(question_words)} does {sentence.lower()}?"
+            
+            if r < 0.4:
+                # Convert to question format
+                question_starters = ['How does', 'What makes', 'Why is', 'In what way does', 
+                                   'To what extent does', 'How can we understand']
+                starter = random.choice(question_starters)
+                rebuilt = f"{starter} {sentence.lower()}?"
                 rebuilt_sentences.append(rebuilt)
-            elif r < 0.6:
-                if len(words) > 6:
-                    mid_point = len(words) // 2
-                    part1 = ' '.join(words[:mid_point])
-                    part2 = ' '.join(words[mid_point:])
-                    rebuilt = f"{part2}, which demonstrates that {part1.lower()}"
+                
+            elif r < 0.7:
+                # Reverse sentence structure
+                if len(words) > 4:
+                    # Split and reorder
+                    split_point = random.randint(2, len(words)-2)
+                    first_part = ' '.join(words[:split_point])
+                    second_part = ' '.join(words[split_point:])
+                    
+                    connectors = [
+                        f"{second_part}, thereby illustrating how {first_part.lower()}",
+                        f"{second_part}, which fundamentally demonstrates that {first_part.lower()}",
+                        f"{second_part}, consequently revealing how {first_part.lower()}",
+                        f"{second_part}, essentially proving that {first_part.lower()}"
+                    ]
+                    rebuilt = random.choice(connectors)
                     rebuilt_sentences.append(rebuilt)
+                else:
+                    rebuilt_sentences.append(sentence)
+                    
             else:
+                # Academic reframing with more variation
                 academic_frames = [
-                    f"Scholarly analysis reveals that {sentence.lower()}",
-                    f"Research findings indicate {sentence.lower()}",
-                    f"Academic investigation demonstrates {sentence.lower()}",
-                    f"Evidence from multiple studies shows {sentence.lower()}",
-                    f"Comprehensive research establishes {sentence.lower()}"
+                    f"From an analytical perspective, {sentence.lower()}",
+                    f"Scholarly examination reveals that {sentence.lower()}",
+                    f"Research findings consistently indicate {sentence.lower()}",
+                    f"Academic scrutiny demonstrates {sentence.lower()}",
+                    f"Empirical evidence substantiates that {sentence.lower()}",
+                    f"Comprehensive analysis establishes {sentence.lower()}",
+                    f"Theoretical frameworks suggest {sentence.lower()}",
+                    f"Methodological approaches confirm {sentence.lower()}"
                 ]
                 rebuilt_sentences.append(random.choice(academic_frames))
+        
         return '. '.join(rebuilt_sentences) + '.'
 
-    # Vocabulary replacement
+    # More comprehensive vocabulary replacement
     def nuclear_vocabulary_replacement(text):
+        # Expanded replacement dictionary
         nuclear_replacements = {
-            'research': ['scholarly investigation', 'academic inquiry', 'systematic study'],
-            'study': ['examination', 'analysis', 'investigation'],
-            'analysis': ['scrutiny', 'assessment', 'evaluation'],
-            'evidence': ['empirical data', 'documented findings', 'research results'],
-            'democracy': ['democratic governance', 'popular sovereignty', 'representative government'],
-            'society': ['social fabric', 'community', 'civilization'],
-            'freedoms': ['liberties', 'entitlements', 'rights'],
-            'institutions': ['establishments', 'organizations', 'bodies'],
-            'struggles': ['campaigns', 'endeavors', 'movements'],
-            'complex': ['multifaceted', 'intricate', 'sophisticated'],
+            'research': ['scholarly investigation', 'academic inquiry', 'systematic study', 'methodological examination'],
+            'study': ['comprehensive examination', 'detailed analysis', 'thorough investigation', 'rigorous scrutiny'],
+            'analysis': ['in-depth scrutiny', 'systematic assessment', 'comprehensive evaluation', 'detailed appraisal'],
+            'evidence': ['empirical data', 'documented findings', 'research results', 'substantive documentation'],
+            'data': ['information', 'findings', 'empirical evidence', 'documented results'],
+            'show': ['demonstrate', 'illustrate', 'reveal', 'substantiate'],
+            'important': ['significant', 'crucial', 'pivotal', 'fundamental'],
+            'change': ['transformation', 'modification', 'alteration', 'shift'],
+            'problem': ['challenge', 'issue', 'difficulty', 'obstacle'],
+            'solution': ['resolution', 'approach', 'method', 'strategy'],
+            'people': ['individuals', 'persons', 'the population', 'society members'],
+            'government': ['governing body', 'administration', 'political leadership', 'state apparatus'],
+            'country': ['nation', 'state', 'territory', 'sovereign entity'],
+            'development': ['progress', 'advancement', 'evolution', 'growth'],
+            'system': ['framework', 'structure', 'mechanism', 'apparatus'],
+            'process': ['procedure', 'methodology', 'approach', 'technique'],
+            'result': ['outcome', 'consequence', 'finding', 'conclusion'],
+            'because': ['due to the fact that', 'owing to', 'as a consequence of', 'given that'],
+            'however': ['nevertheless', 'nonetheless', 'conversely', 'notwithstanding'],
+            'therefore': ['consequently', 'accordingly', 'thus', 'hence']
         }
+        
         new_text = text
         for original, replacements in nuclear_replacements.items():
             pattern = r'\b' + re.escape(original) + r'\b'
@@ -67,47 +113,73 @@ def extreme_rewriter(original_text):
                 new_text = re.sub(pattern, replacement, new_text, flags=re.IGNORECASE)
         return new_text
 
-    # Add human-like touches
+    # More varied human-like touches
     def add_human_touches(text):
-        human_patterns = [
-            lambda t: f"Interestingly, {t.lower()}",
-            lambda t: f"Upon reflection, {t.lower()}",
-            lambda t: f"By comparison, {t.lower()}",
-            lambda t: f"It appears that {t.lower()}",
-            lambda t: f"Notably, {t.lower()}",
-            lambda t: f"In this context, {t.lower()}"
-        ]
-        sentences = [s.strip() for s in text.split('.') if s.strip()]
-        if sentences:
-            first_sentence = sentences[0]
-            if random.random() < 0.7:
+        sentences = split_sentences(text)
+        if not sentences:
+            return text
+            
+        # Apply different transformations to different sentences
+        transformed_sentences = []
+        
+        for i, sentence in enumerate(sentences):
+            if random.random() < 0.6:  # Apply transformation to most sentences
+                human_patterns = [
+                    lambda s: f"Interestingly, {s.lower()}",
+                    lambda s: f"Upon careful consideration, {s.lower()}",
+                    lambda s: f"From a broader perspective, {s.lower()}",
+                    lambda s: f"It is noteworthy that {s.lower()}",
+                    lambda s: f"Significantly, {s.lower()}",
+                    lambda s: f"In this context, {s.lower()}",
+                    lambda s: f"Remarkably, {s.lower()}",
+                    lambda s: f"Essentially, {s.lower()}",
+                    lambda s: f"Fundamentally, {s.lower()}",
+                    lambda s: f"Critically, {s.lower()}"
+                ]
                 pattern = random.choice(human_patterns)
-                sentences[0] = pattern(first_sentence)
-        return '. '.join(sentences) + '.'
+                transformed_sentences.append(pattern(sentence))
+            else:
+                transformed_sentences.append(sentence)
+        
+        return '. '.join(transformed_sentences) + '.'
 
+    # Apply all transformations multiple times for more radical changes
     result = clean_text
-    result = radical_sentence_restructure(result)
-    result = nuclear_vocabulary_replacement(result)
-    result = add_human_touches(result)
+    for _ in range(2):  # Apply twice for more transformation
+        result = radical_sentence_restructure(result)
+        result = nuclear_vocabulary_replacement(result)
+        result = add_human_touches(result)
+    
     return result
 
 def calculate_similarity(original, rewritten):
+    # More sophisticated similarity calculation
     original_words = set(re.findall(r'\b\w+\b', original.lower()))
     rewritten_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
+    
+    if not original_words: 
+        return 0
+    
     common_words = original_words.intersection(rewritten_words)
-    if not original_words: return 0
-    return len(common_words) / len(original_words) * 100
+    similarity = len(common_words) / len(original_words) * 100
+    
+    return similarity
 
-def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=8):
+def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=15):
     best_result = None
     best_similarity = 100
-    for _ in range(max_attempts):
+    
+    for attempt in range(max_attempts):
         rewritten = extreme_rewriter(original_text)
         similarity = calculate_similarity(original_text, rewritten)
+        
         if similarity < best_similarity:
             best_result = rewritten
             best_similarity = similarity
-        if similarity <= max_similarity: break
+            
+        if similarity <= max_similarity: 
+            break
+            
     return best_result, best_similarity
 
 # =========================
@@ -227,14 +299,15 @@ st.markdown("""
         padding: 1.5rem;
         border: 1px solid #90E0EF;
         margin-top: 1rem;
+        min-height: 150px;
     }
     .similarity-meter {
-        background: linear-gradient(90deg, #00B4D8, #0077B6);
         border-radius: 10px;
-        padding: 0.5rem;
+        padding: 0.8rem;
         text-align: center;
         font-weight: bold;
         margin-top: 1rem;
+        font-size: 1.1rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -265,13 +338,12 @@ st.markdown(st.session_state["bubbles_html"], unsafe_allow_html=True)
 
 # --- HEADER ---
 st.markdown("<h1>💧 Extreme Rewriter</h1>", unsafe_allow_html=True)
-st.markdown("<h3>Transform text into a unique version with <20% similarity</h3>", unsafe_allow_html=True)
-st.write("Welcome to **Extreme Rewriter** — re-engineer your text with radical rewriting and low similarity.")
+st.markdown("<h3>Transform text into a unique version with low similarity</h3>", unsafe_allow_html=True)
 
 # --- MAIN UI ---
 st.markdown("### ✏️ Input Text")
 input_text = st.text_area("Paste or type your text:", height=180, key="input_text")
-target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1, key="target_similarity")
+target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 15, step=1, key="target_similarity")
 
 col1, col2 = st.columns([1,1])
 
@@ -280,44 +352,29 @@ with col1:
         if not input_text.strip():
             st.warning("⚠️ Please enter some text first!")
         else:
-            with st.spinner("🧠 Rewriting..."):
+            with st.spinner("🧠 Rewriting text with extreme transformations..."):
                 rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
                 
                 # Display results
                 st.markdown("### 🔄 Rewritten Text")
                 st.markdown(f'<div class="result-box">{rewritten}</div>', unsafe_allow_html=True)
                 
-                # Display similarity score
-                similarity_color = "#00FF00" if similarity <= target_similarity else "#FF6B6B"
+                # Display similarity score with color coding
+                if similarity <= target_similarity:
+                    similarity_color = "#00FF00"
+                    message = f"✅ Success! Achieved {similarity:.1f}% similarity (target: ≤{target_similarity}%)"
+                else:
+                    similarity_color = "#FF6B6B"
+                    message = f"⚠️ Best achieved: {similarity:.1f}% similarity (target: ≤{target_similarity}%)"
+                
                 st.markdown(f'<div class="similarity-meter" style="background: linear-gradient(90deg, {similarity_color}, #0077B6)">'
                            f'📊 Similarity Score: {similarity:.1f}%</div>', unsafe_allow_html=True)
                 
-                # Success message
+                # Success/warning message
                 if similarity <= target_similarity:
-                    st.success(f"✅ Success! Achieved {similarity:.1f}% similarity (target: ≤{target_similarity}%)")
+                    st.success(message)
                 else:
-                    st.warning(f"⚠️ Close! Achieved {similarity:.1f}% similarity (target: ≤{target_similarity}%)")
-
-with col2:
-    st.markdown("### ℹ️ How It Works")
-    st.markdown("""
-    <div class="result-box">
-    - **Radical Restructuring**: Sentences are completely reorganized
-    - **Vocabulary Replacement**: Key words are substituted with academic equivalents
-    - **Human Touches**: Natural phrasing is added for authenticity
-    - **Similarity Control**: Multiple attempts ensure low similarity
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("### 💡 Tips")
-    st.markdown("""
-    <div class="result-box">
-    - Longer texts work better for achieving low similarity
-    - Adjust the target similarity slider as needed
-    - The algorithm makes multiple attempts to meet your target
-    - Results may vary between runs due to random elements
-    </div>
-    """, unsafe_allow_html=True)
+                    st.warning(message)
 
 # --- FOOTER ---
 st.markdown("---")
