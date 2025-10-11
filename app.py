@@ -151,317 +151,141 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=8):
     return best_result, best_similarity
 
 # =========================
-# BEAUTIFUL STREAMLIT FRONTEND (MODIFIED)
+# CLEAN BEAUTIFUL STREAMLIT FRONTEND (SAFE FOR BACKEND)
 # =========================
 
-st.set_page_config(
-    page_title="Extreme Rewriter", 
-    page_icon="💥", 
-    layout="wide"
-)
+st.set_page_config(page_title="Extreme Rewriter", page_icon="💥", layout="wide")
 
-# Custom CSS for animations and styling
+# ---------- Custom Animated Background ----------
 st.markdown("""
 <style>
-    @keyframes float {
-        0%, 100% { transform: translateY(0) rotate(0deg); }
-        50% { transform: translateY(-20px) rotate(180deg); }
-    }
-    
-    @keyframes wave {
-        0% { transform: translateX(0); }
-        50% { transform: translateX(-30px); }
-        100% { transform: translateX(0); }
-    }
-    
-    @keyframes bubble {
-        0% { 
-            transform: translateY(100vh) scale(0.5); 
-            opacity: 0;
-        }
-        50% { 
-            opacity: 0.7;
-        }
-        100% { 
-            transform: translateY(-100px) scale(1.2); 
-            opacity: 0;
-        }
-    }
-    
-    .bubble {
-        position: fixed;
-        bottom: -50px;
-        width: 40px;
-        height: 40px;
-        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(0,180,216,0.4));
-        border-radius: 50%;
-        animation: bubble linear infinite;
-        z-index: -1;
-    }
-    
-    .wave-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 100px;
-        z-index: -1;
-        overflow: hidden;
-    }
-    
-    .wave {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 200%;
-        height: 100%;
-        background: linear-gradient(90deg, 
-            rgba(0,180,216,0.3) 0%, 
-            rgba(32,201,151,0.4) 25%, 
-            rgba(255,193,7,0.3) 50%, 
-            rgba(255,87,34,0.4) 75%, 
-            rgba(156,39,176,0.3) 100%);
-        animation: wave 10s linear infinite;
-        border-radius: 50% 50% 0 0;
-    }
-    
-    .wave:nth-child(2) {
-        animation-duration: 15s;
-        opacity: 0.5;
-        background: linear-gradient(90deg, 
-            rgba(156,39,176,0.3) 0%, 
-            rgba(255,87,34,0.4) 25%, 
-            rgba(255,193,7,0.3) 50%, 
-            rgba(32,201,151,0.4) 75%, 
-            rgba(0,180,216,0.3) 100%);
-    }
-    
-    .main-container {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        padding: 2rem;
-        margin: 1rem 0;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        border: 3px solid transparent;
-        background-clip: padding-box;
-        position: relative;
-        z-index: 1;
-    }
-    
-    .main-container::before {
-        content: '';
-        position: absolute;
-        top: -3px; left: -3px; right: -3px; bottom: -3px;
-        background: linear-gradient(45deg, #00B4D8, #20C997, #FFC107, #FF5722, #9C27B0);
-        border-radius: 23px;
-        z-index: -1;
-        animation: gradientShift 8s ease infinite;
-    }
-    
-    @keyframes gradientShift {
-        0%, 100% { filter: hue-rotate(0deg); }
-        50% { filter: hue-rotate(180deg); }
-    }
-    
-    .stButton button {
-        background: linear-gradient(45deg, #00B4D8, #20C997);
-        color: white;
-        border: none;
-        padding: 0.75rem 2rem;
-        border-radius: 50px;
-        font-weight: bold;
-        font-size: 1.1rem;
-        transition: all 0.3s ease;
-        box-shadow: 0 5px 15px rgba(0,180,216,0.4);
-    }
-    
-    .stButton button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0,180,216,0.6);
-        background: linear-gradient(45deg, #20C997, #00B4D8);
-    }
-    
-    .stTextArea textarea {
-        border-radius: 15px;
-        border: 2px solid #00B4D8;
-        padding: 1rem;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    }
-    
-    .stTextArea textarea:focus {
-        border-color: #FF5722;
-        box-shadow: 0 0 0 2px rgba(255,87,34,0.2);
-    }
-    
-    .slider-container {
-        background: linear-gradient(45deg, #E3F2FD, #F3E5F5);
-        padding: 1.5rem;
-        border-radius: 15px;
-        margin: 1rem 0;
-    }
-    
-    .success-box {
-        background: linear-gradient(45deg, #4CAF50, #8BC34A);
-        color: white;
-        padding: 1rem;
-        border-radius: 15px;
-        text-align: center;
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.02); }
-        100% { transform: scale(1); }
-    }
-    
-    .header-animation {
-        background: linear-gradient(45deg, #00B4D8, #FF5722, #9C27B0, #FFC107);
-        background-size: 400% 400%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: gradientText 6s ease infinite;
-    }
-    
-    @keyframes gradientText {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-    }
-    
-    .text-box {
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 15px;
-        padding: 1.5rem;
-        border: 2px solid #E3F2FD;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
+body {
+    background: linear-gradient(135deg, #e0f7fa 0%, #fce4ec 100%);
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    overflow-x: hidden;
+}
+
+/* Bubbles Animation */
+.bubble {
+    position: fixed;
+    bottom: -60px;
+    background: rgba(0,180,216,0.25);
+    border-radius: 50%;
+    animation: rise 12s infinite ease-in;
+    z-index: -1;
+}
+@keyframes rise {
+    0% { transform: translateY(0) scale(0.5); opacity: 1; }
+    100% { transform: translateY(-110vh) scale(1.2); opacity: 0; }
+}
+
+/* Center container */
+.main-container {
+    background: rgba(255,255,255,0.9);
+    border-radius: 25px;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    backdrop-filter: blur(6px);
+}
+
+/* Buttons */
+.stButton>button {
+    background: linear-gradient(90deg, #00b4d8, #0077b6);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 50px;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+.stButton>button:hover {
+    transform: scale(1.05);
+    background: linear-gradient(90deg, #0077b6, #023e8a);
+}
+
+/* Textarea */
+.stTextArea textarea {
+    border-radius: 12px;
+    border: 2px solid #90e0ef;
+    background: #f9f9f9;
+    font-size: 1rem;
+}
+
+/* Output Box */
+.output-box {
+    background: #f8fcff;
+    border: 2px solid #caf0f8;
+    border-radius: 15px;
+    padding: 1.2rem;
+    font-size: 1.1rem;
+    box-shadow: inset 0 0 10px rgba(0,180,216,0.1);
+}
+
+/* Header */
+h1 {
+    text-align: center;
+    color: #00b4d8;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+}
+h3 {
+    text-align: center;
+    color: #0077b6;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    color: #666;
+    margin-top: 3rem;
+    font-size: 0.9rem;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# Create bubbles
-bubbles_html = ""
-for i in range(15):
-    size = random.randint(20, 60)
-    left = random.randint(0, 95)
-    duration = random.randint(10, 30)
-    delay = random.randint(0, 10)
-    bubbles_html += f"""
-    <div class="bubble" style="
-        left: {left}vw; 
-        width: {size}px; 
-        height: {size}px; 
-        animation-duration: {duration}s;
-        animation-delay: {delay}s;
-        background: radial-gradient(circle at 30% 30%, 
-            rgba({random.randint(200,255)},{random.randint(200,255)},{random.randint(200,255)},0.8), 
-            rgba({random.randint(0,180)},{random.randint(100,216)},{random.randint(150,255)},0.4));
-    "></div>
-    """
+# Floating bubbles
+bubbles_html = "".join([
+    f"<div class='bubble' style='left:{i*5}%; width:{20+i*2}px; height:{20+i*2}px; animation-delay:{i}s;'></div>"
+    for i in range(1, 20)
+])
+st.markdown(bubbles_html, unsafe_allow_html=True)
 
-# Create waves
-waves_html = """
-<div class="wave-container">
-    <div class="wave"></div>
-    <div class="wave"></div>
-</div>
-"""
+# ---------- HEADER ----------
+st.markdown("<h1>💥 Extreme Rewriter</h1>", unsafe_allow_html=True)
+st.markdown("<h3>Make your text uniquely rewritten with ultra-low similarity</h3>", unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 
-# Inject bubbles and waves
-st.markdown(bubbles_html + waves_html, unsafe_allow_html=True)
+# ---------- MAIN UI ----------
+st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
-# Main content
-st.markdown(
-    """
-    <div class="main-container">
-        <h1 class="header-animation" style='text-align:center; font-size:3rem; margin-bottom:0.5rem;'>💥 Extreme Rewriter</h1>
-        <p style='text-align:center; color:#666; font-size:1.2rem; margin-bottom:2rem;'>
-            Transform any text into a unique version with <span style="color:#FF5722; font-weight:bold;"><20% similarity</span>
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+input_text = st.text_area("🧠 Enter your text:", height=180, placeholder="Paste or type your text here...")
 
-# Input section in main container
-with st.container():
-    st.markdown('<div class="main-container">', unsafe_allow_html=True)
-    
-    st.markdown("### ✏️ Enter Your Text")
-    input_text = st.text_area(
-        "Paste or type your text below:", 
-        height=180, 
-        placeholder="Enter your original text here...",
-        help="Enter the text you want to rewrite with low similarity",
-        label_visibility="collapsed"
-    )
+target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
 
-    st.markdown('<div class="slider-container">', unsafe_allow_html=True)
-    target_similarity = st.slider(
-        "🎯 **Target Similarity (%)**", 
-        5, 50, 20, step=1,
-        help="Set your desired maximum similarity percentage"
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
+col1, col2 = st.columns([1, 1])
 
-    col1, col2, col3 = st.columns([1, 1, 1])
-    
-    with col2:
-        if st.button("🚀 **Rewrite Now**", use_container_width=True):
-            if not input_text.strip():
-                st.warning("⚠️ **Please enter some text first!**")
-            else:
-                with st.spinner("🔮 **Rewriting your text with extreme algorithms...**"):
-                    # Your backend function call - UNCHANGED
-                    rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
-                
-                if similarity <= target_similarity:
-                    st.markdown(
-                        f'<div class="success-box">'
-                        f'<h3>🎉 Success! Achieved Similarity: {similarity:.1f}%</h3>'
-                        f'<p>Your text has been transformed below target! ✨</p>'
-                        f'</div>', 
-                        unsafe_allow_html=True
-                    )
-                else:
-                    st.markdown(
-                        f"<h4 style='color:#FF9800; text-align:center; background: rgba(255,152,0,0.1); padding: 1rem; border-radius: 10px;'>"
-                        f"⚠️ Similarity: {similarity:.1f}% (Target: {target_similarity}%)"
-                        f"</h4>", 
-                        unsafe_allow_html=True
-                    )
-                
-                colA, colB = st.columns(2)
-                with colA:
-                    st.markdown("### 📘 Original Text")
-                    st.markdown('<div class="text-box">', unsafe_allow_html=True)
-                    st.text_area("Original", input_text, height=250, key="original", label_visibility="collapsed")
-                    st.markdown('</div>', unsafe_allow_html=True)
-                with colB:
-                    st.markdown("### ✨ Rewritten Text")
-                    st.markdown('<div class="text-box">', unsafe_allow_html=True)
-                    st.text_area("Rewritten", rewritten, height=250, key="rewritten", label_visibility="collapsed")
-                    st.markdown('</div>', unsafe_allow_html=True)
-    
-    with col3:
-        if st.button("🧹 **Clear All**", use_container_width=True):
-            st.rerun()
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+if col1.button("🚀 Rewrite Now"):
+    if not input_text.strip():
+        st.warning("⚠️ Please enter some text first!")
+    else:
+        with st.spinner("Rewriting your text... please wait ⏳"):
+            rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
+        
+        color = "#4CAF50" if similarity <= target_similarity else "#FF9800"
+        st.markdown(f"<h4 style='text-align:center; color:{color};'>✅ Similarity: {similarity:.1f}%</h4>", unsafe_allow_html=True)
+        
+        st.markdown("### ✨ Rewritten Text")
+        st.markdown(f"<div class='output-box'>{rewritten}</div>", unsafe_allow_html=True)
 
-# Footer
+if col2.button("🧹 Clear All"):
+    st.rerun()
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ---------- FOOTER ----------
 st.markdown("---")
 st.markdown(
-    """
-    <div style='text-align:center; color:#666; padding:1rem;'>
-        <p style='font-size:1.1rem; margin-bottom:0.5rem;'>
-            ⚙️ Powered by <span style="color:#00B4D8; font-weight:bold;">Streamlit</span> | 
-            🎨 Developed by <span style="color:#FF5722; font-weight:bold;">Zari's AI Lab</span>
-        </p>
-        <p style='font-size:0.9rem; color:#999;'>
-            ✨ Magical text transformation with animated wonders! ✨
-        </p>
-    </div>
-    """,
+    "<footer>⚙️ Powered by Streamlit | Designed by 💙 Zari's AI Lab</footer>",
     unsafe_allow_html=True
 )
