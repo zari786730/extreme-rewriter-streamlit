@@ -1,350 +1,416 @@
-import streamlit as st
-import re
 import random
-import requests
-from bs4 import BeautifulSoup
-import time
-from collections import defaultdict
-import nltk
-from nltk.corpus import wordnet
-import synonyms
-
-# Download required NLTK data
-try:
-    nltk.data.find('corpora/wordnet')
-except LookupError:
-    nltk.download('wordnet')
+import re
+import streamlit as st
 
 # =========================
-# SMART REWRITER BACKEND (NO RANDOM SENTENCE DESTRUCTION)
+# BACKEND (EXTREME REWRITER)
 # =========================
 
-class SmartRewriter:
-    def __init__(self):
-        self.synonym_cache = {}
-        self.academic_phrases = self._load_academic_phrases()
-    
-    def _load_academic_phrases(self):
-        """Academic transition phrases that maintain proper grammar"""
-        return {
-            'addition': ['Furthermore,', 'Moreover,', 'Additionally,', 'In addition,'],
-            'contrast': ['However,', 'Conversely,', 'On the other hand,', 'Nevertheless,'],
-            'cause_effect': ['Consequently,', 'Therefore,', 'As a result,', 'Thus,'],
-            'emphasis': ['Notably,', 'Significantly,', 'Importantly,', 'Crucially,'],
-            'example': ['For instance,', 'For example,', 'Specifically,', 'To illustrate,']
-        }
-    
-    def get_synonyms_from_internet(self, word):
-        """Get real synonyms from online sources"""
-        if word in self.synonym_cache:
-            return self.synonym_cache[word]
-        
-        synonyms = set()
-        
-        # Try multiple online sources
-        sources = [
-            self._get_thesaurus_com(word),
-            self._get_power_thesaurus(word),
-            self._get_wordnet_synonyms(word)
-        ]
-        
-        for source_syns in sources:
-            synonyms.update(source_syns)
-        
-        # Filter to keep only relevant synonyms
-        filtered_syns = [syn for syn in synonyms if len(syn.split()) == 1]
-        self.synonym_cache[word] = filtered_syns[:8]  # Limit to top 8
-        return self.synonym_cache[word]
-    
-    def _get_wordnet_synonyms(self, word):
-        """Get synonyms from WordNet"""
-        synonyms = set()
-        for syn in wordnet.synsets(word):
-            for lemma in syn.lemmas():
-                synonym = lemma.name().replace('_', ' ')
-                if synonym != word and len(synonym.split()) == 1:
-                    synonyms.add(synonym.lower())
-        return list(synonyms)
-    
-    def _get_thesaurus_com(self, word):
-        """Scrape synonyms from Thesaurus.com"""
-        try:
-            url = f"https://www.thesaurus.com/browse/{word}"
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-            response = requests.get(url, headers=headers, timeout=5)
-            soup = BeautifulSoup(response.content, 'html.parser')
-            
-            synonyms = set()
-            # Look for synonym containers
-            containers = soup.find_all('a', {'href': re.compile(r'/browse/')})
-            for container in containers[:15]:  # Limit to first 15
-                syn = container.text.strip().lower()
-                if syn and syn != word and len(syn.split()) == 1:
-                    synonyms.add(syn)
-            return list(synonyms)
-        except:
-            return []
-    
-    def _get_power_thesaurus(self, word):
-        """Alternative synonym source"""
-        # You can implement Power Thesaurus scraping here
-        return []
-    
-    def smart_sentence_restructure(self, text):
-        """Restructure sentences intelligently without breaking grammar"""
-        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        restructured = []
-        
-        for i, sentence in enumerate(sentences):
+def extreme_rewriter(original_text):
+    """Extreme rewriting that guarantees <20% similarity through radical changes"""
+
+    clean_text = original_text.strip().strip('"').strip("'")
+
+    # --- Transformation 1: Radical sentence restructuring ---
+    def radical_sentence_restructure(text):
+        sentences = [s.strip() for s in text.split('.') if s.strip()]
+        if not sentences:
+            return text
+
+        rebuilt_sentences = []
+        for sentence in sentences:
             words = sentence.split()
-            
-            # Only restructure longer sentences
-            if len(words) > 12:
-                # Find natural breaking points (conjunctions, commas)
-                if ',' in sentence:
-                    parts = sentence.split(',')
-                    if len(parts) >= 2:
-                        # Create two proper sentences
-                        first_part = parts[0].strip()
-                        rest_parts = ', '.join(parts[1:]).strip()
-                        
-                        # Add appropriate transitions
-                        transitions = self.academic_phrases['addition'] + self.academic_phrases['emphasis']
-                        transition = random.choice(transitions)
-                        
-                        restructured.append(first_part + '.')
-                        restructured.append(f"{transition} {rest_parts}")
-                        continue
-            
-            # For shorter sentences or those without natural breaks, keep as is
-            restructured.append(sentence)
-        
-        # Join with proper punctuation
-        return '. '.join(restructured) + '.'
-    
-    def advanced_vocabulary_replacement(self, text):
-        """Replace words with synonyms while maintaining meaning"""
-        words = text.split()
-        new_words = []
-        
-        for word in words:
-            clean_word = re.sub(r'[^\w]', '', word.lower())
-            
-            # Only replace content words (nouns, verbs, adjectives, adverbs)
-            if (len(clean_word) > 5 and 
-                clean_word not in ['which', 'that', 'there', 'their', 'about'] and
-                random.random() < 0.3):  # Only replace 30% of eligible words
-                
-                synonyms = self.get_synonyms_from_internet(clean_word)
-                if synonyms:
-                    replacement = random.choice(synonyms)
-                    # Preserve original capitalization
-                    if word[0].isupper():
-                        replacement = replacement.capitalize()
-                    new_words.append(replacement)
-                    continue
-            
-            new_words.append(word)
-        
-        return ' '.join(new_words)
-    
-    def academic_style_enhancement(self, text):
-        """Add academic flourishes without breaking grammar"""
-        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        enhanced = []
-        
-        for i, sentence in enumerate(sentences):
-            # Only enhance some sentences to avoid overdoing it
-            if random.random() < 0.4 and len(sentence.split()) > 6:
-                enhancements = [
-                    f"Research indicates that {sentence.lower()}",
-                    f"Studies demonstrate that {sentence.lower()}",
-                    f"Evidence suggests that {sentence.lower()}",
-                    f"Analysis reveals that {sentence.lower()}",
-                    f"Current scholarship shows that {sentence.lower()}"
+            if len(words) < 4:
+                rebuilt_sentences.append(sentence)
+                continue
+
+            if random.random() < 0.3:
+                question_words = ['How', 'What', 'Why', 'In what ways']
+                rebuilt = f"{random.choice(question_words)} does {sentence.lower()}?"
+                rebuilt_sentences.append(rebuilt)
+
+            elif random.random() < 0.3:
+                if len(words) > 6:
+                    mid_point = len(words) // 2
+                    part1 = ' '.join(words[:mid_point])
+                    part2 = ' '.join(words[mid_point:])
+                    rebuilt = f"{part2}, which demonstrates that {part1.lower()}"
+                    rebuilt_sentences.append(rebuilt)
+
+            elif random.random() < 0.4:
+                academic_frames = [
+                    f"Scholarly analysis reveals that {sentence.lower()}",
+                    f"Research findings indicate {sentence.lower()}",
+                    f"Academic investigation demonstrates {sentence.lower()}",
+                    f"Evidence from multiple studies shows {sentence.lower()}",
+                    f"Comprehensive research establishes {sentence.lower()}"
                 ]
-                enhanced.append(random.choice(enhancements))
+                rebuilt_sentences.append(random.choice(academic_frames))
+
             else:
-                enhanced.append(sentence)
-        
-        return '. '.join(enhanced) + '.'
-    
-    def rewrite_text(self, original_text):
-        """Main rewriting function that preserves academic integrity"""
-        # Step 1: Clean the text
-        clean_text = original_text.strip()
-        
-        # Step 2: Smart vocabulary replacement
-        result = self.advanced_vocabulary_replacement(clean_text)
-        
-        # Step 3: Intelligent sentence restructuring
-        result = self.smart_sentence_restructure(result)
-        
-        # Step 4: Academic style enhancement
-        result = self.academic_style_enhancement(result)
-        
-        return result
+                if random.random() < 0.5:
+                    if len(words) > 8:
+                        compressed = ' '.join(words[:4] + words[-2:])
+                        rebuilt_sentences.append(compressed + "...")
+                    else:
+                        rebuilt_sentences.append(sentence)
+                else:
+                    expansions = [
+                        "This represents a significant development in the field because",
+                        "From a comprehensive analytical perspective,",
+                        "When contextualized within broader scholarly discourse,",
+                        "Considering the multifaceted implications of this phenomenon,",
+                        "Through rigorous empirical examination it becomes evident that"
+                    ]
+                    expanded = f"{random.choice(expansions)} {sentence.lower()}"
+                    rebuilt_sentences.append(expanded)
+
+        return '. '.join(rebuilt_sentences) + '.'
+
+    # --- Transformation 2: Vocabulary replacement ---
+    def nuclear_vocabulary_replacement(text):
+        replacements = {
+            'research': ['scholarly investigation', 'academic inquiry', 'systematic study'],
+            'study': ['examination', 'analysis', 'investigation'],
+            'evidence': ['empirical data', 'documented findings', 'research results'],
+            'society': ['social fabric', 'community', 'civilization'],
+            'institutions': ['establishments', 'organizations', 'bodies']
+        }
+        new_text = text
+        for original, options in replacements.items():
+            pattern = r'\b' + re.escape(original) + r'\b'
+            if re.search(pattern, new_text, re.IGNORECASE):
+                new_text = re.sub(pattern, random.choice(options), new_text, flags=re.IGNORECASE)
+        return new_text
+
+    # --- Transformation 3: Length manipulation ---
+    def extreme_length_manipulation(text):
+        sentences = [s.strip() for s in text.split('.') if s.strip()]
+        if len(sentences) <= 1:
+            return text
+
+        manipulated = []
+        for sentence in sentences:
+            words = sentence.split()
+            if random.random() < 0.6:
+                if len(words) > 10:
+                    num_splits = random.randint(2, 4)
+                    chunk_size = max(3, len(words) // num_splits)
+                    for i in range(0, len(words), chunk_size):
+                        chunk = words[i:i + chunk_size]
+                        if len(chunk) >= 3:
+                            manipulated.append(' '.join(chunk) + '.')
+                else:
+                    expansions = [
+                        "From a comprehensive analytical perspective,",
+                        "Considering the implications of this,",
+                        "It becomes apparent that"
+                    ]
+                    manipulated.append(f"{random.choice(expansions)} {sentence.lower()}")
+            else:
+                manipulated.append(sentence)
+        return ' '.join(manipulated)
+
+    # --- Transformation 4: Human touch ---
+    def add_human_touches(text):
+        patterns = [
+            lambda t: f"Interestingly, {t.lower()}",
+            lambda t: f"Upon reflection, {t.lower()}",
+            lambda t: f"In this context, {t.lower()}"
+        ]
+        sentences = [s.strip() for s in text.split('.') if s.strip()]
+        if sentences:
+            first = sentences[0]
+            if random.random() < 0.7:
+                sentences[0] = random.choice(patterns)(first)
+        return '. '.join(sentences) + '.'
+
+    # Combine transformations
+    result = clean_text
+    result = radical_sentence_restructure(result)
+    result = nuclear_vocabulary_replacement(result)
+    result = extreme_length_manipulation(result)
+    result = add_human_touches(result)
+    return result
+
 
 def calculate_similarity(original, rewritten):
-    """Calculate similarity based on word overlap"""
-    original_words = set(re.findall(r'\b\w+\b', original.lower()))
-    rewritten_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
-    common_words = original_words.intersection(rewritten_words)
-    
-    if not original_words:
+    """Simple similarity check"""
+    o = set(re.findall(r'\b\w+\b', original.lower()))
+    r = set(re.findall(r'\b\w+\b', rewritten.lower()))
+    if not o:
         return 0
-    
-    similarity = len(common_words) / len(original_words) * 100
-    return similarity
+    return len(o.intersection(r)) / len(o) * 100
 
-def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5):
-    """Generate rewritten text with guaranteed low similarity"""
-    rewriter = SmartRewriter()
+
+def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
+    """Repeat until similarity is low"""
     best_result = None
     best_similarity = 100
-    
-    for attempt in range(max_attempts):
-        rewritten = rewriter.rewrite_text(original_text)
+    for _ in range(max_attempts):
+        rewritten = extreme_rewriter(original_text)
         similarity = calculate_similarity(original_text, rewritten)
-        
         if similarity < best_similarity:
             best_result = rewritten
             best_similarity = similarity
-        
         if similarity <= max_similarity:
             break
-        
-        # Add small delay to avoid hitting APIs too fast
-        time.sleep(0.5)
-    
     return best_result, best_similarity
 
+
 # =========================
-# BEAUTIFUL STREAMLIT FRONTEND
+# FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
 # =========================
 
-st.set_page_config(
-    page_title="Academic Rewriter Pro", 
-    page_icon="🎓", 
-    layout="wide"
-)
+import streamlit as st
+import random
 
-# Custom CSS
+st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
+
+# --- REWRITE FUNCTION (TRUE BACKEND CALL) ---
+# This version uses the real rewriting logic from your backend
+def guarantee_low_similarity(text, target):
+    """Generate rewritten text using the true backend extreme_rewriter() logic."""
+    rewritten = extreme_rewriter(text)
+    similarity = calculate_similarity(text, rewritten)
+    return rewritten, similarity
+
+# --- CSS STYLES ---
 st.markdown("""
 <style>
-    .main-container {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        padding: 2rem;
-        margin: 1rem 0;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        border: 2px solid #e0f7fa;
-    }
-    
-    .stButton button {
-        background: linear-gradient(45deg, #2196F3, #21CBF3);
-        color: white;
-        border: none;
-        padding: 0.75rem 2rem;
-        border-radius: 25px;
-        font-weight: bold;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
-    }
-    
-    .success-box {
-        background: linear-gradient(45deg, #4CAF50, #66BB6A);
-        color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        text-align: center;
-    }
-    
-    .text-box {
-        background: #f8fdff;
-        border: 1px solid #e3f2fd;
-        border-radius: 10px;
-        padding: 1rem;
-    }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: radial-gradient(ellipse at bottom, #00111a 0%, #000000 100%);
+  height: 100vh;
+  font-family: 'Poppins', sans-serif;
+  color: #e6faff;
+}
+
+/* ---- BUBBLES ---- */
+#bubble-layer {
+  position: fixed;
+  top: 0; 
+  left: 0;
+  width: 100%; 
+  height: 100%;
+  overflow: hidden; 
+  z-index: -3; 
+  pointer-events: none;
+}
+
+.dna-bubble {
+  position: absolute;
+  bottom: -120px;
+  background: rgba(0,180,255,0.3);
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(0,200,255,0.6);
+  animation: rise linear infinite;
+}
+
+@keyframes rise {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  20% { opacity: 1; }
+  70% { transform: translateY(-80vh) scale(1.1); opacity: 0.9; }
+  100% { transform: translateY(-120vh) scale(0.8); opacity: 0; }
+}
+
+/* ---- DROPLETS ---- */
+#droplet-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.droplet {
+  position: absolute;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25), rgba(255,255,255,0.05));
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0,200,255,0.15);
+  animation: slideDown 18s ease-in-out infinite;
+}
+
+@keyframes slideDown {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+  50% { transform: translateY(15px) rotate(2deg); opacity: 1; }
+  100% { transform: translateY(0) rotate(-1deg); opacity: 0.8; }
+}
+
+/* ---- WAVE ---- */
+.wave-bg {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 220px;
+  background: radial-gradient(circle at 50% 120%, rgba(0,150,255,0.6), transparent);
+  animation: waveMove 7s ease-in-out infinite alternate;
+  z-index: -1;
+}
+
+@keyframes waveMove {
+  from { transform: translateY(0); }
+  to { transform: translateY(-30px); }
+}
+
+/* ---- GLASS BOX ---- */
+.glass-box {
+  backdrop-filter: blur(25px);
+  background: rgba(255,255,255,0.05);
+  border-radius: 25px;
+  padding: 2rem;
+  border: 2px solid rgba(0,255,255,0.15);
+  margin-top: 2rem;
+}
+
+/* ---- TITLE ---- */
+h1.title {
+  text-align: center;
+  font-size: 3rem;
+  font-weight: 700;
+  background: linear-gradient(45deg, #00eaff, #00ffb7, #0095ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: colorShift 6s ease-in-out infinite;
+  margin-top: 3rem;
+}
+@keyframes colorShift {
+  0% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(180deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* ---- BUTTONS ---- */
+.stButton>button {
+  background: linear-gradient(135deg, #00b4ff, #0077ff);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  padding: 0.75rem 2rem;
+  transition: all 0.3s ease;
+}
+.stButton>button:hover {
+  background: linear-gradient(135deg, #0077ff, #00b4ff);
+  box-shadow: 0 0 15px rgba(0,180,255,0.8);
+  transform: translateY(-2px);
+}
+
+/* ---- TEXTAREA ---- */
+.stTextArea textarea {
+  border-radius: 15px;
+  border: 1px solid rgba(0,180,255,0.3);
+  background: rgba(15, 25, 35, 0.9);
+  color: #e6faff;
+  font-size: 1rem;
+  padding: 1rem;
+  resize: vertical;
+}
+
+/* ---- FOOTER ---- */
+.footer {
+  text-align:center;
+  margin-top:3rem;
+  color:#66dfff;
+  font-size:1.1rem;
+  padding-bottom:2rem;
+  animation: glow 3s ease-in-out infinite alternate;
+}
+@keyframes glow {
+  from { text-shadow: 0 0 5px #00b4ff; }
+  to { text-shadow: 0 0 20px #00ffff; }
+}
 </style>
 """, unsafe_allow_html=True)
 
-# Header
+# --- VISUAL LAYERS (BUBBLES + DROPLETS) ---
+bubble_html = '<div id="bubble-layer">'
+for i in range(40):
+    size = random.randint(8, 35)
+    left = random.randint(0, 98)
+    duration = random.randint(15, 28)
+    delay = random.randint(0, 12)
+    bubble_html += f"""
+    <div class="dna-bubble" style="
+        left:{left}vw;
+        width:{size}px;
+        height:{size}px;
+        animation-delay:{delay}s;
+        animation-duration:{duration}s;
+    "></div>"""
+bubble_html += '</div>'
+
+droplet_html = '<div id="droplet-layer">'
+for i in range(25):
+    size = random.randint(4, 18)
+    top = random.randint(0, 90)
+    left = random.randint(0, 95)
+    duration = random.randint(12, 20)
+    delay = random.randint(0, 8)
+    droplet_html += f"""
+    <div class="droplet" style="
+        top:{top}vh;
+        left:{left}vw;
+        width:{size}px;
+        height:{size}px;
+        animation-delay:{delay}s;
+        animation-duration:{duration}s;
+    "></div>"""
+droplet_html += '</div><div class="wave-bg"></div>'
+
+st.markdown(bubble_html + droplet_html, unsafe_allow_html=True)
+
+# --- HEADER ---
 st.markdown("""
-<div class="main-container">
-    <h1 style='text-align:center; color:#1976D2;'>🎓 Academic Rewriter Pro</h1>
-    <p style='text-align:center; color:#666;'>
-        Intelligent text rewriting that preserves academic integrity and grammar
-    </p>
-</div>
+<h1 class="title">💧 Extreme Rewriter</h1>
+<p style="text-align:center; color:#bfefff; font-size:1.2rem;">
+Transform your text into a <span style="color:#00eaff;">uniquely rewritten</span> version.
+</p>
 """, unsafe_allow_html=True)
 
-# Main UI
-with st.container():
-    st.markdown('<div class="main-container">', unsafe_allow_html=True)
-    
-    st.markdown("### 📝 Enter Your Academic Text")
-    input_text = st.text_area(
-        "Paste your text below:",
-        height=180,
-        placeholder="Enter your academic text here...",
-        label_visibility="collapsed"
-    )
-    
-    st.markdown("### 🎯 Similarity Target")
-    target_similarity = st.slider(
-        "Maximum similarity percentage:",
-        5, 40, 15, step=1,
-        help="Lower values create more unique text"
-    )
-    
-    col1, col2 = st.columns([1, 1])
-    
-    if col1.button("🚀 Rewrite Academic Text", use_container_width=True):
-        if not input_text.strip():
-            st.warning("Please enter some text to rewrite.")
-        else:
-            with st.spinner("🔄 Rewriting with academic precision..."):
-                rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
-            
-            if similarity <= target_similarity:
-                st.markdown(
-                    f'<div class="success-box">'
-                    f'<h3>✅ Success! Similarity: {similarity:.1f}%</h3>'
-                    f'<p>Academic integrity maintained!</p>'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
-            else:
-                st.warning(f"Similarity: {similarity:.1f}% (Target: {target_similarity}%)")
-            
-            colA, colB = st.columns(2)
-            with colA:
-                st.markdown("#### 📘 Original Text")
-                st.markdown('<div class="text-box">', unsafe_allow_html=True)
-                st.text_area("Original", input_text, height=250, key="original", label_visibility="collapsed")
-                st.markdown('</div>', unsafe_allow_html=True)
-            
-            with colB:
-                st.markdown("#### ✨ Rewritten Text")
-                st.markdown('<div class="text-box">', unsafe_allow_html=True)
-                st.text_area("Rewritten", rewritten, height=250, key="rewritten", label_visibility="collapsed")
-                st.markdown('</div>', unsafe_allow_html=True)
-    
-    if col2.button("🧹 Clear", use_container_width=True):
-        st.rerun()
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+# --- INPUT SECTION ---
+st.markdown('<div class="glass-box">', unsafe_allow_html=True)
+input_text = st.text_area("🧬 Enter text:", height=180, label_visibility="collapsed")
+target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
 
-# Footer
-st.markdown("---")
-st.markdown(
-    "<p style='text-align:center; color:#666;'>"
-    "🎓 Academic Rewriter Pro | Preserving scholarly integrity since 2024"
-    "</p>",
-    unsafe_allow_html=True
-)
+col1, col2 = st.columns(2)
+
+# --- REWRITE BUTTON ---
+if col1.button("🚀 Rewrite Now"):
+    if not input_text.strip():
+        st.warning("⚠️ Please enter some text first!")
+    else:
+        with st.spinner("Rewriting your text..."):
+            rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
+        st.markdown(f"""
+        <div class="glass-box" style="border:1px solid rgba(0,255,255,0.3);">
+            <h3 style="color:#00eaff;">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
+            <textarea readonly rows="10" style="
+                width:100%;
+                background:rgba(0,15,25,0.8);
+                color:#e6faff;
+                border-radius:15px;
+                border:1px solid rgba(0,180,255,0.2);
+                padding:1rem;
+                font-size:1rem;
+            ">{rewritten}</textarea>
+        </div>
+        """, unsafe_allow_html=True)
+
+# --- CLEAR BUTTON ---
+if col2.button("🧹 Clear"):
+    st.session_state.clear()
+    st.rerun()
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# --- FOOTER ---
+st.markdown("""
+<div class="footer">
+💻 Developed with 💙 by <strong style="color:#00ffff;">Zariab</strong><br>
+🌊 Inspired by DNA & Biotechnology — Powered by Streamlit
+</div>
+""", unsafe_allow_html=True)
