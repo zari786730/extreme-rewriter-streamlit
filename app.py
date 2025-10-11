@@ -159,13 +159,32 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
 
 
 # =========================
-# FRONTEND (BEAUTIFUL DNA WATER UI — DARK MODE + CONTINUOUS BUBBLES)
+# FRONTEND (BEAUTIFUL DNA WATER UI — DARK MODE ONLY + CONTINUOUS BUBBLES)
 # =========================
 
 import streamlit as st
 import random
 
-st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
+# --- PAGE SETUP ---
+st.set_page_config(
+    page_title="Extreme Rewriter",
+    page_icon="💧",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# Force Streamlit to use custom dark styling regardless of user theme
+st.markdown("""
+<style>
+:root {
+  color-scheme: dark;
+}
+html, body, [class*="stAppViewContainer"], [class*="stApp"] {
+  background: radial-gradient(ellipse at bottom, #00111a 0%, #000000 100%) !important;
+  color: #eafcff !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # --- CSS STYLES ---
 st.markdown("""
@@ -173,10 +192,10 @@ st.markdown("""
 body {
   margin: 0;
   overflow: hidden;
-  background: radial-gradient(ellipse at bottom, #00111a 0%, #000000 100%);
+  background: radial-gradient(ellipse at bottom, #00111a 0%, #000000 100%) !important;
   height: 100vh;
   font-family: 'Poppins', sans-serif;
-  color: #eafcff;
+  color: #eafcff !important;
 }
 
 /* ===== CONTINUOUS FLOATING BUBBLES ===== */
@@ -224,7 +243,7 @@ body {
   to { transform: translateY(-25px); }
 }
 
-/* Glass UI */
+/* Glass box */
 .glass-box {
   backdrop-filter: blur(20px);
   background: rgba(255,255,255,0.06);
@@ -292,13 +311,18 @@ h1.title {
   from { text-shadow: 0 0 5px #00b4ff; }
   to { text-shadow: 0 0 20px #00ffff; }
 }
+
+/* Hide Streamlit default theme toggle and toolbar */
+[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], [data-testid="stHeader"] {
+  display: none !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# --- CONTINUOUS BUBBLES ---
+# --- CONTINUOUS BUBBLES (ALWAYS ON) ---
 if "bubble_html" not in st.session_state:
     bubble_html = '<div id="bubble-layer">'
-    for i in range(60):  # many bubbles for continuous flow
+    for i in range(60):
         size = random.randint(10, 35)
         left = random.randint(0, 95)
         duration = random.randint(15, 30)
@@ -331,7 +355,7 @@ target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
 
 col1, col2 = st.columns(2)
 
-# --- Dummy rewriting function (replace with real logic) ---
+# --- Dummy rewriting function (replace with your logic) ---
 def guarantee_low_similarity(text, target_similarity):
     return f"[Rewritten version of]: {text}", target_similarity
 
