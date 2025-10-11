@@ -212,20 +212,22 @@ body {
 </style>
 """, unsafe_allow_html=True)
 
-# Persistent bubbles
-bubble_html = '<div id="bubble-layer">'
-for i in range(30):
-    size = random.randint(10, 35)
-    left = random.randint(0, 95)
-    duration = random.randint(12, 26)
-    delay = random.randint(0, 10)
-    bubble_html += f"""
-    <div class="dna-bubble" style="
-        left:{left}vw; width:{size}px; height:{size}px;
-        animation-delay:{delay}s; animation-duration:{duration}s;
-    "></div>"""
-bubble_html += '</div><div class="wave-bg"></div>'
-st.markdown(bubble_html, unsafe_allow_html=True)
+# === PERSISTENT DNA BUBBLES (always visible) ===
+if "bubbles_rendered" not in st.session_state:
+    bubble_html = '<div id="bubble-layer">'
+    for i in range(30):
+        size = random.randint(10, 35)
+        left = random.randint(0, 95)
+        duration = random.randint(12, 26)
+        delay = random.randint(0, 10)
+        bubble_html += f"""
+        <div class="dna-bubble" style="
+            left:{left}vw; width:{size}px; height:{size}px;
+            animation-delay:{delay}s; animation-duration:{duration}s;
+        "></div>"""
+    bubble_html += '</div><div class="wave-bg"></div>'
+    st.markdown(bubble_html, unsafe_allow_html=True, key="dna_bubbles")
+    st.session_state.bubbles_rendered = True
 
 # Title
 st.markdown("""
