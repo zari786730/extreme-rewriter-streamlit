@@ -157,43 +157,119 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=8):
 # STREAMLIT FRONTEND
 # =========================
 
-st.set_page_config(page_title="Extreme Rewriter", page_icon="💥", layout="wide")
+import streamlit as st
+from extreme_rewriter import extreme_rewrite_any_text  # keep your backend import
 
-st.markdown(
-    """
-    <h1 style='text-align:center;color:#00B4D8;'>💥 Extreme Rewriter</h1>
-    <p style='text-align:center;color:gray;'>Transform any text into a unique version with <20% similarity.</p>
-    """,
-    unsafe_allow_html=True
+# --- PAGE CONFIG ---
+st.set_page_config(
+    page_title="BioWrite - AI Text Rewriter",
+    page_icon="🧬",
+    layout="wide"
 )
 
-# Input section
-input_text = st.text_area("✏️ Enter your text here:", height=180, placeholder="Paste or type your text...")
+# --- CUSTOM STYLING ---
+st.markdown("""
+    <style>
+    /* General Background */
+    body {
+        background: linear-gradient(135deg, #E0F2F1, #F1F8E9);
+        font-family: 'Helvetica Neue', sans-serif;
+    }
 
-target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
+    .main {
+        background-color: #ffffff;
+        border-radius: 20px;
+        padding: 2rem 3rem;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
 
-col1, col2 = st.columns([1, 1])
+    h1, h2, h3 {
+        color: #004D40;
+        text-align: center;
+        font-weight: 800;
+    }
 
-if col1.button("🚀 Rewrite Now"):
-    if not input_text.strip():
-        st.warning("⚠️ Please enter some text first!")
+    h1 {
+        font-size: 2.4rem;
+    }
+
+    h2 {
+        color: #00796B;
+        margin-top: -10px;
+    }
+
+    textarea {
+        border-radius: 10px !important;
+        border: 1px solid #80CBC4 !important;
+        background-color: #FAFAFA !important;
+    }
+
+    .stButton>button {
+        background: linear-gradient(90deg, #26A69A, #00796B);
+        color: white;
+        font-weight: bold;
+        border-radius: 12px;
+        height: 3em;
+        width: 100%;
+        border: none;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        transition: all 0.2s ease;
+    }
+
+    .stButton>button:hover {
+        background: linear-gradient(90deg, #00796B, #004D40);
+        transform: scale(1.03);
+    }
+
+    .output-box {
+        background-color: #E0F2F1;
+        border-radius: 12px;
+        padding: 1.2rem;
+        box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+    }
+
+    footer {
+        text-align: center;
+        color: #555;
+        margin-top: 2rem;
+        font-size: 0.9rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- HEADER ---
+st.markdown("<h1>🧬 BioWrite</h1>", unsafe_allow_html=True)
+st.markdown("<h2>Rewrite Your Text with Biotech Precision</h2>", unsafe_allow_html=True)
+st.write("Welcome to **BioWrite**, an AI-powered text rewriting engine inspired by biotechnology — transforming your words with precision and originality. 💡")
+
+# --- LAYOUT ---
+col1, col2 = st.columns(2)
+
+with col1:
+    user_text = st.text_area("🔬 Paste your text below:", height=250, placeholder="Enter text to rewrite...")
+
+    rewrite_button = st.button("⚗️ Rewrite Now")
+
+    if rewrite_button:
+        if user_text.strip():
+            with st.spinner("🧠 Analyzing and rewriting your text..."):
+                result = extreme_rewrite_any_text(user_text)
+            st.session_state["output"] = result
+        else:
+            st.warning("Please enter some text first!")
+
+with col2:
+    st.markdown("### 🧫 Rewritten Output")
+    if "output" in st.session_state:
+        st.markdown(f"<div class='output-box'>{st.session_state['output']}</div>", unsafe_allow_html=True)
     else:
-        with st.spinner("Rewriting your text..."):
-            rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
-        color = "#4CAF50" if similarity <= target_similarity else "#FF9800"
-        st.markdown(f"<h4 style='color:{color};'>✅ Done! Achieved Similarity: {similarity:.1f}%</h4>", unsafe_allow_html=True)
-        colA, colB = st.columns(2)
-        with colA:
-            st.subheader("📘 Original Text")
-            st.text_area("Original", input_text, height=200)
-        with colB:
-            st.subheader("✨ Rewritten Text")
-            st.text_area("Rewritten", rewritten, height=200)
-elif col2.button("🧹 Clear"):
-    st.experimental_rerun()
+        st.info("Output will appear here after rewriting.")
 
-st.markdown("---")
-st.markdown(
-    "<p style='text-align:center;color:gray;'>⚙️ Powered by Streamlit | Developed by Zari's AI Lab</p>",
-    unsafe_allow_html=True
-                  )
+# --- FOOTER ---
+st.markdown("""
+    <footer>
+        <p>🧬 <b>BioWrite</b> — Built with AI & Biotechnology-inspired precision.<br>
+        Designed by Zari © 2025</p>
+    </footer>
+""", unsafe_allow_html=True)
