@@ -151,141 +151,157 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=8):
     return best_result, best_similarity
 
 # =========================
-# CLEAN BEAUTIFUL STREAMLIT FRONTEND (SAFE FOR BACKEND)
+# BEAUTIFUL DNA–WATER BACKGROUND FRONTEND
 # =========================
 
-st.set_page_config(page_title="Extreme Rewriter", page_icon="💥", layout="wide")
+st.set_page_config(
+    page_title="Extreme Rewriter",
+    page_icon="💧",
+    layout="wide"
+)
 
-# ---------- Custom Animated Background ----------
 st.markdown("""
 <style>
+/* Background Animation */
 body {
-    background: linear-gradient(135deg, #e0f7fa 0%, #fce4ec 100%);
-    font-family: 'Poppins', sans-serif;
-    color: #333;
-    overflow-x: hidden;
+  margin: 0;
+  overflow: hidden;
+  background: radial-gradient(ellipse at bottom, #00111a 0%, #000000 100%);
+  height: 100vh;
+  font-family: 'Poppins', sans-serif;
 }
 
-/* Bubbles Animation */
-.bubble {
-    position: fixed;
-    bottom: -60px;
-    background: rgba(0,180,216,0.25);
-    border-radius: 50%;
-    animation: rise 12s infinite ease-in;
-    z-index: -1;
+/* DNA Spiral Bubbles */
+.dna-bubble {
+  position: fixed;
+  bottom: -100px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0, 180, 255, 0.4);
+  border-radius: 50%;
+  animation: rise 12s infinite ease-in;
+  box-shadow: 0 0 20px rgba(0,180,255,0.7);
 }
+
 @keyframes rise {
-    0% { transform: translateY(0) scale(0.5); opacity: 1; }
-    100% { transform: translateY(-110vh) scale(1.2); opacity: 0; }
+  0% { transform: translateX(0) translateY(0) scale(0.5); opacity: 0; }
+  20% { opacity: 1; }
+  50% { transform: translateX(40px) translateY(-50vh) scale(1.2); }
+  100% { transform: translateX(-40px) translateY(-100vh) scale(0.8); opacity: 0; }
 }
 
-/* Center container */
-.main-container {
-    background: rgba(255,255,255,0.9);
-    border-radius: 25px;
-    padding: 2rem;
-    margin-top: 2rem;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    backdrop-filter: blur(6px);
+/* Wave Glow */
+.wave-bg {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 200px;
+  background: radial-gradient(circle at 50% 120%, rgba(0,150,255,0.6), transparent);
+  animation: waveMove 8s ease-in-out infinite alternate;
+  z-index: -2;
+}
+
+@keyframes waveMove {
+  from { transform: translateY(0); }
+  to { transform: translateY(-20px); }
+}
+
+/* Glass Effect Container */
+.glass-box {
+  backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 25px;
+  padding: 2rem;
+  border: 2px solid rgba(255,255,255,0.2);
+  box-shadow: 0 0 30px rgba(0,180,255,0.1);
+  margin-top: 2rem;
 }
 
 /* Buttons */
 .stButton>button {
-    background: linear-gradient(90deg, #00b4d8, #0077b6);
-    color: white;
-    font-weight: bold;
-    border: none;
-    border-radius: 50px;
-    padding: 0.75rem 1.5rem;
-    transition: all 0.3s ease;
+  background: linear-gradient(135deg, #00b4ff, #0077ff);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  padding: 0.75rem 2rem;
+  transition: all 0.3s ease;
 }
 .stButton>button:hover {
-    transform: scale(1.05);
-    background: linear-gradient(90deg, #0077b6, #023e8a);
+  background: linear-gradient(135deg, #0077ff, #00b4ff);
+  box-shadow: 0 0 15px rgba(0,180,255,0.7);
+  transform: translateY(-2px);
 }
 
-/* Textarea */
+/* Text areas */
 .stTextArea textarea {
-    border-radius: 12px;
-    border: 2px solid #90e0ef;
-    background: #f9f9f9;
-    font-size: 1rem;
-}
-
-/* Output Box */
-.output-box {
-    background: #f8fcff;
-    border: 2px solid #caf0f8;
-    border-radius: 15px;
-    padding: 1.2rem;
-    font-size: 1.1rem;
-    box-shadow: inset 0 0 10px rgba(0,180,216,0.1);
-}
-
-/* Header */
-h1 {
-    text-align: center;
-    color: #00b4d8;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-}
-h3 {
-    text-align: center;
-    color: #0077b6;
-}
-
-/* Footer */
-footer {
-    text-align: center;
-    color: #666;
-    margin-top: 3rem;
-    font-size: 0.9rem;
+  border-radius: 15px;
+  border: 1px solid rgba(0,180,255,0.3);
+  background: rgba(255,255,255,0.05);
+  color: #e0f7ff;
+  font-size: 1rem;
+  padding: 1rem;
+  resize: vertical;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# Floating bubbles
-bubbles_html = "".join([
-    f"<div class='bubble' style='left:{i*5}%; width:{20+i*2}px; height:{20+i*2}px; animation-delay:{i}s;'></div>"
-    for i in range(1, 20)
-])
-st.markdown(bubbles_html, unsafe_allow_html=True)
+# Floating DNA bubbles
+dna_html = ""
+for i in range(25):
+    size = random.randint(10, 35)
+    left = random.randint(0, 95)
+    duration = random.randint(10, 22)
+    delay = random.randint(0, 10)
+    dna_html += f"""
+    <div class="dna-bubble" style="
+        left:{left}vw;
+        width:{size}px;
+        height:{size}px;
+        animation-delay:{delay}s;
+        animation-duration:{duration}s;
+    "></div>
+    """
+st.markdown(dna_html + '<div class="wave-bg"></div>', unsafe_allow_html=True)
 
-# ---------- HEADER ----------
-st.markdown("<h1>💥 Extreme Rewriter</h1>", unsafe_allow_html=True)
-st.markdown("<h3>Make your text uniquely rewritten with ultra-low similarity</h3>", unsafe_allow_html=True)
-st.markdown("<br>", unsafe_allow_html=True)
+# Title
+st.markdown("""
+<div style='text-align:center; margin-top:3rem;'>
+    <h1 style="color:#00d5ff; font-size:3rem; font-weight:700; text-shadow:0 0 25px #00eaff;">
+        💧 Extreme Rewriter
+    </h1>
+    <p style="color:#a0e4ff; font-size:1.2rem;">Rebuild your text into a fresh version — <span style="color:#00eaff;">under 20% similarity</span></p>
+</div>
+""", unsafe_allow_html=True)
 
-# ---------- MAIN UI ----------
-st.markdown('<div class="main-container">', unsafe_allow_html=True)
-
-input_text = st.text_area("🧠 Enter your text:", height=180, placeholder="Paste or type your text here...")
-
+# Input
+st.markdown('<div class="glass-box">', unsafe_allow_html=True)
+input_text = st.text_area("📝 Enter text to rewrite:", height=180, label_visibility="collapsed")
 target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
 
-col1, col2 = st.columns([1, 1])
-
-if col1.button("🚀 Rewrite Now"):
+if st.button("🚀 Rewrite"):
     if not input_text.strip():
-        st.warning("⚠️ Please enter some text first!")
+        st.warning("Please enter text first.")
     else:
-        with st.spinner("Rewriting your text... please wait ⏳"):
+        with st.spinner("Transforming your text..."):
             rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
-        
-        color = "#4CAF50" if similarity <= target_similarity else "#FF9800"
-        st.markdown(f"<h4 style='text-align:center; color:{color};'>✅ Similarity: {similarity:.1f}%</h4>", unsafe_allow_html=True)
-        
-        st.markdown("### ✨ Rewritten Text")
-        st.markdown(f"<div class='output-box'>{rewritten}</div>", unsafe_allow_html=True)
 
-if col2.button("🧹 Clear All"):
-    st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ---------- FOOTER ----------
-st.markdown("---")
-st.markdown(
-    "<footer>⚙️ Powered by Streamlit | Designed by 💙 Zari's AI Lab</footer>",
-    unsafe_allow_html=True
-)
+        # Output (only rewritten text shown)
+        st.markdown(f"""
+        <div class="glass-box" style="border:1px solid rgba(0,255,255,0.3);">
+            <h3 style="color:#00eaff;">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
+            <textarea readonly rows="10" style="
+                width:100%;
+                background:rgba(0,10,20,0.6);
+                color:#bdfdff;
+                border-radius:15px;
+                border:1px solid rgba(0,180,255,0.2);
+                padding:1rem;
+                font-size:1rem;
+            ">{rewritten}</textarea>
+        </div>
+        """, unsafe_allow_html=True)
+else:
+    st.markdown('</div>', unsafe_allow_html=True)
