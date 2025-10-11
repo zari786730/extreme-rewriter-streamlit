@@ -197,13 +197,19 @@ body {
   background: rgba(0,180,255,0.35);
   border-radius: 50%;
   box-shadow: 0 0 25px rgba(0,180,255,0.7);
-  animation: rise infinite ease-in;
+  animation-name: rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: forwards;
+  opacity: 0;
 }
 
+/* Fixed smooth continuous bubble motion */
 @keyframes rise {
-  0% { transform: translateY(0) scale(0.5); opacity: 0; }
-  20% { opacity: 0.8; }
-  60% { transform: translateY(-70vh) scale(1.2); opacity: 1; }
+  0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+  10%  { opacity: 0.6; }
+  40%  { transform: translateY(-40vh) scale(1.1); opacity: 1; }
+  80%  { transform: translateY(-100vh) scale(0.8); opacity: 0.4; }
   100% { transform: translateY(-120vh) scale(0.6); opacity: 0; }
 }
 
@@ -293,23 +299,26 @@ h1.title {
 </style>
 """, unsafe_allow_html=True)
 
-# --- BUBBLE GENERATION (ALWAYS PRESENT) ---
-bubble_html = '<div id="bubble-layer">'
-for i in range(40):
-    size = random.randint(10, 35)
-    left = random.randint(0, 95)
-    duration = random.randint(14, 26)
-    delay = random.randint(0, 10)
-    bubble_html += f"""
-    <div class="dna-bubble" style="
-        left:{left}vw; 
-        width:{size}px; 
-        height:{size}px;
-        animation-delay:{delay}s; 
-        animation-duration:{duration}s;
-    "></div>"""
-bubble_html += '</div><div class="wave-bg"></div>'
-st.markdown(bubble_html, unsafe_allow_html=True)
+# --- BUBBLE GENERATION (ALWAYS PRESENT & SMOOTH) ---
+if "bubble_html" not in st.session_state:
+    bubble_html = '<div id="bubble-layer">'
+    for i in range(40):
+        size = random.randint(10, 35)
+        left = random.randint(0, 95)
+        duration = random.randint(15, 28)
+        delay = random.uniform(0, 8)
+        bubble_html += f"""
+        <div class="dna-bubble" style="
+            left:{left}vw; 
+            width:{size}px; 
+            height:{size}px;
+            animation-delay:{delay}s; 
+            animation-duration:{duration}s;
+        "></div>"""
+    bubble_html += '</div><div class="wave-bg"></div>'
+    st.session_state.bubble_html = bubble_html
+
+st.markdown(st.session_state.bubble_html, unsafe_allow_html=True)
 
 # --- HEADER ---
 st.markdown("""
@@ -325,6 +334,10 @@ input_text = st.text_area("🧬 Enter text:", height=180, label_visibility="coll
 target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
 
 col1, col2 = st.columns(2)
+
+# --- PLACEHOLDER REWRITE FUNCTION (ADD YOUR OWN LOGIC) ---
+def guarantee_low_similarity(text, target_similarity):
+    return f"[Rewritten version of]: {text}", target_similarity
 
 # --- REWRITE BUTTON ---
 if col1.button("🚀 Rewrite Now"):
