@@ -119,21 +119,123 @@ st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide
 # --- CSS STYLING ---
 st.markdown("""
 <style>
-body { background: radial-gradient(circle at 20% 20%, #00111a, #000000); color: #e6faff; overflow: hidden; font-family: 'Poppins', sans-serif; }
-#bubble-layer, #droplet-layer { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:-1; overflow:hidden; }
-/* Rising bubbles */
-.bubble { position:absolute; bottom:-100px; background: rgba(0,200,255,0.3); border-radius:50%; box-shadow:0 0 10px rgba(0,200,255,0.5); animation: rise linear infinite; }
-@keyframes rise { 0% { transform:translateY(0) scale(0.6); opacity:0.8; } 50% { opacity:1; } 100% { transform:translateY(-120vh) scale(1.2); opacity:0; } }
-/* Water droplets */
-.droplet { position:absolute; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(255,255,255,0.05)); border-radius:50%; box-shadow:0 0 8px rgba(0,200,255,0.2); animation: shimmer 4s ease-in-out infinite alternate; }
-@keyframes shimmer { 0% { transform: translateY(0) scale(0.7); opacity:0.6; } 50% { transform: translateY(3px) scale(1); opacity:0.9; } 100% { transform: translateY(0) scale(0.8); opacity:0.7; } }
-h1 { text-align:center; color:#00B4D8; font-size:2.8rem; }
-h3 { text-align:center; color:#00eaff; }
-.stButton>button { background: linear-gradient(90deg,#00B4D8,#0077B6); color:white; border:none; border-radius:12px; padding:0.8rem 1.5rem; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.2); transition:all 0.3s ease; }
-.stButton>button:hover { background: linear-gradient(90deg,#0077B6,#023E8A); transform: scale(1.05); }
-/* Textareas */
-textarea { border-radius:10px !important; border:1px solid #90E0EF !important; background-color:#101820 !important; color:#e6faff !important; }
-footer { text-align:center; color:#aaa; margin-top:2rem; font-size:0.9rem; }
+    body { 
+        background: radial-gradient(circle at 20% 20%, #00111a, #000000); 
+        color: #e6faff; 
+        overflow-x: hidden;
+        font-family: 'Poppins', sans-serif; 
+    }
+    .main > div {
+        background-color: transparent;
+    }
+    #bubble-layer, #droplet-layer { 
+        position: fixed; 
+        top:0; 
+        left:0; 
+        width:100%; 
+        height:100%; 
+        pointer-events:none; 
+        z-index:-1; 
+        overflow:hidden; 
+    }
+    /* Rising bubbles */
+    .bubble { 
+        position:absolute; 
+        bottom:-100px; 
+        background: rgba(0,200,255,0.3); 
+        border-radius:50%; 
+        box-shadow:0 0 10px rgba(0,200,255,0.5); 
+        animation: rise linear infinite; 
+    }
+    @keyframes rise { 
+        0% { 
+            transform:translateY(0) scale(0.6); 
+            opacity:0.8; 
+        } 
+        50% { 
+            opacity:1; 
+        } 
+        100% { 
+            transform:translateY(-120vh) scale(1.2); 
+            opacity:0; 
+        } 
+    }
+    /* Water droplets */
+    .droplet { 
+        position:absolute; 
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(255,255,255,0.05)); 
+        border-radius:50%; 
+        box-shadow:0 0 8px rgba(0,200,255,0.2); 
+        animation: shimmer 4s ease-in-out infinite alternate; 
+    }
+    @keyframes shimmer { 
+        0% { 
+            transform: translateY(0) scale(0.7); 
+            opacity:0.6; 
+        } 
+        50% { 
+            transform: translateY(3px) scale(1); 
+            opacity:0.9; 
+        } 
+        100% { 
+            transform: translateY(0) scale(0.8); 
+            opacity:0.7; 
+        } 
+    }
+    h1 { 
+        text-align:center; 
+        color:#00B4D8; 
+        font-size:2.8rem; 
+        margin-bottom: 0.5rem;
+    }
+    h3 { 
+        text-align:center; 
+        color:#00eaff; 
+        margin-top: 0;
+    }
+    .stButton>button { 
+        background: linear-gradient(90deg,#00B4D8,#0077B6); 
+        color:white; 
+        border:none; 
+        border-radius:12px; 
+        padding:0.8rem 1.5rem; 
+        font-weight:bold; 
+        box-shadow:0 4px 10px rgba(0,0,0,0.2); 
+        transition:all 0.3s ease; 
+        width: 100%;
+    }
+    .stButton>button:hover { 
+        background: linear-gradient(90deg,#0077B6,#023E8A); 
+        transform: scale(1.05); 
+    }
+    /* Textareas */
+    .stTextArea textarea {
+        border-radius:10px !important;
+        border:1px solid #90E0EF !important;
+        background-color:#101820 !important;
+        color:#e6faff !important;
+    }
+    footer { 
+        text-align:center; 
+        color:#aaa; 
+        margin-top:2rem; 
+        font-size:0.9rem; 
+    }
+    .result-box {
+        background-color: rgba(16, 24, 32, 0.8);
+        border-radius: 10px;
+        padding: 1.5rem;
+        border: 1px solid #90E0EF;
+        margin-top: 1rem;
+    }
+    .similarity-meter {
+        background: linear-gradient(90deg, #00B4D8, #0077B6);
+        border-radius: 10px;
+        padding: 0.5rem;
+        text-align: center;
+        font-weight: bold;
+        margin-top: 1rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -168,14 +270,55 @@ st.write("Welcome to **Extreme Rewriter** — re-engineer your text with radical
 
 # --- MAIN UI ---
 st.markdown("### ✏️ Input Text")
-input_text = st.text_area("Paste or type your text:", height=180)
-target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
+input_text = st.text_area("Paste or type your text:", height=180, key="input_text")
+target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1, key="target_similarity")
 
 col1, col2 = st.columns([1,1])
 
-if col1.button("🚀 Rewrite Now"):
-    if not input_text.strip():
-        st.warning("⚠️ Please enter some text first!")
-    else:
-        with st.spinner("🧠 Rewriting..."):
-            rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
+with col1:
+    if st.button("🚀 Rewrite Now", key="rewrite_button"):
+        if not input_text.strip():
+            st.warning("⚠️ Please enter some text first!")
+        else:
+            with st.spinner("🧠 Rewriting..."):
+                rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
+                
+                # Display results
+                st.markdown("### 🔄 Rewritten Text")
+                st.markdown(f'<div class="result-box">{rewritten}</div>', unsafe_allow_html=True)
+                
+                # Display similarity score
+                similarity_color = "#00FF00" if similarity <= target_similarity else "#FF6B6B"
+                st.markdown(f'<div class="similarity-meter" style="background: linear-gradient(90deg, {similarity_color}, #0077B6)">'
+                           f'📊 Similarity Score: {similarity:.1f}%</div>', unsafe_allow_html=True)
+                
+                # Success message
+                if similarity <= target_similarity:
+                    st.success(f"✅ Success! Achieved {similarity:.1f}% similarity (target: ≤{target_similarity}%)")
+                else:
+                    st.warning(f"⚠️ Close! Achieved {similarity:.1f}% similarity (target: ≤{target_similarity}%)")
+
+with col2:
+    st.markdown("### ℹ️ How It Works")
+    st.markdown("""
+    <div class="result-box">
+    - **Radical Restructuring**: Sentences are completely reorganized
+    - **Vocabulary Replacement**: Key words are substituted with academic equivalents
+    - **Human Touches**: Natural phrasing is added for authenticity
+    - **Similarity Control**: Multiple attempts ensure low similarity
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("### 💡 Tips")
+    st.markdown("""
+    <div class="result-box">
+    - Longer texts work better for achieving low similarity
+    - Adjust the target similarity slider as needed
+    - The algorithm makes multiple attempts to meet your target
+    - Results may vary between runs due to random elements
+    </div>
+    """, unsafe_allow_html=True)
+
+# --- FOOTER ---
+st.markdown("---")
+st.markdown("<footer>Extreme Rewriter • Dark Water UI • Text Transformation Tool</footer>", unsafe_allow_html=True)
