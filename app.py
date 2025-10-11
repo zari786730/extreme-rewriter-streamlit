@@ -167,10 +167,13 @@ import random
 
 st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
 
-# --- REWRITE FUNCTION (placeholder for demo) ---
+# --- REWRITE FUNCTION (TRUE BACKEND CALL) ---
+# This version uses the real rewriting logic from your backend
 def guarantee_low_similarity(text, target):
-    """Fake rewrite function for demo."""
-    return f"[Rewritten version of your text targeting {target}% similarity]\n\n{text[::-1]}", target - random.uniform(1, 3)
+    """Generate rewritten text using the true backend extreme_rewriter() logic."""
+    rewritten = extreme_rewriter(text)
+    similarity = calculate_similarity(text, rewritten)
+    return rewritten, similarity
 
 # --- CSS STYLES ---
 st.markdown("""
