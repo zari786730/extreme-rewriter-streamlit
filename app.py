@@ -525,4 +525,4 @@ with st.container():
                     <strong>AI Detection Risk:</strong> {"LOW RISK" if similarity < 20 else "MODERATE RISK"}
                     </div>
                     """,
-                    unsafe_allow_html=TRUE)
+                    unsafe_allow_html=True)
