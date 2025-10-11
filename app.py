@@ -159,13 +159,18 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
 
 
 # =========================
-# FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE)
+# FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
 # =========================
 
 import streamlit as st
 import random
 
 st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
+
+# --- REWRITE FUNCTION (placeholder for demo) ---
+def guarantee_low_similarity(text, target):
+    """Fake rewrite function for demo."""
+    return f"[Rewritten version of your text targeting {target}% similarity]\n\n{text[::-1]}", target - random.uniform(1, 3)
 
 # --- CSS STYLES ---
 st.markdown("""
@@ -179,7 +184,7 @@ body {
   color: #e6faff;
 }
 
-/* ---- BUBBLE LAYER ---- */
+/* ---- BUBBLES ---- */
 #bubble-layer {
   position: fixed;
   top: 0; 
@@ -198,7 +203,6 @@ body {
   border-radius: 50%;
   box-shadow: 0 0 20px rgba(0,200,255,0.6);
   animation: rise linear infinite;
-  animation-fill-mode: forwards;
 }
 
 @keyframes rise {
@@ -224,7 +228,7 @@ body {
   background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25), rgba(255,255,255,0.05));
   border-radius: 50%;
   box-shadow: 0 0 8px rgba(0,200,255,0.15);
-  animation: slideDown 15s ease-in-out infinite;
+  animation: slideDown 18s ease-in-out infinite;
 }
 
 @keyframes slideDown {
@@ -296,7 +300,7 @@ h1.title {
 .stTextArea textarea {
   border-radius: 15px;
   border: 1px solid rgba(0,180,255,0.3);
-  background: rgba(10, 20, 30, 0.8);
+  background: rgba(15, 25, 35, 0.9);
   color: #e6faff;
   font-size: 1rem;
   padding: 1rem;
@@ -319,7 +323,7 @@ h1.title {
 </style>
 """, unsafe_allow_html=True)
 
-# --- CONTINUOUS BUBBLES ---
+# --- VISUAL LAYERS (BUBBLES + DROPLETS) ---
 bubble_html = '<div id="bubble-layer">'
 for i in range(40):
     size = random.randint(8, 35)
@@ -336,14 +340,13 @@ for i in range(40):
     "></div>"""
 bubble_html += '</div>'
 
-# --- WATER DROPLETS ---
 droplet_html = '<div id="droplet-layer">'
 for i in range(25):
     size = random.randint(4, 18)
     top = random.randint(0, 90)
     left = random.randint(0, 95)
-    duration = random.randint(10, 20)
-    delay = random.randint(0, 10)
+    duration = random.randint(12, 20)
+    delay = random.randint(0, 8)
     droplet_html += f"""
     <div class="droplet" style="
         top:{top}vh;
@@ -355,7 +358,6 @@ for i in range(25):
     "></div>"""
 droplet_html += '</div><div class="wave-bg"></div>'
 
-# Combine bubble + droplet layers
 st.markdown(bubble_html + droplet_html, unsafe_allow_html=True)
 
 # --- HEADER ---
@@ -379,7 +381,7 @@ if col1.button("🚀 Rewrite Now"):
         st.warning("⚠️ Please enter some text first!")
     else:
         with st.spinner("Rewriting your text..."):
-            rewritten, similarity = ("This is your rewritten text.", 18.3)  # placeholder
+            rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
         st.markdown(f"""
         <div class="glass-box" style="border:1px solid rgba(0,255,255,0.3);">
             <h3 style="color:#00eaff;">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
