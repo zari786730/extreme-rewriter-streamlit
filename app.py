@@ -1,160 +1,360 @@
 import random
 import re
 import streamlit as st
+from collections import defaultdict
 
 # =========================
-# BACKEND (EXTREME REWRITER)
+# IMPROVED UNIVERSAL BACKEND
 # =========================
 
-def extreme_rewriter(original_text):
-    """Extreme rewriting that guarantees <20% similarity through radical changes"""
-
-    clean_text = original_text.strip().strip('"').strip("'")
-
-    # --- Transformation 1: Radical sentence restructuring ---
-    def radical_sentence_restructure(text):
-        sentences = [s.strip() for s in text.split('.') if s.strip()]
+class UniversalExtremeRewriter:
+    def __init__(self):
+        self.setup_comprehensive_vocabulary()
+    
+    def setup_comprehensive_vocabulary(self):
+        """EXPANDED vocabulary database for universal use"""
+        self.replacements = {
+            # Common academic/research words
+            'research': ['scholarly investigation', 'academic inquiry', 'systematic study', 'empirical exploration'],
+            'study': ['examination', 'analysis', 'investigation', 'scrutiny', 'assessment'],
+            'analysis': ['evaluation', 'appraisal', 'interpretation', 'assessment'],
+            'evidence': ['empirical data', 'documented findings', 'research results', 'substantive proof'],
+            'data': ['information', 'findings', 'metrics', 'statistics'],
+            'method': ['approach', 'technique', 'procedure', 'methodology'],
+            'result': ['outcome', 'finding', 'conclusion', 'product'],
+            'show': ['demonstrate', 'reveal', 'illustrate', 'indicate', 'display'],
+            'prove': ['substantiate', 'verify', 'confirm', 'validate'],
+            'suggest': ['indicate', 'imply', 'propose', 'point to'],
+            
+            # Common adjectives
+            'important': ['crucial', 'vital', 'essential', 'significant', 'paramount'],
+            'significant': ['notable', 'considerable', 'substantial', 'meaningful'],
+            'different': ['various', 'diverse', 'distinct', 'disparate'],
+            'many': ['numerous', 'multiple', 'countless', 'several'],
+            'big': ['large', 'substantial', 'considerable', 'sizable'],
+            'small': ['minor', 'modest', 'limited', 'minimal'],
+            'good': ['effective', 'beneficial', 'advantageous', 'favorable'],
+            'bad': ['detrimental', 'unfavorable', 'negative', 'adverse'],
+            'beautiful': ['stunning', 'gorgeous', 'exquisite', 'magnificent'],
+            'beauty': ['aesthetics', 'elegance', 'grace', 'loveliness'],
+            
+            # Common verbs
+            'use': ['utilize', 'employ', 'leverage', 'apply'],
+            'make': ['create', 'produce', 'construct', 'generate'],
+            'do': ['perform', 'execute', 'carry out', 'conduct'],
+            'get': ['obtain', 'acquire', 'secure', 'attain'],
+            'help': ['assist', 'facilitate', 'support', 'aid'],
+            'change': ['alter', 'modify', 'transform', 'adjust'],
+            'develop': ['cultivate', 'nurture', 'foster', 'build'],
+            'create': ['generate', 'produce', 'establish', 'form'],
+            'understand': ['comprehend', 'grasp', 'apprehend', 'fathom'],
+            'explain': ['clarify', 'elucidate', 'interpret', 'expound'],
+            
+            # Society & culture words
+            'society': ['community', 'populace', 'civilization', 'social fabric'],
+            'culture': ['heritage', 'traditions', 'customs', 'way of life'],
+            'people': ['individuals', 'persons', 'population', 'citizens'],
+            'government': ['administration', 'authorities', 'leadership', 'regime'],
+            'organization': ['institution', 'entity', 'association', 'body'],
+            'system': ['framework', 'structure', 'network', 'arrangement'],
+            
+            # Education words
+            'education': ['learning', 'instruction', 'schooling', 'training'],
+            'student': ['learner', 'pupil', 'scholar', 'trainee'],
+            'teacher': ['educator', 'instructor', 'tutor', 'mentor'],
+            'school': ['institution', 'academy', 'educational establishment'],
+            
+            # Business words
+            'business': ['enterprise', 'company', 'firm', 'venture'],
+            'market': ['industry', 'sector', 'commerce', 'trade'],
+            'product': ['item', 'goods', 'merchandise', 'offering'],
+            'customer': ['client', 'consumer', 'buyer', 'patron'],
+            
+            # Technology words
+            'technology': ['innovation', 'digital tools', 'tech solutions', 'advancements'],
+            'digital': ['electronic', 'computerized', 'online', 'virtual'],
+            'information': ['data', 'knowledge', 'intelligence', 'facts'],
+            
+            # Time-related words
+            'time': ['period', 'duration', 'interval', 'timespan'],
+            'now': ['currently', 'presently', 'at this time', 'currently'],
+            'recent': ['latest', 'current', 'contemporary', 'modern'],
+            'old': ['ancient', 'aged', 'traditional', 'historic'],
+            
+            # Place-related words
+            'world': ['globe', 'planet', 'earth', 'international community'],
+            'country': ['nation', 'state', 'land', 'sovereign state'],
+            'city': ['metropolis', 'urban center', 'municipality', 'town'],
+            'place': ['location', 'site', 'venue', 'setting'],
+            
+            # General nouns
+            'problem': ['issue', 'challenge', 'difficulty', 'obstacle'],
+            'solution': ['resolution', 'answer', 'remedy', 'fix'],
+            'way': ['method', 'approach', 'manner', 'technique'],
+            'part': ['component', 'element', 'section', 'portion'],
+            'kind': ['type', 'category', 'sort', 'variety'],
+            
+            # General adjectives
+            'new': ['novel', 'innovative', 'fresh', 'recent'],
+            'old': ['aged', 'ancient', 'traditional', 'historic'],
+            'high': ['elevated', 'significant', 'substantial', 'considerable'],
+            'low': ['minimal', 'reduced', 'limited', 'modest'],
+            'fast': ['rapid', 'quick', 'speedy', 'swift'],
+            'slow': ['gradual', 'leisurely', 'unhurried', 'deliberate']
+        }
+    
+    def intelligent_word_replacement(self, text):
+        """More aggressive and intelligent word replacement"""
+        words = text.split()
+        new_words = []
+        
+        i = 0
+        while i < len(words):
+            word = words[i].lower().strip('.,!?;:"')
+            original_word = words[i]
+            
+            # Skip very short/common words
+            if len(word) <= 2 or word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']:
+                new_words.append(original_word)
+                i += 1
+                continue
+            
+            # Try 2-word phrases first
+            if i + 1 < len(words):
+                next_word = words[i+1].lower().strip('.,!?;:"')
+                two_word = f"{word} {next_word}"
+                if two_word in self.replacements:
+                    replacement = random.choice(self.replacements[two_word])
+                    if words[i][0].isupper():
+                        replacement = replacement.capitalize()
+                    new_words.append(replacement)
+                    i += 2
+                    continue
+            
+            # Single word replacement with high probability
+            if word in self.replacements and random.random() < 0.7:  # 70% replacement rate
+                replacement = random.choice(self.replacements[word])
+                if words[i][0].isupper():
+                    replacement = replacement.capitalize()
+                new_words.append(replacement)
+            else:
+                new_words.append(original_word)
+            
+            i += 1
+        
+        return ' '.join(new_words)
+    
+    def varied_sentence_restructure(self, text):
+        """More diverse sentence restructuring patterns"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if not sentences:
             return text
-
-        rebuilt_sentences = []
-        for sentence in sentences:
+        
+        restructured = []
+        
+        for i, sentence in enumerate(sentences):
             words = sentence.split()
             if len(words) < 4:
-                rebuilt_sentences.append(sentence)
+                restructured.append(sentence)
                 continue
-
-            if random.random() < 0.3:
-                question_words = ['How', 'What', 'Why', 'In what ways']
-                rebuilt = f"{random.choice(question_words)} does {sentence.lower()}?"
-                rebuilt_sentences.append(rebuilt)
-
-            elif random.random() < 0.3:
-                if len(words) > 6:
-                    mid_point = len(words) // 2
-                    part1 = ' '.join(words[:mid_point])
-                    part2 = ' '.join(words[mid_point:])
-                    rebuilt = f"{part2}, which demonstrates that {part1.lower()}"
-                    rebuilt_sentences.append(rebuilt)
-
-            elif random.random() < 0.4:
-                academic_frames = [
-                    f"Scholarly analysis reveals that {sentence.lower()}",
-                    f"Research findings indicate {sentence.lower()}",
-                    f"Academic investigation demonstrates {sentence.lower()}",
-                    f"Evidence from multiple studies shows {sentence.lower()}",
-                    f"Comprehensive research establishes {sentence.lower()}"
+            
+            # DIVERSE patterns (no repetition)
+            pattern_choice = random.choice([
+                'reverse', 'question', 'academic', 'emphasis', 
+                'context', 'normal', 'comparative', 'result'
+            ])
+            
+            if pattern_choice == 'reverse' and len(words) > 6:
+                split_point = random.randint(3, len(words) - 3)
+                first_part = ' '.join(words[:split_point])
+                second_part = ' '.join(words[split_point:])
+                reverse_frames = [
+                    f"{second_part}, thereby illustrating {first_part.lower()}",
+                    f"{second_part}, which highlights {first_part.lower()}",
+                    f"{second_part}, revealing how {first_part.lower()}",
+                    f"{second_part}, demonstrating that {first_part.lower()}"
                 ]
-                rebuilt_sentences.append(random.choice(academic_frames))
-
+                restructured.append(random.choice(reverse_frames))
+                
+            elif pattern_choice == 'question':
+                question_frames = [
+                    f"What explains {sentence.lower()}?",
+                    f"How can we understand {sentence.lower()}?",
+                    f"Why is it significant that {sentence.lower()}?",
+                    f"In what ways does {sentence.lower()}?"
+                ]
+                restructured.append(random.choice(question_frames))
+                
+            elif pattern_choice == 'academic':
+                academic_frames = [
+                    f"Research indicates that {sentence.lower()}",
+                    f"Studies demonstrate that {sentence.lower()}",
+                    f"Evidence suggests that {sentence.lower()}",
+                    f"Analysis reveals that {sentence.lower()}",
+                    f"Findings show that {sentence.lower()}"
+                ]
+                restructured.append(random.choice(academic_frames))
+                
+            elif pattern_choice == 'emphasis':
+                emphasis_frames = [
+                    f"Notably, {sentence.lower()}",
+                    f"Significantly, {sentence.lower()}",
+                    f"Importantly, {sentence.lower()}",
+                    f"Remarkably, {sentence.lower()}"
+                ]
+                restructured.append(random.choice(emphasis_frames))
+                
+            elif pattern_choice == 'context':
+                context_frames = [
+                    f"In this context, {sentence.lower()}",
+                    f"Within this framework, {sentence.lower()}",
+                    f"From this perspective, {sentence.lower()}",
+                    f"Considering these factors, {sentence.lower()}"
+                ]
+                restructured.append(random.choice(context_frames))
+                
+            elif pattern_choice == 'comparative':
+                comparative_frames = [
+                    f"By comparison, {sentence.lower()}",
+                    f"Similarly, {sentence.lower()}",
+                    f"Likewise, {sentence.lower()}",
+                    f"In contrast, {sentence.lower()}"
+                ]
+                restructured.append(random.choice(comparative_frames))
+                
+            elif pattern_choice == 'result':
+                result_frames = [
+                    f"Consequently, {sentence.lower()}",
+                    f"As a result, {sentence.lower()}",
+                    f"Therefore, {sentence.lower()}",
+                    f"Accordingly, {sentence.lower()}"
+                ]
+                restructured.append(random.choice(result_frames))
+                
             else:
-                if random.random() < 0.5:
-                    if len(words) > 8:
-                        compressed = ' '.join(words[:4] + words[-2:])
-                        rebuilt_sentences.append(compressed + "...")
-                    else:
-                        rebuilt_sentences.append(sentence)
-                else:
-                    expansions = [
-                        "This represents a significant development in the field because",
-                        "From a comprehensive analytical perspective,",
-                        "When contextualized within broader scholarly discourse,",
-                        "Considering the multifaceted implications of this phenomenon,",
-                        "Through rigorous empirical examination it becomes evident that"
-                    ]
-                    expanded = f"{random.choice(expansions)} {sentence.lower()}"
-                    rebuilt_sentences.append(expanded)
-
-        return '. '.join(rebuilt_sentences) + '.'
-
-    # --- Transformation 2: Vocabulary replacement ---
-    def nuclear_vocabulary_replacement(text):
-        replacements = {
-            'research': ['scholarly investigation', 'academic inquiry', 'systematic study'],
-            'study': ['examination', 'analysis', 'investigation'],
-            'evidence': ['empirical data', 'documented findings', 'research results'],
-            'society': ['social fabric', 'community', 'civilization'],
-            'institutions': ['establishments', 'organizations', 'bodies']
-        }
-        new_text = text
-        for original, options in replacements.items():
-            pattern = r'\b' + re.escape(original) + r'\b'
-            if re.search(pattern, new_text, re.IGNORECASE):
-                new_text = re.sub(pattern, random.choice(options), new_text, flags=re.IGNORECASE)
-        return new_text
-
-    # --- Transformation 3: Length manipulation ---
-    def extreme_length_manipulation(text):
-        sentences = [s.strip() for s in text.split('.') if s.strip()]
-        if len(sentences) <= 1:
+                restructured.append(sentence)
+        
+        return '. '.join(restructured) + '.'
+    
+    def smart_length_manipulation(self, text):
+        """Better sentence length management"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if len(sentences) <= 2:
             return text
-
-        manipulated = []
+        
+        processed = []
+        
         for sentence in sentences:
             words = sentence.split()
-            if random.random() < 0.6:
-                if len(words) > 10:
-                    num_splits = random.randint(2, 4)
-                    chunk_size = max(3, len(words) // num_splits)
-                    for i in range(0, len(words), chunk_size):
-                        chunk = words[i:i + chunk_size]
-                        if len(chunk) >= 3:
-                            manipulated.append(' '.join(chunk) + '.')
-                else:
+            
+            # Only manipulate 50% of sentences for better flow
+            if random.random() < 0.5:
+                if len(words) > 12:
+                    # Smart splitting at natural break points
+                    connectors = ['and', 'but', 'however', 'therefore', 'moreover', 'furthermore']
+                    split_points = []
+                    
+                    for i, word in enumerate(words):
+                        if word.lower() in connectors and 4 < i < len(words) - 4:
+                            split_points.append(i)
+                    
+                    if split_points:
+                        split_at = random.choice(split_points)
+                        part1 = ' '.join(words[:split_at])
+                        part2 = ' '.join(words[split_at:])
+                        processed.extend([part1 + '.', part2.capitalize()])
+                    else:
+                        # Fallback: split at middle
+                        mid = len(words) // 2
+                        part1 = ' '.join(words[:mid])
+                        part2 = ' '.join(words[mid:])
+                        processed.extend([part1 + '.', part2.capitalize()])
+                elif len(words) < 6:
+                    # Expand short sentences
                     expansions = [
-                        "From a comprehensive analytical perspective,",
-                        "Considering the implications of this,",
-                        "It becomes apparent that"
+                        "It is evident that",
+                        "One can observe that", 
+                        "Research indicates that",
+                        "The evidence shows that",
+                        "Analysis reveals that"
                     ]
-                    manipulated.append(f"{random.choice(expansions)} {sentence.lower()}")
+                    expanded = f"{random.choice(expansions)} {sentence.lower()}"
+                    processed.append(expanded)
+                else:
+                    processed.append(sentence)
             else:
-                manipulated.append(sentence)
-        return ' '.join(manipulated)
-
-    # --- Transformation 4: Human touch ---
-    def add_human_touches(text):
-        patterns = [
-            lambda t: f"Interestingly, {t.lower()}",
-            lambda t: f"Upon reflection, {t.lower()}",
-            lambda t: f"In this context, {t.lower()}"
-        ]
-        sentences = [s.strip() for s in text.split('.') if s.strip()]
-        if sentences:
-            first = sentences[0]
-            if random.random() < 0.7:
-                sentences[0] = random.choice(patterns)(first)
+                processed.append(sentence)
+        
+        return ' '.join(processed)
+    
+    def add_natural_variation(self, text):
+        """Add natural human writing variations"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if not sentences:
+            return text
+        
+        # Add variation to first sentence only (avoid over-patterning)
+        if random.random() < 0.4:
+            variations = [
+                f"Interestingly, {sentences[0].lower()}",
+                f"Notably, {sentences[0].lower()}",
+                f"Surprisingly, {sentences[0].lower()}",
+                f"Importantly, {sentences[0].lower()}"
+            ]
+            sentences[0] = random.choice(variations)
+        
         return '. '.join(sentences) + '.'
 
-    # Combine transformations
+# Initialize the universal rewriter
+universal_rewriter = UniversalExtremeRewriter()
+
+def extreme_rewriter(original_text):
+    """Universal extreme rewriting with improved transformations"""
+    clean_text = original_text.strip().strip('"').strip("'")
+    
+    # Apply transformations in random order for variety
+    transformations = [
+        universal_rewriter.varied_sentence_restructure,
+        universal_rewriter.intelligent_word_replacement, 
+        universal_rewriter.smart_length_manipulation,
+        universal_rewriter.add_natural_variation
+    ]
+    random.shuffle(transformations)
+    
     result = clean_text
-    result = radical_sentence_restructure(result)
-    result = nuclear_vocabulary_replacement(result)
-    result = extreme_length_manipulation(result)
-    result = add_human_touches(result)
+    for transform in transformations:
+        result = transform(result)
+    
     return result
 
-
 def calculate_similarity(original, rewritten):
-    """Simple similarity check"""
-    o = set(re.findall(r'\b\w+\b', original.lower()))
-    r = set(re.findall(r'\b\w+\b', rewritten.lower()))
-    if not o:
+    """Calculate text similarity"""
+    original_words = set(re.findall(r'\b\w+\b', original.lower()))
+    rewritten_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
+    common_words = original_words.intersection(rewritten_words)
+    
+    if not original_words:
         return 0
-    return len(o.intersection(r)) / len(o) * 100
-
+    
+    similarity = len(common_words) / len(original_words) * 100
+    return similarity
 
 def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
-    """Repeat until similarity is low"""
+    """Keep generating until similarity is below threshold"""
     best_result = None
     best_similarity = 100
-    for _ in range(max_attempts):
+    
+    for attempt in range(max_attempts):
         rewritten = extreme_rewriter(original_text)
         similarity = calculate_similarity(original_text, rewritten)
+        
         if similarity < best_similarity:
             best_result = rewritten
             best_similarity = similarity
+            
         if similarity <= max_similarity:
-            break
+            return rewritten, similarity
+    
     return best_result, best_similarity
 
 
