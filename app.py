@@ -1,214 +1,142 @@
-# =========================
-# FRONTEND (DNA WATER GLASS UI — COMPLETE WORKING VERSION)
-# =========================
-
-import streamlit as st
 import random
 import re
-import time
-import nltk
-from nltk.corpus import wordnet
-
-# Download NLTK data
-try:
-    nltk.data.find('corpora/wordnet')
-except LookupError:
-    nltk.download('wordnet')
-
-st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
+import streamlit as st
+from collections import defaultdict
 
 # =========================
-# BACKEND FUNCTIONS (NO EXTERNAL DEPENDENCIES)
+# IMPROVED UNIVERSAL BACKEND
 # =========================
 
-class AdvancedSynonymFinder:
+class UniversalExtremeRewriter:
     def __init__(self):
-        self.synonym_cache = {}
-        self.setup_comprehensive_synonyms()
+        self.setup_comprehensive_vocabulary()
     
-    def setup_comprehensive_synonyms(self):
-        """Comprehensive built-in synonym database"""
-        self.synonym_database = {
+    def setup_comprehensive_vocabulary(self):
+        """EXPANDED vocabulary database for universal use"""
+        self.replacements = {
             # Common academic/research words
-            'research': ['investigation', 'study', 'analysis', 'examination', 'inquiry', 'exploration'],
-            'study': ['research', 'analysis', 'investigation', 'examination', 'scrutiny', 'assessment'],
-            'analysis': ['evaluation', 'assessment', 'examination', 'interpretation', 'scrutiny'],
-            'evidence': ['proof', 'data', 'findings', 'confirmation', 'verification'],
-            'data': ['information', 'facts', 'statistics', 'figures', 'metrics'],
+            'research': ['scholarly investigation', 'academic inquiry', 'systematic study', 'empirical exploration'],
+            'study': ['examination', 'analysis', 'investigation', 'scrutiny', 'assessment'],
+            'analysis': ['evaluation', 'appraisal', 'interpretation', 'assessment'],
+            'evidence': ['empirical data', 'documented findings', 'research results', 'substantive proof'],
+            'data': ['information', 'findings', 'metrics', 'statistics'],
+            'method': ['approach', 'technique', 'procedure', 'methodology'],
+            'result': ['outcome', 'finding', 'conclusion', 'product'],
+            'show': ['demonstrate', 'reveal', 'illustrate', 'indicate', 'display'],
+            'prove': ['substantiate', 'verify', 'confirm', 'validate'],
+            'suggest': ['indicate', 'imply', 'propose', 'point to'],
             
             # Common adjectives
-            'beautiful': ['gorgeous', 'stunning', 'lovely', 'attractive', 'exquisite', 'magnificent'],
-            'important': ['crucial', 'essential', 'vital', 'significant', 'critical', 'paramount'],
-            'good': ['excellent', 'great', 'superb', 'outstanding', 'fine', 'satisfactory'],
-            'big': ['large', 'huge', 'enormous', 'massive', 'substantial', 'considerable'],
-            'small': ['tiny', 'little', 'miniature', 'compact', 'petite', 'modest'],
-            'fast': ['quick', 'rapid', 'swift', 'speedy', 'brisk', 'expeditious'],
-            'slow': ['gradual', 'leisurely', 'unhurried', 'deliberate', 'measured', 'sluggish'],
+            'important': ['crucial', 'vital', 'essential', 'significant', 'paramount'],
+            'significant': ['notable', 'considerable', 'substantial', 'meaningful'],
+            'different': ['various', 'diverse', 'distinct', 'disparate'],
+            'many': ['numerous', 'multiple', 'countless', 'several'],
+            'big': ['large', 'substantial', 'considerable', 'sizable'],
+            'small': ['minor', 'modest', 'limited', 'minimal'],
+            'good': ['effective', 'beneficial', 'advantageous', 'favorable'],
+            'bad': ['detrimental', 'unfavorable', 'negative', 'adverse'],
+            'beautiful': ['stunning', 'gorgeous', 'exquisite', 'magnificent'],
+            'beauty': ['aesthetics', 'elegance', 'grace', 'loveliness'],
             
             # Common verbs
-            'show': ['demonstrate', 'reveal', 'display', 'illustrate', 'exhibit', 'present'],
-            'make': ['create', 'produce', 'construct', 'generate', 'fabricate', 'build'],
-            'use': ['utilize', 'employ', 'apply', 'operate', 'handle', 'wield'],
-            'help': ['assist', 'aid', 'support', 'facilitate', 'enable', 'guide'],
-            'change': ['alter', 'modify', 'transform', 'adjust', 'adapt', 'convert'],
-            'develop': ['cultivate', 'nurture', 'foster', 'build', 'establish', 'create'],
+            'use': ['utilize', 'employ', 'leverage', 'apply'],
+            'make': ['create', 'produce', 'construct', 'generate'],
+            'do': ['perform', 'execute', 'carry out', 'conduct'],
+            'get': ['obtain', 'acquire', 'secure', 'attain'],
+            'help': ['assist', 'facilitate', 'support', 'aid'],
+            'change': ['alter', 'modify', 'transform', 'adjust'],
+            'develop': ['cultivate', 'nurture', 'foster', 'build'],
+            'create': ['generate', 'produce', 'establish', 'form'],
+            'understand': ['comprehend', 'grasp', 'apprehend', 'fathom'],
+            'explain': ['clarify', 'elucidate', 'interpret', 'expound'],
             
             # Society & culture words
-            'society': ['community', 'population', 'civilization', 'public', 'culture'],
-            'culture': ['heritage', 'traditions', 'customs', 'society', 'civilization'],
-            'people': ['individuals', 'persons', 'population', 'citizens', 'humans'],
-            'government': ['administration', 'authorities', 'leadership', 'regime', 'rule'],
-            'organization': ['institution', 'entity', 'association', 'body', 'establishment'],
+            'society': ['community', 'populace', 'civilization', 'social fabric'],
+            'culture': ['heritage', 'traditions', 'customs', 'way of life'],
+            'people': ['individuals', 'persons', 'population', 'citizens'],
+            'government': ['administration', 'authorities', 'leadership', 'regime'],
+            'organization': ['institution', 'entity', 'association', 'body'],
+            'system': ['framework', 'structure', 'network', 'arrangement'],
             
             # Education words
-            'education': ['learning', 'instruction', 'schooling', 'training', 'tuition'],
-            'student': ['learner', 'pupil', 'scholar', 'trainee', 'apprentice'],
-            'teacher': ['educator', 'instructor', 'tutor', 'mentor', 'professor'],
+            'education': ['learning', 'instruction', 'schooling', 'training'],
+            'student': ['learner', 'pupil', 'scholar', 'trainee'],
+            'teacher': ['educator', 'instructor', 'tutor', 'mentor'],
+            'school': ['institution', 'academy', 'educational establishment'],
             
             # Business words
-            'business': ['enterprise', 'company', 'firm', 'venture', 'corporation'],
-            'market': ['industry', 'sector', 'commerce', 'trade', 'business'],
-            'product': ['item', 'goods', 'merchandise', 'offering', 'commodity'],
+            'business': ['enterprise', 'company', 'firm', 'venture'],
+            'market': ['industry', 'sector', 'commerce', 'trade'],
+            'product': ['item', 'goods', 'merchandise', 'offering'],
+            'customer': ['client', 'consumer', 'buyer', 'patron'],
             
             # Technology words
-            'technology': ['innovation', 'digital', 'tech', 'advancement', 'electronics'],
-            'digital': ['electronic', 'computerized', 'online', 'virtual', 'cyber'],
-            'information': ['data', 'knowledge', 'intelligence', 'facts', 'details'],
+            'technology': ['innovation', 'digital tools', 'tech solutions', 'advancements'],
+            'digital': ['electronic', 'computerized', 'online', 'virtual'],
+            'information': ['data', 'knowledge', 'intelligence', 'facts'],
             
             # Time-related words
-            'time': ['period', 'duration', 'interval', 'timespan', 'era'],
-            'now': ['currently', 'presently', 'at this time', 'currently', 'nowadays'],
-            'recent': ['latest', 'current', 'contemporary', 'modern', 'new'],
+            'time': ['period', 'duration', 'interval', 'timespan'],
+            'now': ['currently', 'presently', 'at this time', 'currently'],
+            'recent': ['latest', 'current', 'contemporary', 'modern'],
+            'old': ['ancient', 'aged', 'traditional', 'historic'],
+            
+            # Place-related words
+            'world': ['globe', 'planet', 'earth', 'international community'],
+            'country': ['nation', 'state', 'land', 'sovereign state'],
+            'city': ['metropolis', 'urban center', 'municipality', 'town'],
+            'place': ['location', 'site', 'venue', 'setting'],
             
             # General nouns
-            'problem': ['issue', 'challenge', 'difficulty', 'obstacle', 'complication'],
-            'solution': ['resolution', 'answer', 'remedy', 'fix', 'antidote'],
-            'way': ['method', 'approach', 'manner', 'technique', 'process'],
-            'part': ['component', 'element', 'section', 'portion', 'segment'],
+            'problem': ['issue', 'challenge', 'difficulty', 'obstacle'],
+            'solution': ['resolution', 'answer', 'remedy', 'fix'],
+            'way': ['method', 'approach', 'manner', 'technique'],
+            'part': ['component', 'element', 'section', 'portion'],
+            'kind': ['type', 'category', 'sort', 'variety'],
             
-            # Emotions and qualities
-            'love': ['affection', 'adoration', 'passion', 'devotion', 'fondness'],
-            'happy': ['joyful', 'delighted', 'pleased', 'content', 'cheerful'],
-            'sad': ['unhappy', 'depressed', 'melancholy', 'gloomy', 'downcast'],
-            'smart': ['intelligent', 'clever', 'bright', 'brilliant', 'knowledgeable'],
-            'strong': ['powerful', 'robust', 'sturdy', 'tough', 'resilient'],
-            
-            # Nature and environment
-            'flower': ['blossom', 'bloom', 'floral', 'plant', 'petal'],
-            'rose': ['blossom', 'flower', 'bloom', 'floral'],
-            'nature': ['environment', 'wildlife', 'outdoors', 'landscape', 'ecology'],
-            'environment': ['surroundings', 'habitat', 'ecosystem', 'nature', 'setting'],
-            
-            # Colors
-            'red': ['crimson', 'scarlet', 'ruby', 'burgundy', 'vermilion'],
-            'blue': ['azure', 'sapphire', 'cobalt', 'navy', 'cerulean'],
-            'green': ['emerald', 'olive', 'forest', 'lime', 'jade'],
-            
-            # Your specific words from the rose text
-            'admired': ['cherished', 'revered', 'esteemed', 'valued', 'prized', 'respected'],
-            'symbolizing': ['representing', 'embodying', 'signifying', 'denoting', 'epitomizing'],
-            'passion': ['ardor', 'fervor', 'intensity', 'zeal', 'enthusiasm', 'desire'],
-            'emotion': ['sentiment', 'feeling', 'affection', 'sensation', 'response'],
-            'vibrant': ['brilliant', 'radiant', 'lively', 'dynamic', 'vivid', 'energetic'],
-            'delicate': ['subtle', 'gentle', 'soft', 'refined', 'elegant', 'fragile'],
-            'fragrance': ['scent', 'aroma', 'perfume', 'bouquet', 'essence', 'smell'],
-            'timeless': ['eternal', 'enduring', 'perpetual', 'ageless', 'classic', 'everlasting'],
-            'romance': ['love affair', 'courtship', 'amour', 'passion', 'devotion', 'intimacy'],
-            'affection': ['fondness', 'tenderness', 'warmth', 'attachment', 'care', 'devotion'],
-            'purity': ['innocence', 'virtue', 'chastity', 'cleanliness', 'clarity', 'simplicity'],
-            'intensity': ['ferocity', 'strength', 'power', 'vigor', 'potency', 'passion'],
-            'devotion': ['dedication', 'commitment', 'loyalty', 'faithfulness', 'allegiance'],
-            'sacrifice': ['self-denial', 'offering', 'forfeiture', 'renunciation', 'surrender'],
-            'desire': ['longing', 'yearning', 'craving', 'want', 'aspiration', 'wish'],
-            'respect': ['esteem', 'honor', 'regard', 'admiration', 'deference', 'reverence'],
-            'courage': ['bravery', 'valor', 'fortitude', 'fearlessness', 'heroism', 'boldness'],
-            'heartfelt': ['sincere', 'genuine', 'profound', 'deep', 'earnest', 'authentic'],
-            'botanical': ['horticultural', 'floral', 'plant-related', 'vegetal', 'garden'],
-            'velvety': ['smooth', 'soft', 'plush', 'silky', 'luxurious', 'satiny'],
-            'symmetry': ['balance', 'proportion', 'harmony', 'equilibrium', 'regularity'],
-            'fertile': ['productive', 'rich', 'fruitful', 'abundant', 'lush', 'prolific'],
-            'nurturing': ['caring', 'fostering', 'cultivating', 'supporting', 'nourishing'],
-            'elegance': ['grace', 'refinement', 'sophistication', 'style', 'polish', 'dignity'],
-            'universal': ['global', 'worldwide', 'comprehensive', 'all-encompassing', 'general'],
-            'enduring': ['lasting', 'persistent', 'abiding', 'continuing', 'permanent', 'constant']
+            # General adjectives
+            'new': ['novel', 'innovative', 'fresh', 'recent'],
+            'old': ['aged', 'ancient', 'traditional', 'historic'],
+            'high': ['elevated', 'significant', 'substantial', 'considerable'],
+            'low': ['minimal', 'reduced', 'limited', 'modest'],
+            'fast': ['rapid', 'quick', 'speedy', 'swift'],
+            'slow': ['gradual', 'leisurely', 'unhurried', 'deliberate']
         }
-    
-    def get_synonyms(self, word):
-        """Get synonyms from built-in database with WordNet fallback"""
-        word_lower = word.lower()
-        
-        # Check built-in database first
-        if word_lower in self.synonym_database:
-            return self.synonym_database[word_lower]
-        
-        # Try WordNet as fallback
-        synonyms = set()
-        for syn in wordnet.synsets(word_lower):
-            for lemma in syn.lemmas():
-                synonym = lemma.name().replace('_', ' ')
-                if synonym.lower() != word_lower and len(synonym.split()) == 1:
-                    synonyms.add(synonym)
-        
-        if synonyms:
-            return list(synonyms)[:6]  # Limit to 6 synonyms
-        
-        # If no synonyms found, return the original word
-        return [word]
-
-class GrammarCorrectedRewriter:
-    def __init__(self):
-        self.synonym_finder = AdvancedSynonymFinder()
-        self.common_words = {
-            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 
-            'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been',
-            'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should'
-        }
-    
-    def clean_sentence_endings(self, text):
-        """Remove random dots and ensure proper sentence endings"""
-        text = re.sub(r'\.{2,}', '.', text)
-        text = re.sub(r'\.(\w)', r'. \1', text)
-        text = re.sub(r'(\w)\.(\s+[a-z])', r'\1\2', text)
-        return text
     
     def intelligent_word_replacement(self, text):
-        """Replace words with synonyms from comprehensive database"""
+        """More aggressive and intelligent word replacement"""
         words = text.split()
         new_words = []
         
         i = 0
         while i < len(words):
+            word = words[i].lower().strip('.,!?;:"')
             original_word = words[i]
-            word_clean = original_word.lower().strip('.,!?;:"')
             
             # Skip very short/common words
-            if len(word_clean) <= 2 or word_clean in self.common_words:
+            if len(word) <= 2 or word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']:
                 new_words.append(original_word)
                 i += 1
                 continue
             
-            # Extract punctuation
-            punctuation = ''
-            if original_word and not original_word[-1].isalnum():
-                punctuation = original_word[-1]
-                clean_word = original_word[:-1]
-            else:
-                clean_word = original_word
-            
-            # Get synonyms (60% replacement rate for better flow)
-            if random.random() < 0.6:
-                synonyms = self.synonym_finder.get_synonyms(word_clean)
-                
-                if synonyms and synonyms[0] != word_clean:
-                    replacement = random.choice(synonyms)
-                    
-                    # Preserve capitalization
-                    if clean_word[0].isupper():
+            # Try 2-word phrases first
+            if i + 1 < len(words):
+                next_word = words[i+1].lower().strip('.,!?;:"')
+                two_word = f"{word} {next_word}"
+                if two_word in self.replacements:
+                    replacement = random.choice(self.replacements[two_word])
+                    if words[i][0].isupper():
                         replacement = replacement.capitalize()
-                    
-                    new_words.append(replacement + punctuation)
-                else:
-                    new_words.append(original_word)
+                    new_words.append(replacement)
+                    i += 2
+                    continue
+            
+            # Single word replacement with high probability
+            if word in self.replacements and random.random() < 0.7:  # 70% replacement rate
+                replacement = random.choice(self.replacements[word])
+                if words[i][0].isupper():
+                    replacement = replacement.capitalize()
+                new_words.append(replacement)
             else:
                 new_words.append(original_word)
             
@@ -216,8 +144,8 @@ class GrammarCorrectedRewriter:
         
         return ' '.join(new_words)
     
-    def grammar_aware_sentence_restructure(self, text):
-        """Restructure sentences with proper grammar"""
+    def varied_sentence_restructure(self, text):
+        """More diverse sentence restructuring patterns"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if not sentences:
             return text
@@ -230,152 +158,172 @@ class GrammarCorrectedRewriter:
                 restructured.append(sentence)
                 continue
             
-            # Choose different patterns for variety
-            pattern_type = random.choice(['academic', 'emphatic', 'contextual', 'normal', 'comparative', 'result'])
+            # DIVERSE patterns (no repetition)
+            pattern_choice = random.choice([
+                'reverse', 'question', 'academic', 'emphasis', 
+                'context', 'normal', 'comparative', 'result'
+            ])
             
-            if pattern_type == 'academic':
-                frames = [
+            if pattern_choice == 'reverse' and len(words) > 6:
+                split_point = random.randint(3, len(words) - 3)
+                first_part = ' '.join(words[:split_point])
+                second_part = ' '.join(words[split_point:])
+                reverse_frames = [
+                    f"{second_part}, thereby illustrating {first_part.lower()}",
+                    f"{second_part}, which highlights {first_part.lower()}",
+                    f"{second_part}, revealing how {first_part.lower()}",
+                    f"{second_part}, demonstrating that {first_part.lower()}"
+                ]
+                restructured.append(random.choice(reverse_frames))
+                
+            elif pattern_choice == 'question':
+                question_frames = [
+                    f"What explains {sentence.lower()}?",
+                    f"How can we understand {sentence.lower()}?",
+                    f"Why is it significant that {sentence.lower()}?",
+                    f"In what ways does {sentence.lower()}?"
+                ]
+                restructured.append(random.choice(question_frames))
+                
+            elif pattern_choice == 'academic':
+                academic_frames = [
                     f"Research indicates that {sentence.lower()}",
                     f"Studies demonstrate that {sentence.lower()}",
                     f"Evidence suggests that {sentence.lower()}",
-                    f"Analysis reveals that {sentence.lower()}"
+                    f"Analysis reveals that {sentence.lower()}",
+                    f"Findings show that {sentence.lower()}"
                 ]
-                restructured.append(random.choice(frames))
+                restructured.append(random.choice(academic_frames))
                 
-            elif pattern_type == 'emphatic':
-                frames = [
+            elif pattern_choice == 'emphasis':
+                emphasis_frames = [
                     f"Notably, {sentence.lower()}",
                     f"Significantly, {sentence.lower()}",
                     f"Importantly, {sentence.lower()}",
                     f"Remarkably, {sentence.lower()}"
                 ]
-                restructured.append(random.choice(frames))
+                restructured.append(random.choice(emphasis_frames))
                 
-            elif pattern_type == 'contextual':
-                frames = [
+            elif pattern_choice == 'context':
+                context_frames = [
                     f"In this context, {sentence.lower()}",
                     f"Within this framework, {sentence.lower()}",
                     f"From this perspective, {sentence.lower()}",
                     f"Considering these factors, {sentence.lower()}"
                 ]
-                restructured.append(random.choice(frames))
+                restructured.append(random.choice(context_frames))
                 
-            elif pattern_type == 'comparative':
-                frames = [
+            elif pattern_choice == 'comparative':
+                comparative_frames = [
+                    f"By comparison, {sentence.lower()}",
                     f"Similarly, {sentence.lower()}",
                     f"Likewise, {sentence.lower()}",
-                    f"By comparison, {sentence.lower()}",
                     f"In contrast, {sentence.lower()}"
                 ]
-                restructured.append(random.choice(frames))
+                restructured.append(random.choice(comparative_frames))
                 
-            elif pattern_type == 'result':
-                frames = [
+            elif pattern_choice == 'result':
+                result_frames = [
                     f"Consequently, {sentence.lower()}",
                     f"As a result, {sentence.lower()}",
                     f"Therefore, {sentence.lower()}",
                     f"Accordingly, {sentence.lower()}"
                 ]
-                restructured.append(random.choice(frames))
+                restructured.append(random.choice(result_frames))
                 
             else:
                 restructured.append(sentence)
         
-        result = '. '.join(restructured) + '.' if restructured else ''
-        return self.clean_sentence_endings(result)
+        return '. '.join(restructured) + '.'
     
-    def vary_sentence_lengths(self, text):
-        """Ensure sentences have different word counts"""
+    def smart_length_manipulation(self, text):
+        """Better sentence length management"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        if len(sentences) < 2:
+        if len(sentences) <= 2:
             return text
         
-        processed_sentences = []
-        
-        for i, sentence in enumerate(sentences):
-            words = sentence.split()
-            current_length = len(words)
-            
-            # Strategic length variation
-            if current_length > 15:
-                # Split long sentences
-                split_sentences = self.split_intelligently(sentence)
-                processed_sentences.extend(split_sentences)
-            elif current_length < 6:
-                # Expand very short sentences
-                processed_sentences.append(self.expand_sentence(sentence))
-            else:
-                processed_sentences.append(sentence)
-        
-        result = '. '.join(processed_sentences) + '.' if processed_sentences else ''
-        return self.clean_sentence_endings(result)
-    
-    def split_intelligently(self, sentence):
-        """Split long sentences at natural break points"""
-        words = sentence.split()
-        connectors = ['and', 'but', 'however', 'therefore', 'moreover', 'although', 'while', 'because']
-        split_points = []
-        
-        for i, word in enumerate(words):
-            if word.lower() in connectors and 4 < i < len(words) - 4:
-                split_points.append(i)
-        
-        if split_points:
-            split_at = random.choice(split_points)
-            part1 = ' '.join(words[:split_at])
-            part2 = ' '.join(words[split_at:])
-            part2 = part2[0].upper() + part2[1:] if part2 else part2
-            return [part1 + '.', part2]
-        else:
-            return [sentence]
-    
-    def expand_sentence(self, sentence):
-        """Expand short sentences"""
-        expansions = [
-            "It is evident that",
-            "Research shows that",
-            "Studies indicate that",
-            "One can observe that",
-            "Analysis demonstrates that",
-            "Evidence confirms that"
-        ]
-        
-        base_sentence = sentence.lower()
-        expanded = f"{random.choice(expansions)} {base_sentence}"
-        return expanded[0].upper() + expanded[1:]
-    
-    def ensure_grammar_flow(self, text):
-        """Final grammar and flow check"""
-        # Fix common grammar issues
-        text = re.sub(r'\s+([.,!?])', r'\1', text)
-        text = re.sub(r'\.\s*\.', '.', text)
-        text = re.sub(r',\s*,', ',', text)
-        
-        # Ensure proper capitalization
-        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        corrected_sentences = []
+        processed = []
         
         for sentence in sentences:
-            if sentence and sentence[0].islower():
-                sentence = sentence[0].upper() + sentence[1:]
-            corrected_sentences.append(sentence)
+            words = sentence.split()
+            
+            # Only manipulate 50% of sentences for better flow
+            if random.random() < 0.5:
+                if len(words) > 12:
+                    # Smart splitting at natural break points
+                    connectors = ['and', 'but', 'however', 'therefore', 'moreover', 'furthermore']
+                    split_points = []
+                    
+                    for i, word in enumerate(words):
+                        if word.lower() in connectors and 4 < i < len(words) - 4:
+                            split_points.append(i)
+                    
+                    if split_points:
+                        split_at = random.choice(split_points)
+                        part1 = ' '.join(words[:split_at])
+                        part2 = ' '.join(words[split_at:])
+                        processed.extend([part1 + '.', part2.capitalize()])
+                    else:
+                        # Fallback: split at middle
+                        mid = len(words) // 2
+                        part1 = ' '.join(words[:mid])
+                        part2 = ' '.join(words[mid:])
+                        processed.extend([part1 + '.', part2.capitalize()])
+                elif len(words) < 6:
+                    # Expand short sentences
+                    expansions = [
+                        "It is evident that",
+                        "One can observe that", 
+                        "Research indicates that",
+                        "The evidence shows that",
+                        "Analysis reveals that"
+                    ]
+                    expanded = f"{random.choice(expansions)} {sentence.lower()}"
+                    processed.append(expanded)
+                else:
+                    processed.append(sentence)
+            else:
+                processed.append(sentence)
         
-        result = '. '.join(corrected_sentences) + '.' if corrected_sentences else ''
-        return result
+        return ' '.join(processed)
+    
+    def add_natural_variation(self, text):
+        """Add natural human writing variations"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if not sentences:
+            return text
+        
+        # Add variation to first sentence only (avoid over-patterning)
+        if random.random() < 0.4:
+            variations = [
+                f"Interestingly, {sentences[0].lower()}",
+                f"Notably, {sentences[0].lower()}",
+                f"Surprisingly, {sentences[0].lower()}",
+                f"Importantly, {sentences[0].lower()}"
+            ]
+            sentences[0] = random.choice(variations)
+        
+        return '. '.join(sentences) + '.'
 
-# Initialize the rewriter
-rewriter = GrammarCorrectedRewriter()
+# Initialize the universal rewriter
+universal_rewriter = UniversalExtremeRewriter()
 
 def extreme_rewriter(original_text):
-    """Main rewriting function"""
+    """Universal extreme rewriting with improved transformations"""
     clean_text = original_text.strip().strip('"').strip("'")
     
-    # Apply transformations
+    # Apply transformations in random order for variety
+    transformations = [
+        universal_rewriter.varied_sentence_restructure,
+        universal_rewriter.intelligent_word_replacement, 
+        universal_rewriter.smart_length_manipulation,
+        universal_rewriter.add_natural_variation
+    ]
+    random.shuffle(transformations)
+    
     result = clean_text
-    result = rewriter.intelligent_word_replacement(result)
-    result = rewriter.grammar_aware_sentence_restructure(result)
-    result = rewriter.vary_sentence_lengths(result)
-    result = rewriter.ensure_grammar_flow(result)
+    for transform in transformations:
+        result = transform(result)
     
     return result
 
@@ -391,7 +339,7 @@ def calculate_similarity(original, rewritten):
     similarity = len(common_words) / len(original_words) * 100
     return similarity
 
-def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5):
+def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
     """Keep generating until similarity is below threshold"""
     best_result = None
     best_similarity = 100
@@ -406,15 +354,26 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5):
             
         if similarity <= max_similarity:
             return rewritten, similarity
-        
-        # Small delay
-        time.sleep(0.1)
     
     return best_result, best_similarity
 
+
 # =========================
-# FRONTEND UI (YOUR ORIGINAL BEAUTIFUL DESIGN)
+# FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
 # =========================
+
+import streamlit as st
+import random
+
+st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
+
+# --- REWRITE FUNCTION (TRUE BACKEND CALL) ---
+# This version uses the real rewriting logic from your backend
+def guarantee_low_similarity(text, target):
+    """Generate rewritten text using the true backend extreme_rewriter() logic."""
+    rewritten = extreme_rewriter(text)
+    similarity = calculate_similarity(text, rewritten)
+    return rewritten, similarity
 
 # --- CSS STYLES ---
 st.markdown("""
@@ -533,7 +492,6 @@ h1.title {
   font-size: 1.1rem;
   padding: 0.75rem 2rem;
   transition: all 0.3s ease;
-  width: 100%;
 }
 .stButton>button:hover {
   background: linear-gradient(135deg, #0077ff, #00b4ff);
@@ -552,11 +510,6 @@ h1.title {
   resize: vertical;
 }
 
-/* ---- SLIDER ---- */
-.stSlider {
-  margin: 2rem 0;
-}
-
 /* ---- FOOTER ---- */
 .footer {
   text-align:center;
@@ -569,16 +522,6 @@ h1.title {
 @keyframes glow {
   from { text-shadow: 0 0 5px #00b4ff; }
   to { text-shadow: 0 0 20px #00ffff; }
-}
-
-/* ---- SUCCESS MESSAGE ---- */
-.success-box {
-  backdrop-filter: blur(25px);
-  background: rgba(0,255,200,0.1);
-  border-radius: 15px;
-  padding: 1.5rem;
-  border: 2px solid rgba(0,255,200,0.3);
-  margin: 1rem 0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -630,51 +573,36 @@ Transform your text into a <span style="color:#00eaff;">uniquely rewritten</span
 
 # --- INPUT SECTION ---
 st.markdown('<div class="glass-box">', unsafe_allow_html=True)
-
-input_text = st.text_area(
-    "🧬 Enter text to rewrite:", 
-    height=180, 
-    placeholder="Paste your text here...\n\nExample: The red rose is one of the most beautiful and admired flowers in the world, symbolizing love, passion, and deep emotion."
-)
-
-target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 15, step=1)
+input_text = st.text_area("🧬 Enter text:", height=180, label_visibility="collapsed")
+target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
 
 col1, col2 = st.columns(2)
 
 # --- REWRITE BUTTON ---
-if col1.button("🚀 Rewrite Now", use_container_width=True):
+if col1.button("🚀 Rewrite Now"):
     if not input_text.strip():
         st.warning("⚠️ Please enter some text first!")
     else:
-        with st.spinner("🔄 Rewriting your text with AI-powered synonyms..."):
+        with st.spinner("Rewriting your text..."):
             rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
-        
-        # Display results
         st.markdown(f"""
-        <div class="success-box">
-            <h3 style="color:#00eaff; margin-top:0;">✨ Rewritten Text</h3>
-            <p style="color:#66fffa; font-size:1.1rem;">Similarity: <strong>{similarity:.1f}%</strong> (Target: {target_similarity}%)</p>
+        <div class="glass-box" style="border:1px solid rgba(0,255,255,0.3);">
+            <h3 style="color:#00eaff;">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
+            <textarea readonly rows="10" style="
+                width:100%;
+                background:rgba(0,15,25,0.8);
+                color:#e6faff;
+                border-radius:15px;
+                border:1px solid rgba(0,180,255,0.2);
+                padding:1rem;
+                font-size:1rem;
+            ">{rewritten}</textarea>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.text_area(
-            "Copy your rewritten text:",
-            value=rewritten,
-            height=200,
-            key="output_text"
-        )
-        
-        # Show statistics
-        col_stat1, col_stat2, col_stat3 = st.columns(3)
-        with col_stat1:
-            st.metric("Original Words", len(input_text.split()))
-        with col_stat2:
-            st.metric("Rewritten Words", len(rewritten.split()))
-        with col_stat3:
-            st.metric("AI Detection", "LOW" if similarity < 20 else "MODERATE")
 
 # --- CLEAR BUTTON ---
-if col2.button("🧹 Clear All", use_container_width=True):
+if col2.button("🧹 Clear"):
+    st.session_state.clear()
     st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)
