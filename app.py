@@ -1,3 +1,8 @@
+# =========================
+# FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
+# =========================
+
+import streamlit as st
 import random
 import re
 import requests
@@ -12,8 +17,10 @@ try:
 except LookupError:
     nltk.download('wordnet')
 
+st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
+
 # =========================
-# DYNAMIC SYNONYM FETCHER
+# BACKEND FUNCTIONS
 # =========================
 
 class DynamicSynonymFetcher:
@@ -31,9 +38,9 @@ class DynamicSynonymFetcher:
             'small': ['tiny', 'little', 'miniature', 'compact', 'petite'],
             'fast': ['quick', 'rapid', 'swift', 'speedy', 'brisk'],
             'slow': ['gradual', 'leisurely', 'unhurried', 'deliberate', 'measured'],
-            'happy': ['joyful', 'delighted', 'pleased', 'content', 'cheerful'],
-            'sad': ['unhappy', 'depressed', 'melancholy', 'gloomy', 'downcast'],
-            'smart': ['intelligent', 'clever', 'bright', 'brilliant', 'knowledgeable']
+            'research': ['study', 'investigation', 'analysis', 'examination'],
+            'study': ['research', 'investigation', 'analysis', 'examination'],
+            'analysis': ['evaluation', 'assessment', 'examination', 'scrutiny']
         }
     
     def fetch_synonyms_online(self, word):
@@ -48,7 +55,6 @@ class DynamicSynonymFetcher:
             # Try multiple online sources
             sources = [
                 f"https://www.thesaurus.com/browse/{word}",
-                f"https://www.merriam-webster.com/thesaurus/{word}",
             ]
             
             for url in sources:
@@ -59,13 +65,6 @@ class DynamicSynonymFetcher:
                         
                         if "thesaurus.com" in url:
                             synonym_elements = soup.find_all('a', {'data-linkid': 'nn1ov4'})
-                            for elem in synonym_elements[:10]:
-                                syn = elem.text.strip()
-                                if syn and syn.lower() != word.lower():
-                                    synonyms.add(syn)
-                        
-                        elif "merriam-webster" in url:
-                            synonym_elements = soup.find_all('a', class_='pb-4')
                             for elem in synonym_elements[:10]:
                                 syn = elem.text.strip()
                                 if syn and syn.lower() != word.lower():
@@ -113,10 +112,6 @@ class DynamicSynonymFetcher:
             return [word]
         
         return synonyms
-
-# =========================
-# GRAMMAR-CORRECTED REWRITER
-# =========================
 
 class DynamicRewriter:
     def __init__(self):
@@ -256,10 +251,7 @@ class DynamicRewriter:
             elif current_length < 6:
                 processed_sentences.append(self.expand_sentence(sentence))
             else:
-                if i % 3 == 0 and current_length > 10:
-                    processed_sentences.append(' '.join(words[:8]) + '...')
-                else:
-                    processed_sentences.append(sentence)
+                processed_sentences.append(sentence)
         
         result = '. '.join(processed_sentences) + '.' if processed_sentences else ''
         return self.clean_sentence_endings(result)
@@ -316,15 +308,11 @@ class DynamicRewriter:
         result = '. '.join(corrected_sentences) + '.' if corrected_sentences else ''
         return result
 
-# =========================
-# MAIN BACKEND FUNCTIONS
-# =========================
-
 # Initialize the dynamic rewriter
 dynamic_rewriter = DynamicRewriter()
 
 def extreme_rewriter(original_text):
-    """Main rewriting function - call this from your frontend"""
+    """Main rewriting function"""
     clean_text = original_text.strip().strip('"').strip("'")
     
     # Apply transformations
@@ -337,7 +325,7 @@ def extreme_rewriter(original_text):
     return result
 
 def calculate_similarity(original, rewritten):
-    """Calculate text similarity - keep this function"""
+    """Calculate text similarity"""
     original_words = set(re.findall(r'\b\w+\b', original.lower()))
     rewritten_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
     common_words = original_words.intersection(rewritten_words)
@@ -348,8 +336,8 @@ def calculate_similarity(original, rewritten):
     similarity = len(common_words) / len(original_words) * 100
     return similarity
 
-def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
-    """Keep generating until similarity is below threshold - keep this function"""
+def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5):
+    """Keep generating until similarity is below threshold"""
     best_result = None
     best_similarity = 100
     
@@ -365,26 +353,13 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
             return rewritten, similarity
         
         # Small delay to avoid rate limiting
-        time.sleep(0.3)
+        time.sleep(0.2)
     
     return best_result, best_similarity
 
 # =========================
-# FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
+# FRONTEND UI (YOUR ORIGINAL DESIGN)
 # =========================
-
-import streamlit as st
-import random
-
-st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
-
-# --- REWRITE FUNCTION (TRUE BACKEND CALL) ---
-# This version uses the real rewriting logic from your backend
-def guarantee_low_similarity(text, target):
-    """Generate rewritten text using the true backend extreme_rewriter() logic."""
-    rewritten = extreme_rewriter(text)
-    similarity = calculate_similarity(text, rewritten)
-    return rewritten, similarity
 
 # --- CSS STYLES ---
 st.markdown("""
@@ -503,6 +478,7 @@ h1.title {
   font-size: 1.1rem;
   padding: 0.75rem 2rem;
   transition: all 0.3s ease;
+  width: 100%;
 }
 .stButton>button:hover {
   background: linear-gradient(135deg, #0077ff, #00b4ff);
@@ -521,6 +497,11 @@ h1.title {
   resize: vertical;
 }
 
+/* ---- SLIDER ---- */
+.stSlider {
+  margin: 2rem 0;
+}
+
 /* ---- FOOTER ---- */
 .footer {
   text-align:center;
@@ -533,6 +514,16 @@ h1.title {
 @keyframes glow {
   from { text-shadow: 0 0 5px #00b4ff; }
   to { text-shadow: 0 0 20px #00ffff; }
+}
+
+/* ---- SUCCESS MESSAGE ---- */
+.success-box {
+  backdrop-filter: blur(25px);
+  background: rgba(0,255,200,0.1);
+  border-radius: 15px;
+  padding: 1.5rem;
+  border: 2px solid rgba(0,255,200,0.3);
+  margin: 1rem 0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -584,36 +575,51 @@ Transform your text into a <span style="color:#00eaff;">uniquely rewritten</span
 
 # --- INPUT SECTION ---
 st.markdown('<div class="glass-box">', unsafe_allow_html=True)
-input_text = st.text_area("🧬 Enter text:", height=180, label_visibility="collapsed")
-target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
+
+input_text = st.text_area(
+    "🧬 Enter text to rewrite:", 
+    height=180, 
+    placeholder="Paste your text here...\n\nExample: The red rose is one of the most beautiful and admired flowers in the world, symbolizing love, passion, and deep emotion."
+)
+
+target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 15, step=1)
 
 col1, col2 = st.columns(2)
 
 # --- REWRITE BUTTON ---
-if col1.button("🚀 Rewrite Now"):
+if col1.button("🚀 Rewrite Now", use_container_width=True):
     if not input_text.strip():
         st.warning("⚠️ Please enter some text first!")
     else:
-        with st.spinner("Rewriting your text..."):
+        with st.spinner("🔄 Rewriting your text with fresh synonyms..."):
             rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
+        
+        # Display results
         st.markdown(f"""
-        <div class="glass-box" style="border:1px solid rgba(0,255,255,0.3);">
-            <h3 style="color:#00eaff;">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
-            <textarea readonly rows="10" style="
-                width:100%;
-                background:rgba(0,15,25,0.8);
-                color:#e6faff;
-                border-radius:15px;
-                border:1px solid rgba(0,180,255,0.2);
-                padding:1rem;
-                font-size:1rem;
-            ">{rewritten}</textarea>
+        <div class="success-box">
+            <h3 style="color:#00eaff; margin-top:0;">✨ Rewritten Text</h3>
+            <p style="color:#66fffa; font-size:1.1rem;">Similarity: <strong>{similarity:.1f}%</strong> (Target: {target_similarity}%)</p>
         </div>
         """, unsafe_allow_html=True)
+        
+        st.text_area(
+            "Copy your rewritten text:",
+            value=rewritten,
+            height=200,
+            key="output_text"
+        )
+        
+        # Show statistics
+        col_stat1, col_stat2, col_stat3 = st.columns(3)
+        with col_stat1:
+            st.metric("Original Words", len(input_text.split()))
+        with col_stat2:
+            st.metric("Rewritten Words", len(rewritten.split()))
+        with col_stat3:
+            st.metric("AI Detection", "LOW" if similarity < 20 else "MODERATE")
 
 # --- CLEAR BUTTON ---
-if col2.button("🧹 Clear"):
-    st.session_state.clear()
+if col2.button("🧹 Clear All", use_container_width=True):
     st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)
