@@ -26,82 +26,290 @@ class UniversalExtremeRewriter:
             'prove': ['substantiate', 'verify', 'confirm', 'validate'],
             'suggest': ['indicate', 'imply', 'propose', 'point to'],
             
-            # Common adjectives
-            'important': ['crucial', 'vital', 'essential', 'significant', 'paramount'],
-            'significant': ['notable', 'considerable', 'substantial', 'meaningful'],
-            'different': ['various', 'diverse', 'distinct', 'disparate'],
-            'many': ['numerous', 'multiple', 'countless', 'several'],
-            'big': ['large', 'substantial', 'considerable', 'sizable'],
-            'small': ['minor', 'modest', 'limited', 'minimal'],
-            'good': ['effective', 'beneficial', 'advantageous', 'favorable'],
-            'bad': ['detrimental', 'unfavorable', 'negative', 'adverse'],
-            'beautiful': ['stunning', 'gorgeous', 'exquisite', 'magnificent'],
-            'beauty': ['aesthetics', 'elegance', 'grace', 'loveliness'],
-            
-            # Common verbs
-            'use': ['utilize', 'employ', 'leverage', 'apply'],
-            'make': ['create', 'produce', 'construct', 'generate'],
-            'do': ['perform', 'execute', 'carry out', 'conduct'],
-            'get': ['obtain', 'acquire', 'secure', 'attain'],
-            'help': ['assist', 'facilitate', 'support', 'aid'],
-            'change': ['alter', 'modify', 'transform', 'adjust'],
-            'develop': ['cultivate', 'nurture', 'foster', 'build'],
-            'create': ['generate', 'produce', 'establish', 'form'],
-            'understand': ['comprehend', 'grasp', 'apprehend', 'fathom'],
-            'explain': ['clarify', 'elucidate', 'interpret', 'expound'],
-            
-            # Society & culture words
-            'society': ['community', 'populace', 'civilization', 'social fabric'],
-            'culture': ['heritage', 'traditions', 'customs', 'way of life'],
-            'people': ['individuals', 'persons', 'population', 'citizens'],
-            'government': ['administration', 'authorities', 'leadership', 'regime'],
-            'organization': ['institution', 'entity', 'association', 'body'],
-            'system': ['framework', 'structure', 'network', 'arrangement'],
-            
-            # Education words
-            'education': ['learning', 'instruction', 'schooling', 'training'],
-            'student': ['learner', 'pupil', 'scholar', 'trainee'],
-            'teacher': ['educator', 'instructor', 'tutor', 'mentor'],
-            'school': ['institution', 'academy', 'educational establishment'],
-            
-            # Business words
-            'business': ['enterprise', 'company', 'firm', 'venture'],
-            'market': ['industry', 'sector', 'commerce', 'trade'],
-            'product': ['item', 'goods', 'merchandise', 'offering'],
-            'customer': ['client', 'consumer', 'buyer', 'patron'],
-            
-            # Technology words
-            'technology': ['innovation', 'digital tools', 'tech solutions', 'advancements'],
-            'digital': ['electronic', 'computerized', 'online', 'virtual'],
-            'information': ['data', 'knowledge', 'intelligence', 'facts'],
-            
-            # Time-related words
-            'time': ['period', 'duration', 'interval', 'timespan'],
-            'now': ['currently', 'presently', 'at this time', 'currently'],
-            'recent': ['latest', 'current', 'contemporary', 'modern'],
-            'old': ['ancient', 'aged', 'traditional', 'historic'],
-            
-            # Place-related words
-            'world': ['globe', 'planet', 'earth', 'international community'],
-            'country': ['nation', 'state', 'land', 'sovereign state'],
-            'city': ['metropolis', 'urban center', 'municipality', 'town'],
-            'place': ['location', 'site', 'venue', 'setting'],
-            
-            # General nouns
-            'problem': ['issue', 'challenge', 'difficulty', 'obstacle'],
-            'solution': ['resolution', 'answer', 'remedy', 'fix'],
-            'way': ['method', 'approach', 'manner', 'technique'],
-            'part': ['component', 'element', 'section', 'portion'],
-            'kind': ['type', 'category', 'sort', 'variety'],
-            
-            # General adjectives
-            'new': ['novel', 'innovative', 'fresh', 'recent'],
-            'old': ['aged', 'ancient', 'traditional', 'historic'],
-            'high': ['elevated', 'significant', 'substantial', 'considerable'],
-            'low': ['minimal', 'reduced', 'limited', 'modest'],
-            'fast': ['rapid', 'quick', 'speedy', 'swift'],
-            'slow': ['gradual', 'leisurely', 'unhurried', 'deliberate']
-        }
+           synonyms = {
+    # your original core
+    'research': ['scholarly investigation', 'academic inquiry', 'systematic study', 'empirical exploration'],
+    'study': ['examination', 'analysis', 'investigation', 'scrutiny', 'assessment'],
+    'analysis': ['evaluation', 'appraisal', 'interpretation', 'assessment'],
+    'evidence': ['empirical data', 'documented findings', 'research results', 'substantive proof'],
+    'data': ['information', 'findings', 'metrics', 'statistics'],
+    'method': ['approach', 'technique', 'procedure', 'methodology'],
+    'result': ['outcome', 'finding', 'conclusion', 'product'],
+    'show': ['demonstrate', 'reveal', 'illustrate', 'indicate', 'display'],
+    'prove': ['substantiate', 'verify', 'confirm', 'validate'],
+    'suggest': ['indicate', 'imply', 'propose', 'point to'],
+
+    # Common adjectives
+    'important': ['crucial', 'vital', 'essential', 'significant', 'paramount'],
+    'significant': ['notable', 'considerable', 'substantial', 'meaningful'],
+    'different': ['various', 'diverse', 'distinct', 'disparate'],
+    'many': ['numerous', 'multiple', 'countless', 'several'],
+    'big': ['large', 'substantial', 'considerable', 'sizable'],
+    'small': ['minor', 'modest', 'limited', 'minimal'],
+    'good': ['effective', 'beneficial', 'advantageous', 'favorable'],
+    'bad': ['detrimental', 'unfavorable', 'negative', 'adverse'],
+    'beautiful': ['stunning', 'gorgeous', 'exquisite', 'magnificent'],
+    'beauty': ['aesthetics', 'elegance', 'grace', 'loveliness'],
+
+    # Common verbs
+    'use': ['utilize', 'employ', 'leverage', 'apply'],
+    'make': ['create', 'produce', 'construct', 'generate'],
+    'do': ['perform', 'execute', 'carry out', 'conduct'],
+    'get': ['obtain', 'acquire', 'secure', 'attain'],
+    'help': ['assist', 'facilitate', 'support', 'aid'],
+    'change': ['alter', 'modify', 'transform', 'adjust'],
+    'develop': ['cultivate', 'nurture', 'foster', 'build'],
+    'create': ['generate', 'produce', 'establish', 'form'],
+    'understand': ['comprehend', 'grasp', 'apprehend', 'fathom'],
+    'explain': ['clarify', 'elucidate', 'interpret', 'expound'],
+
+    # Society & culture words
+    'society': ['community', 'populace', 'civilization', 'social fabric'],
+    'culture': ['heritage', 'traditions', 'customs', 'way of life'],
+    'people': ['individuals', 'persons', 'population', 'citizens'],
+    'government': ['administration', 'authorities', 'leadership', 'regime'],
+    'organization': ['institution', 'entity', 'association', 'body'],
+    'system': ['framework', 'structure', 'network', 'arrangement'],
+
+    # Education words
+    'education': ['learning', 'instruction', 'schooling', 'training'],
+    'student': ['learner', 'pupil', 'scholar', 'trainee'],
+    'teacher': ['educator', 'instructor', 'tutor', 'mentor'],
+    'school': ['institution', 'academy', 'educational establishment'],
+
+    # Business words
+    'business': ['enterprise', 'company', 'firm', 'venture'],
+    'market': ['industry', 'sector', 'commerce', 'trade'],
+    'product': ['item', 'goods', 'merchandise', 'offering'],
+    'customer': ['client', 'consumer', 'buyer', 'patron'],
+
+    # Technology words
+    'technology': ['innovation', 'digital tools', 'tech solutions', 'advancements'],
+    'digital': ['electronic', 'computerized', 'online', 'virtual'],
+    'information': ['data', 'knowledge', 'intelligence', 'facts'],
+
+    # Time-related words
+    'time': ['period', 'duration', 'interval', 'timespan'],
+    'now': ['currently', 'presently', 'at this time', 'right now'],
+    'recent': ['latest', 'current', 'contemporary', 'modern'],
+    'old': ['ancient', 'aged', 'traditional', 'historic'],
+
+    # Place-related words
+    'world': ['globe', 'planet', 'earth', 'international community'],
+    'country': ['nation', 'state', 'land', 'sovereign state'],
+    'city': ['metropolis', 'urban center', 'municipality', 'town'],
+    'place': ['location', 'site', 'venue', 'setting'],
+
+    # General nouns
+    'problem': ['issue', 'challenge', 'difficulty', 'obstacle'],
+    'solution': ['resolution', 'answer', 'remedy', 'fix'],
+    'way': ['method', 'approach', 'manner', 'technique'],
+    'part': ['component', 'element', 'section', 'portion'],
+    'kind': ['type', 'category', 'sort', 'variety'],
+
+    # General adjectives
+    'new': ['novel', 'innovative', 'fresh', 'recent'],
+    'old': ['aged', 'ancient', 'traditional', 'historic'],
+    'high': ['elevated', 'significant', 'substantial', 'considerable'],
+    'low': ['minimal', 'reduced', 'limited', 'modest'],
+    'fast': ['rapid', 'quick', 'speedy', 'swift'],
+    'slow': ['gradual', 'leisurely', 'unhurried', 'deliberate'],
+
+    # Expanded academic & research vocabulary
+    'theory': ['concept', 'hypothesis', 'doctrine', 'model'],
+    'hypothesis': ['proposition', 'assumption', 'supposition', 'postulate'],
+    'variable': ['factor', 'element', 'parameter', 'component'],
+    'control': ['regulate', 'govern', 'manage', 'supervise'],
+    'sample': ['subset', 'specimen', 'example', 'instance'],
+    'population': ['cohort', 'aggregate', 'community', 'group'],
+    'significance': ['importance', 'meaningfulness', 'consequence', 'weight'],
+    'bias': ['prejudice', 'partiality', 'skew', 'tilt'],
+    'reliability': ['consistency', 'dependability', 'stability', 'trustworthiness'],
+    'validity': ['soundness', 'legitimacy', 'accuracy', 'authenticity'],
+    'replicate': ['repeat', 'reproduce', 'recreate', 'duplicate'],
+    'measure': ['quantify', 'gauge', 'assess', 'evaluate'],
+    'metric': ['measure', 'indicator', 'gauge', 'benchmark'],
+    'trend': ['pattern', 'trajectory', 'tendency', 'movement'],
+    'correlation': ['association', 'relationship', 'link', 'connection'],
+    'causation': ['causal link', 'cause-and-effect', 'determinant', 'influence'],
+    'model': ['framework', 'schema', 'representation', 'paradigm'],
+    'framework': ['structure', 'scaffold', 'system', 'architecture'],
+    'literature': ['publications', 'scholarship', 'research corpus', 'bibliography'],
+    'review': ['survey', 'overview', 'critique', 'evaluation'],
+    'thematic': ['topical', 'subject-based', 'motif-driven', 'topic-centered'],
+    'qualitative': ['descriptive', 'non-numeric', 'textual', 'interpretive'],
+    'quantitative': ['numerical', 'statistical', 'metric-based', 'measurable'],
+    'mixed-methods': ['combined approach', 'hybrid methodology', 'integrated methods', 'dual approach'],
+
+    # Writing & argument
+    'argument': ['claim', 'assertion', 'case', 'contention'],
+    'claim': ['assertion', 'statement', 'contend', 'maintain'],
+    'counterargument': ['rebuttal', 'opposing view', 'contrary position', 'refutation'],
+    'evidence-based': ['empirically supported', 'data-driven', 'substantiated', 'validated'],
+    'citation': ['reference', 'source', 'attribution', 'acknowledgment'],
+    'paragraph': ['section', 'passage', 'block of text', 'segment'],
+    'sentence': ['clause', 'statement', 'utterance', 'line'],
+    'thesis': ['argument', 'central claim', 'main idea', 'proposition'],
+    'conclusion': ['summary', 'final thought', 'closing argument', 'wrap-up'],
+    'introduction': ['opening', 'preface', 'lead-in', 'overview'],
+
+    # Statistical & analytic terms
+    'mean': ['average', 'central tendency', 'arithmetic mean', 'expected value'],
+    'median': ['middle value', '50th percentile', 'central point', 'midpoint'],
+    'mode': ['most frequent value', 'common value', 'prevalent value', 'dominant value'],
+    'variance': ['dispersion', 'spread', 'variability', 'deviation'],
+    'standard deviation': ['dispersion measure', 'spread indicator', 'variability metric', 'std dev'],
+    'regression': ['prediction model', 'trend analysis', 'statistical modeling', 'fit'],
+    'p-value': ['significance level indicator', 'probability measure', 'statistical significance', 'p'],
+    'confidence interval': ['range estimate', 'uncertainty bound', 'estimate interval', 'CI'],
+    'sample size': ['n', 'number of observations', 'cohort size', 'participant count'],
+    'outlier': ['anomaly', 'exception', 'deviant point', 'extreme value'],
+
+    # Project & process
+    'plan': ['strategy', 'scheme', 'blueprint', 'roadmap'],
+    'strategy': ['approach', 'tactic', 'plan', 'method'],
+    'goal': ['objective', 'aim', 'target', 'intention'],
+    'objective': ['aim', 'purpose', 'goal', 'target'],
+    'deadline': ['due date', 'target date', 'cutoff', 'time limit'],
+    'phase': ['stage', 'step', 'period', 'cycle'],
+    'task': ['assignment', 'job', 'chore', 'duty'],
+    'deliverable': ['output', 'product', 'result', 'submission'],
+    'budget': ['funding', 'resources', 'financial plan', 'allocation'],
+    'scope': ['extent', 'range', 'breadth', 'coverage'],
+
+    # Communication & presentation
+    'present': ['display', 'exhibit', 'show', 'demonstrate'],
+    'communicate': ['convey', 'transmit', 'express', 'articulate'],
+    'discuss': ['debate', 'consider', 'talk about', 'examine'],
+    'report': ['document', 'record', 'describe', 'account for'],
+    'summarize': ['condense', 'recap', 'abridge', 'outline'],
+    'illustrate': ['demonstrate', 'depict', 'showcase', 'exemplify'],
+    'highlight': ['emphasize', 'underscore', 'stress', 'spotlight'],
+
+    # Emotions & evaluation
+    'happy': ['pleased', 'content', 'satisfied', 'delighted'],
+    'sad': ['unhappy', 'sorrowful', 'downcast', 'dejected'],
+    'angry': ['irate', 'furious', 'annoyed', 'resentful'],
+    'important to note': ['noteworthy', 'worth mentioning', 'of interest', 'notable'],
+
+    # Law, policy & governance
+    'law': ['statute', 'regulation', 'legislation', 'rule'],
+    'policy': ['guideline', 'protocol', 'rule', 'directive'],
+    'regulation': ['rule', 'ordinance', 'directive', 'statute'],
+    'compliance': ['adherence', 'conformity', 'observance', 'abidance'],
+    'governance': ['administration', 'oversight', 'management', 'regulation'],
+
+    # Health & medicine
+    'health': ['well-being', 'wellness', 'fitness', 'vitality'],
+    'disease': ['illness', 'ailment', 'condition', 'disorder'],
+    'treatment': ['therapy', 'intervention', 'care', 'remedy'],
+    'symptom': ['sign', 'indicator', 'manifestation', 'feature'],
+    'diagnosis': ['identification', 'assessment', 'evaluation', 'determination'],
+    'prevention': ['prophylaxis', 'avoidance', 'protection', 'risk reduction'],
+
+    # Environment & ecology
+    'environment': ['surroundings', 'ecosystem', 'habitat', 'milieu'],
+    'sustainability': ['durability', 'long-term viability', 'eco-friendliness', 'resilience'],
+    'pollution': ['contamination', 'tainting', 'degradation', 'environmental harm'],
+    'conservation': ['preservation', 'protection', 'safeguarding', 'stewardship'],
+    'climate': ['weather patterns', 'atmospheric conditions', 'climatic system', 'temperature regime'],
+
+    # Science & engineering
+    'experiment': ['trial', 'test', 'investigation', 'trial run'],
+    'prototype': ['model', 'mockup', 'archetype', 'preliminary version'],
+    'innovation': ['invention', 'novelty', 'breakthrough', 'advance'],
+    'engineer': ['designer', 'developer', 'builder', 'technician'],
+    'technology transfer': ['knowledge transfer', 'tech diffusion', 'commercialization', 'transfer of tech'],
+
+    # Finance & economics
+    'economy': ['market system', 'financial system', 'economic system', 'macroeconomy'],
+    'finance': ['funding', 'capital management', 'monetary affairs', 'financial matters'],
+    'investment': ['capital allocation', 'funding', 'stake', 'asset placement'],
+    'inflation': ['price rise', 'cost escalation', 'monetary inflation', 'price inflation'],
+    'revenue': ['income', 'receipts', 'turnover', 'earnings'],
+    'cost': ['expense', 'expenditure', 'outlay', 'charge'],
+    'profit': ['gain', 'return', 'surplus', 'earnings'],
+    'loss': ['deficit', 'shortfall', 'negative return', 'decrease'],
+
+    # Marketing & product
+    'brand': ['label', 'trade name', 'marque', 'identity'],
+    'advertise': ['promote', 'publicize', 'market', 'announce'],
+    'campaign': ['drive', 'initiative', 'push', 'strategy'],
+    'audience': ['viewers', 'readers', 'target market', 'spectators'],
+    'engagement': ['involvement', 'participation', 'interaction', 'connection'],
+
+    # Computing & IT
+    'software': ['application', 'program', 'system', 'suite'],
+    'hardware': ['equipment', 'physical components', 'devices', 'machinery'],
+    'algorithm': ['procedure', 'routine', 'method', 'computational rule'],
+    'database': ['data store', 'data repository', 'information system', 'data bank'],
+    'security': ['protection', 'safeguarding', 'defense', 'cybersecurity'],
+    'network': ['web', 'system', 'interconnected system', 'mesh'],
+
+    # Design & aesthetics
+    'design': ['plan', 'layout', 'blueprint', 'scheme'],
+    'creative': ['inventive', 'imaginative', 'original', 'innovative'],
+    'style': ['fashion', 'mode', 'manner', 'approach'],
+    'aesthetic': ['artistic', 'visual', 'stylistic', 'tasteful'],
+
+    # Relationship & social terms
+    'friend': ['companion', 'ally', 'confidant', 'associate'],
+    'relationship': ['connection', 'bond', 'association', 'link'],
+    'community engagement': ['public involvement', 'civic participation', 'community participation', 'public engagement'],
+    'diversity': ['variety', 'heterogeneity', 'plurality', 'multiplicity'],
+    'inclusion': ['integration', 'embracing', 'acceptance', 'involvement'],
+
+    # Emphasis & transition words
+    'however': ['nevertheless', 'nonetheless', 'but', 'yet'],
+    'therefore': ['consequently', 'thus', 'hence', 'as a result'],
+    'moreover': ['furthermore', 'additionally', 'besides', 'in addition'],
+    'for example': ['for instance', 'such as', 'e.g.', 'to illustrate'],
+    'in conclusion': ['to conclude', 'in summary', 'to sum up', 'overall'],
+
+    # Measurement & units
+    'measure': ['gauge', 'quantify', 'assess', 'evaluate'],
+    'length': ['extent', 'distance', 'span', 'range'],
+    'weight': ['mass', 'heft', 'load', 'burden'],
+    'volume': ['capacity', 'amount', 'size', 'extent'],
+
+    # Action & motion
+    'move': ['shift', 'transfer', 'relocate', 'advance'],
+    'stop': ['cease', 'halt', 'terminate', 'end'],
+    'start': ['begin', 'commence', 'initiate', 'launch'],
+    'increase': ['raise', 'boost', 'heighten', 'escalate'],
+    'decrease': ['reduce', 'diminish', 'lower', 'curtail'],
+
+    # Personality & traits
+    'intelligent': ['smart', 'clever', 'bright', 'astute'],
+    'creative': ['innovative', 'inventive', 'original', 'imaginative'],
+    'reliable': ['dependable', 'trustworthy', 'consistent', 'steady'],
+    'ambitious': ['driven', 'aspiring', 'determined', 'goal-oriented'],
+
+    # Safety & risk
+    'risk': ['hazard', 'danger', 'peril', 'exposure'],
+    'safe': ['secure', 'protected', 'harmless', 'risk-free'],
+    'protect': ['safeguard', 'shield', 'defend', 'preserve'],
+
+    # Misc common verbs & nouns
+    'buy': ['purchase', 'acquire', 'procure', 'obtain'],
+    'sell': ['vend', 'trade', 'market', 'retail'],
+    'read': ['peruse', 'scan', 'examine', 'study'],
+    'write': ['compose', 'draft', 'pen', 'document'],
+    'listen': ['heed', 'attend', 'give ear', 'pay attention'],
+    'speak': ['talk', 'utter', 'express', 'articulate'],
+
+    # Additional useful academic connectors
+    'although': ['though', 'even though', 'whereas', 'while'],
+    'despite': ['in spite of', 'notwithstanding', 'regardless of', 'even with'],
+    'because': ['since', 'as', 'due to the fact that', 'for the reason that'],
+    'unless': ['except if', 'if not', 'save that', 'without'],
+
+    # Concluding/summary language
+    'implication': ['consequence', 'ramification', 'connotation', 'suggestion'],
+    'recommendation': ['suggestion', 'proposal', 'advice', 'guidance'],
+    'limitation': ['constraint', 'restriction', 'shortcoming', 'boundary'],
+    'future work': ['further research', 'next steps', 'subsequent study', 'follow-up research']
+}
     
     def intelligent_word_replacement(self, text):
         """More aggressive and intelligent word replacement"""
