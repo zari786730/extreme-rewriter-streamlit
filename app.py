@@ -4,10 +4,10 @@ import streamlit as st
 from collections import defaultdict
 
 # =========================
-# IMPROVED UNIVERSAL BACKEND
+# GRAMMAR-CORRECTED UNIVERSAL BACKEND
 # =========================
 
-class UniversalExtremeRewriter:
+class GrammarCorrectedRewriter:
     def __init__(self):
         self.setup_comprehensive_vocabulary()
     
@@ -57,54 +57,20 @@ class UniversalExtremeRewriter:
             'government': ['administration', 'authorities', 'leadership', 'regime'],
             'organization': ['institution', 'entity', 'association', 'body'],
             'system': ['framework', 'structure', 'network', 'arrangement'],
-            
-            # Education words
-            'education': ['learning', 'instruction', 'schooling', 'training'],
-            'student': ['learner', 'pupil', 'scholar', 'trainee'],
-            'teacher': ['educator', 'instructor', 'tutor', 'mentor'],
-            'school': ['institution', 'academy', 'educational establishment'],
-            
-            # Business words
-            'business': ['enterprise', 'company', 'firm', 'venture'],
-            'market': ['industry', 'sector', 'commerce', 'trade'],
-            'product': ['item', 'goods', 'merchandise', 'offering'],
-            'customer': ['client', 'consumer', 'buyer', 'patron'],
-            
-            # Technology words
-            'technology': ['innovation', 'digital tools', 'tech solutions', 'advancements'],
-            'digital': ['electronic', 'computerized', 'online', 'virtual'],
-            'information': ['data', 'knowledge', 'intelligence', 'facts'],
-            
-            # Time-related words
-            'time': ['period', 'duration', 'interval', 'timespan'],
-            'now': ['currently', 'presently', 'at this time', 'currently'],
-            'recent': ['latest', 'current', 'contemporary', 'modern'],
-            'old': ['ancient', 'aged', 'traditional', 'historic'],
-            
-            # Place-related words
-            'world': ['globe', 'planet', 'earth', 'international community'],
-            'country': ['nation', 'state', 'land', 'sovereign state'],
-            'city': ['metropolis', 'urban center', 'municipality', 'town'],
-            'place': ['location', 'site', 'venue', 'setting'],
-            
-            # General nouns
-            'problem': ['issue', 'challenge', 'difficulty', 'obstacle'],
-            'solution': ['resolution', 'answer', 'remedy', 'fix'],
-            'way': ['method', 'approach', 'manner', 'technique'],
-            'part': ['component', 'element', 'section', 'portion'],
-            'kind': ['type', 'category', 'sort', 'variety'],
-            
-            # General adjectives
-            'new': ['novel', 'innovative', 'fresh', 'recent'],
-            'old': ['aged', 'ancient', 'traditional', 'historic'],
-            'high': ['elevated', 'significant', 'substantial', 'considerable'],
-            'low': ['minimal', 'reduced', 'limited', 'modest'],
-            'fast': ['rapid', 'quick', 'speedy', 'swift'],
-            'slow': ['gradual', 'leisurely', 'unhurried', 'deliberate']
         }
     
+    def clean_sentence_endings(self, text):
+        """Remove random dots and ensure proper sentence endings"""
+        # Remove multiple consecutive dots
+        text = re.sub(r'\.{2,}', '.', text)
+        # Ensure space after dots
+        text = re.sub(r'\.(\w)', r'. \1', text)
+        # Remove dots in the middle of sentences
+        text = re.sub(r'(\w)\.(\s+[a-z])', r'\1\2', text)
+        return text
+    
     def intelligent_word_replacement(self, text):
-        """More aggressive and intelligent word replacement"""
+        """Grammar-aware word replacement"""
         words = text.split()
         new_words = []
         
@@ -113,217 +79,209 @@ class UniversalExtremeRewriter:
             word = words[i].lower().strip('.,!?;:"')
             original_word = words[i]
             
+            # Preserve punctuation
+            punctuation = ''
+            if original_word and not original_word[-1].isalnum():
+                punctuation = original_word[-1]
+                original_word = original_word[:-1]
+            
             # Skip very short/common words
             if len(word) <= 2 or word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']:
-                new_words.append(original_word)
+                new_words.append(original_word + punctuation)
                 i += 1
                 continue
             
-            # Try 2-word phrases first
-            if i + 1 < len(words):
-                next_word = words[i+1].lower().strip('.,!?;:"')
-                two_word = f"{word} {next_word}"
-                if two_word in self.replacements:
-                    replacement = random.choice(self.replacements[two_word])
-                    if words[i][0].isupper():
-                        replacement = replacement.capitalize()
-                    new_words.append(replacement)
-                    i += 2
-                    continue
-            
-            # Single word replacement with high probability
-            if word in self.replacements and random.random() < 0.7:  # 70% replacement rate
+            # Single word replacement with grammar awareness
+            if word in self.replacements and random.random() < 0.7:
                 replacement = random.choice(self.replacements[word])
-                if words[i][0].isupper():
+                # Preserve capitalization
+                if original_word[0].isupper():
                     replacement = replacement.capitalize()
-                new_words.append(replacement)
+                new_words.append(replacement + punctuation)
             else:
-                new_words.append(original_word)
+                new_words.append(original_word + punctuation)
             
             i += 1
         
         return ' '.join(new_words)
     
-    def varied_sentence_restructure(self, text):
-        """More diverse sentence restructuring patterns"""
+    def grammar_aware_sentence_restructure(self, text):
+        """Restructure sentences with proper grammar"""
+        # Split into sentences properly
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if not sentences:
             return text
         
         restructured = []
         
-        for i, sentence in enumerate(sentences):
+        for sentence in sentences:
             words = sentence.split()
             if len(words) < 4:
                 restructured.append(sentence)
                 continue
             
-            # DIVERSE patterns (no repetition)
-            pattern_choice = random.choice([
-                'reverse', 'question', 'academic', 'emphasis', 
-                'context', 'normal', 'comparative', 'result'
-            ])
-            
-            if pattern_choice == 'reverse' and len(words) > 6:
-                split_point = random.randint(3, len(words) - 3)
-                first_part = ' '.join(words[:split_point])
-                second_part = ' '.join(words[split_point:])
-                reverse_frames = [
-                    f"{second_part}, thereby illustrating {first_part.lower()}",
-                    f"{second_part}, which highlights {first_part.lower()}",
-                    f"{second_part}, revealing how {first_part.lower()}",
-                    f"{second_part}, demonstrating that {first_part.lower()}"
-                ]
-                restructured.append(random.choice(reverse_frames))
-                
-            elif pattern_choice == 'question':
-                question_frames = [
-                    f"What explains {sentence.lower()}?",
-                    f"How can we understand {sentence.lower()}?",
-                    f"Why is it significant that {sentence.lower()}?",
-                    f"In what ways does {sentence.lower()}?"
-                ]
-                restructured.append(random.choice(question_frames))
-                
-            elif pattern_choice == 'academic':
-                academic_frames = [
-                    f"Research indicates that {sentence.lower()}",
-                    f"Studies demonstrate that {sentence.lower()}",
-                    f"Evidence suggests that {sentence.lower()}",
-                    f"Analysis reveals that {sentence.lower()}",
-                    f"Findings show that {sentence.lower()}"
-                ]
-                restructured.append(random.choice(academic_frames))
-                
-            elif pattern_choice == 'emphasis':
-                emphasis_frames = [
-                    f"Notably, {sentence.lower()}",
-                    f"Significantly, {sentence.lower()}",
-                    f"Importantly, {sentence.lower()}",
-                    f"Remarkably, {sentence.lower()}"
-                ]
-                restructured.append(random.choice(emphasis_frames))
-                
-            elif pattern_choice == 'context':
-                context_frames = [
-                    f"In this context, {sentence.lower()}",
-                    f"Within this framework, {sentence.lower()}",
-                    f"From this perspective, {sentence.lower()}",
-                    f"Considering these factors, {sentence.lower()}"
-                ]
-                restructured.append(random.choice(context_frames))
-                
-            elif pattern_choice == 'comparative':
-                comparative_frames = [
-                    f"By comparison, {sentence.lower()}",
-                    f"Similarly, {sentence.lower()}",
-                    f"Likewise, {sentence.lower()}",
-                    f"In contrast, {sentence.lower()}"
-                ]
-                restructured.append(random.choice(comparative_frames))
-                
-            elif pattern_choice == 'result':
-                result_frames = [
-                    f"Consequently, {sentence.lower()}",
-                    f"As a result, {sentence.lower()}",
-                    f"Therefore, {sentence.lower()}",
-                    f"Accordingly, {sentence.lower()}"
-                ]
-                restructured.append(random.choice(result_frames))
-                
+            # Choose structure based on sentence length and content
+            if len(words) > 15:
+                # Split long sentences intelligently
+                restructured.extend(self.split_long_sentence(sentence))
+            elif len(words) < 8:
+                # Expand short sentences
+                restructured.append(self.expand_short_sentence(sentence))
             else:
-                restructured.append(sentence)
+                # Restructure medium sentences
+                restructured.append(self.restructure_medium_sentence(sentence))
         
-        return '. '.join(restructured) + '.'
+        # Join with proper punctuation
+        result = '. '.join(restructured) + '.' if restructured else ''
+        return self.clean_sentence_endings(result)
     
-    def smart_length_manipulation(self, text):
-        """Better sentence length management"""
+    def split_long_sentence(self, sentence):
+        """Intelligently split long sentences at natural break points"""
+        words = sentence.split()
+        connectors = ['and', 'but', 'however', 'therefore', 'moreover', 'furthermore', 'although', 'while']
+        split_points = []
+        
+        # Find natural split points
+        for i, word in enumerate(words):
+            if word.lower() in connectors and 4 < i < len(words) - 4:
+                split_points.append(i)
+        
+        if split_points:
+            split_at = random.choice(split_points)
+            part1 = ' '.join(words[:split_at])
+            part2 = ' '.join(words[split_at:])
+            # Ensure part2 starts with proper capitalization
+            part2 = part2[0].upper() + part2[1:] if part2 else part2
+            return [part1 + '.', part2]
+        else:
+            # Fallback: split at relative clause or comma
+            return [sentence]
+    
+    def expand_short_sentence(self, sentence):
+        """Expand short sentences with additional context"""
+        expansions = [
+            "Research indicates that",
+            "Studies demonstrate that", 
+            "Evidence suggests that",
+            "It is evident that",
+            "One can observe that",
+            "Analysis reveals that",
+            "Findings show that"
+        ]
+        
+        # Ensure the expanded sentence flows naturally
+        base_sentence = sentence.lower()
+        if base_sentence.startswith(('the ', 'a ', 'an ')):
+            base_sentence = base_sentence
+        else:
+            base_sentence = base_sentence
+        
+        expanded = f"{random.choice(expansions)} {base_sentence}"
+        return expanded[0].upper() + expanded[1:]
+    
+    def restructure_medium_sentence(self, sentence):
+        """Restructure medium-length sentences with varied patterns"""
+        words = sentence.split()
+        pattern_choice = random.choice(['passive', 'active', 'emphatic', 'conditional'])
+        
+        if pattern_choice == 'passive' and len(words) > 6:
+            # Convert to passive voice where appropriate
+            return self.convert_to_passive(sentence)
+        elif pattern_choice == 'emphatic':
+            # Add emphasis
+            emphatic_words = ['Notably,', 'Significantly,', 'Importantly,', 'Remarkably,']
+            return f"{random.choice(emphatic_words)} {sentence.lower()}"
+        elif pattern_choice == 'conditional':
+            # Add conditional framing
+            conditionals = ['When considered,', 'In this context,', 'From this perspective,']
+            return f"{random.choice(conditionals)} {sentence.lower()}"
+        else:
+            return sentence
+    
+    def convert_to_passive(self, sentence):
+        """Simple passive voice conversion for common patterns"""
+        words = sentence.split()
+        if len(words) >= 3:
+            # Simple pattern: "A does B" -> "B is done by A"
+            if words[1].endswith('s') and len(words) >= 3:  # Simple present tense detection
+                subject = words[0]
+                verb = words[1]
+                rest = ' '.join(words[2:])
+                
+                # Convert verb to past participle
+                verb_base = verb[:-1] if verb.endswith('s') else verb
+                past_participle = verb_base + 'ed'  # Simple conversion
+                
+                return f"{rest} is {past_participle} by {subject}".capitalize()
+        
+        return sentence
+    
+    def vary_sentence_lengths(self, text):
+        """Ensure sentences have different word counts while preserving meaning"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        if len(sentences) <= 2:
+        if len(sentences) < 2:
             return text
         
-        processed = []
+        processed_sentences = []
+        
+        for i, sentence in enumerate(sentences):
+            words = sentence.split()
+            current_length = len(words)
+            
+            # Vary sentence lengths strategically
+            if current_length > 20:
+                # Split very long sentences
+                split_sentences = self.split_long_sentence(sentence)
+                processed_sentences.extend(split_sentences)
+            elif current_length < 6:
+                # Expand very short sentences
+                processed_sentences.append(self.expand_short_sentence(sentence))
+            else:
+                # Moderate adjustment for medium sentences
+                if i % 2 == 0 and current_length > 8:
+                    # Make every other medium sentence slightly shorter
+                    if len(words) > 10:
+                        processed_sentences.append(' '.join(words[:8]) + '...')
+                    else:
+                        processed_sentences.append(sentence)
+                else:
+                    processed_sentences.append(sentence)
+        
+        result = '. '.join(processed_sentences) + '.' if processed_sentences else ''
+        return self.clean_sentence_endings(result)
+    
+    def ensure_grammar_flow(self, text):
+        """Final grammar and flow check"""
+        # Fix common grammar issues
+        text = re.sub(r'\s+([.,!?])', r'\1', text)  # Remove spaces before punctuation
+        text = re.sub(r'\.\s*\.', '.', text)  # Remove consecutive dots
+        text = re.sub(r',\s*,', ',', text)  # Remove consecutive commas
+        
+        # Ensure proper capitalization after sentence endings
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        corrected_sentences = []
         
         for sentence in sentences:
-            words = sentence.split()
-            
-            # Only manipulate 50% of sentences for better flow
-            if random.random() < 0.5:
-                if len(words) > 12:
-                    # Smart splitting at natural break points
-                    connectors = ['and', 'but', 'however', 'therefore', 'moreover', 'furthermore']
-                    split_points = []
-                    
-                    for i, word in enumerate(words):
-                        if word.lower() in connectors and 4 < i < len(words) - 4:
-                            split_points.append(i)
-                    
-                    if split_points:
-                        split_at = random.choice(split_points)
-                        part1 = ' '.join(words[:split_at])
-                        part2 = ' '.join(words[split_at:])
-                        processed.extend([part1 + '.', part2.capitalize()])
-                    else:
-                        # Fallback: split at middle
-                        mid = len(words) // 2
-                        part1 = ' '.join(words[:mid])
-                        part2 = ' '.join(words[mid:])
-                        processed.extend([part1 + '.', part2.capitalize()])
-                elif len(words) < 6:
-                    # Expand short sentences
-                    expansions = [
-                        "It is evident that",
-                        "One can observe that", 
-                        "Research indicates that",
-                        "The evidence shows that",
-                        "Analysis reveals that"
-                    ]
-                    expanded = f"{random.choice(expansions)} {sentence.lower()}"
-                    processed.append(expanded)
-                else:
-                    processed.append(sentence)
-            else:
-                processed.append(sentence)
+            if sentence and sentence[0].islower():
+                sentence = sentence[0].upper() + sentence[1:]
+            corrected_sentences.append(sentence)
         
-        return ' '.join(processed)
-    
-    def add_natural_variation(self, text):
-        """Add natural human writing variations"""
-        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        if not sentences:
-            return text
-        
-        # Add variation to first sentence only (avoid over-patterning)
-        if random.random() < 0.4:
-            variations = [
-                f"Interestingly, {sentences[0].lower()}",
-                f"Notably, {sentences[0].lower()}",
-                f"Surprisingly, {sentences[0].lower()}",
-                f"Importantly, {sentences[0].lower()}"
-            ]
-            sentences[0] = random.choice(variations)
-        
-        return '. '.join(sentences) + '.'
+        result = '. '.join(corrected_sentences) + '.' if corrected_sentences else ''
+        return result
 
-# Initialize the universal rewriter
-universal_rewriter = UniversalExtremeRewriter()
+# Initialize the grammar-corrected rewriter
+grammar_rewriter = GrammarCorrectedRewriter()
 
 def extreme_rewriter(original_text):
-    """Universal extreme rewriting with improved transformations"""
+    """Grammar-corrected extreme rewriting"""
     clean_text = original_text.strip().strip('"').strip("'")
     
-    # Apply transformations in random order for variety
-    transformations = [
-        universal_rewriter.varied_sentence_restructure,
-        universal_rewriter.intelligent_word_replacement, 
-        universal_rewriter.smart_length_manipulation,
-        universal_rewriter.add_natural_variation
-    ]
-    random.shuffle(transformations)
-    
+    # Apply transformations in logical order
     result = clean_text
-    for transform in transformations:
-        result = transform(result)
+    result = grammar_rewriter.intelligent_word_replacement(result)
+    result = grammar_rewriter.grammar_aware_sentence_restructure(result)
+    result = grammar_rewriter.vary_sentence_lengths(result)
+    result = grammar_rewriter.ensure_grammar_flow(result)
     
     return result
 
