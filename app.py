@@ -1,105 +1,178 @@
 import random
 import re
-import streamlit as st
-from collections import defaultdict
+import requests
+from bs4 import BeautifulSoup
+import time
+import nltk
+from nltk.corpus import wordnet
+
+# Download NLTK data
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
 
 # =========================
-# GRAMMAR-CORRECTED UNIVERSAL BACKEND
+# DYNAMIC SYNONYM FETCHER
 # =========================
 
-class GrammarCorrectedRewriter:
+class DynamicSynonymFetcher:
     def __init__(self):
-        self.setup_comprehensive_vocabulary()
+        self.synonym_cache = {}
+        self.setup_fallback_synonyms()
     
-    def setup_comprehensive_vocabulary(self):
-        """EXPANDED vocabulary database for universal use"""
-        self.replacements = {
-            # Common academic/research words
-            'research': ['scholarly investigation', 'academic inquiry', 'systematic study', 'empirical exploration'],
-            'study': ['examination', 'analysis', 'investigation', 'scrutiny', 'assessment'],
-            'analysis': ['evaluation', 'appraisal', 'interpretation', 'assessment'],
-            'evidence': ['empirical data', 'documented findings', 'research results', 'substantive proof'],
-            'data': ['information', 'findings', 'metrics', 'statistics'],
-            'method': ['approach', 'technique', 'procedure', 'methodology'],
-            'result': ['outcome', 'finding', 'conclusion', 'product'],
-            'show': ['demonstrate', 'reveal', 'illustrate', 'indicate', 'display'],
-            'prove': ['substantiate', 'verify', 'confirm', 'validate'],
-            'suggest': ['indicate', 'imply', 'propose', 'point to'],
+    def setup_fallback_synonyms(self):
+        """Basic fallback for common words if online fetch fails"""
+        self.fallback_synonyms = {
+            'beautiful': ['attractive', 'lovely', 'pretty', 'gorgeous', 'stunning'],
+            'important': ['significant', 'crucial', 'essential', 'vital', 'critical'],
+            'good': ['excellent', 'great', 'superb', 'outstanding', 'fine'],
+            'big': ['large', 'huge', 'enormous', 'massive', 'substantial'],
+            'small': ['tiny', 'little', 'miniature', 'compact', 'petite'],
+            'fast': ['quick', 'rapid', 'swift', 'speedy', 'brisk'],
+            'slow': ['gradual', 'leisurely', 'unhurried', 'deliberate', 'measured'],
+            'happy': ['joyful', 'delighted', 'pleased', 'content', 'cheerful'],
+            'sad': ['unhappy', 'depressed', 'melancholy', 'gloomy', 'downcast'],
+            'smart': ['intelligent', 'clever', 'bright', 'brilliant', 'knowledgeable']
+        }
+    
+    def fetch_synonyms_online(self, word):
+        """Fetch fresh synonyms from online sources"""
+        synonyms = set()
+        
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
             
-            # Common adjectives
-            'important': ['crucial', 'vital', 'essential', 'significant', 'paramount'],
-            'significant': ['notable', 'considerable', 'substantial', 'meaningful'],
-            'different': ['various', 'diverse', 'distinct', 'disparate'],
-            'many': ['numerous', 'multiple', 'countless', 'several'],
-            'big': ['large', 'substantial', 'considerable', 'sizable'],
-            'small': ['minor', 'modest', 'limited', 'minimal'],
-            'good': ['effective', 'beneficial', 'advantageous', 'favorable'],
-            'bad': ['detrimental', 'unfavorable', 'negative', 'adverse'],
-            'beautiful': ['stunning', 'gorgeous', 'exquisite', 'magnificent'],
-            'beauty': ['aesthetics', 'elegance', 'grace', 'loveliness'],
+            # Try multiple online sources
+            sources = [
+                f"https://www.thesaurus.com/browse/{word}",
+                f"https://www.merriam-webster.com/thesaurus/{word}",
+            ]
             
-            # Common verbs
-            'use': ['utilize', 'employ', 'leverage', 'apply'],
-            'make': ['create', 'produce', 'construct', 'generate'],
-            'do': ['perform', 'execute', 'carry out', 'conduct'],
-            'get': ['obtain', 'acquire', 'secure', 'attain'],
-            'help': ['assist', 'facilitate', 'support', 'aid'],
-            'change': ['alter', 'modify', 'transform', 'adjust'],
-            'develop': ['cultivate', 'nurture', 'foster', 'build'],
-            'create': ['generate', 'produce', 'establish', 'form'],
-            'understand': ['comprehend', 'grasp', 'apprehend', 'fathom'],
-            'explain': ['clarify', 'elucidate', 'interpret', 'expound'],
+            for url in sources:
+                try:
+                    response = requests.get(url, headers=headers, timeout=5)
+                    if response.status_code == 200:
+                        soup = BeautifulSoup(response.content, 'html.parser')
+                        
+                        if "thesaurus.com" in url:
+                            synonym_elements = soup.find_all('a', {'data-linkid': 'nn1ov4'})
+                            for elem in synonym_elements[:10]:
+                                syn = elem.text.strip()
+                                if syn and syn.lower() != word.lower():
+                                    synonyms.add(syn)
+                        
+                        elif "merriam-webster" in url:
+                            synonym_elements = soup.find_all('a', class_='pb-4')
+                            for elem in synonym_elements[:10]:
+                                syn = elem.text.strip()
+                                if syn and syn.lower() != word.lower():
+                                    synonyms.add(syn)
+                    
+                    if synonyms:
+                        break
+                        
+                except:
+                    continue
             
-            # Society & culture words
-            'society': ['community', 'populace', 'civilization', 'social fabric'],
-            'culture': ['heritage', 'traditions', 'customs', 'way of life'],
-            'people': ['individuals', 'persons', 'population', 'citizens'],
-            'government': ['administration', 'authorities', 'leadership', 'regime'],
-            'organization': ['institution', 'entity', 'association', 'body'],
-            'system': ['framework', 'structure', 'network', 'arrangement'],
+            # If online failed, try WordNet
+            if not synonyms:
+                for syn in wordnet.synsets(word):
+                    for lemma in syn.lemmas():
+                        synonym = lemma.name().replace('_', ' ')
+                        if synonym.lower() != word.lower() and len(synonym.split()) == 1:
+                            synonyms.add(synonym)
+            
+            # Final fallback
+            if not synonyms and word in self.fallback_synonyms:
+                synonyms.update(self.fallback_synonyms[word])
+            
+            # Cache the results
+            self.synonym_cache[word.lower()] = list(synonyms)[:8]
+            
+        except Exception as e:
+            if word in self.fallback_synonyms:
+                synonyms = set(self.fallback_synonyms[word])
+            else:
+                synonyms = set()
+        
+        return list(synonyms)
+    
+    def get_fresh_synonyms(self, word):
+        """Get synonyms with caching"""
+        word_lower = word.lower()
+        
+        if word_lower in self.synonym_cache:
+            return self.synonym_cache[word_lower]
+        
+        synonyms = self.fetch_synonyms_online(word_lower)
+        
+        if not synonyms:
+            return [word]
+        
+        return synonyms
+
+# =========================
+# GRAMMAR-CORRECTED REWRITER
+# =========================
+
+class DynamicRewriter:
+    def __init__(self):
+        self.synonym_fetcher = DynamicSynonymFetcher()
+        self.common_words = {
+            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 
+            'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been'
         }
     
     def clean_sentence_endings(self, text):
         """Remove random dots and ensure proper sentence endings"""
-        # Remove multiple consecutive dots
         text = re.sub(r'\.{2,}', '.', text)
-        # Ensure space after dots
         text = re.sub(r'\.(\w)', r'. \1', text)
-        # Remove dots in the middle of sentences
         text = re.sub(r'(\w)\.(\s+[a-z])', r'\1\2', text)
         return text
     
     def intelligent_word_replacement(self, text):
-        """Grammar-aware word replacement"""
+        """Replace words with fresh synonyms from online sources"""
         words = text.split()
         new_words = []
         
         i = 0
         while i < len(words):
-            word = words[i].lower().strip('.,!?;:"')
             original_word = words[i]
-            
-            # Preserve punctuation
-            punctuation = ''
-            if original_word and not original_word[-1].isalnum():
-                punctuation = original_word[-1]
-                original_word = original_word[:-1]
+            word_clean = original_word.lower().strip('.,!?;:"')
             
             # Skip very short/common words
-            if len(word) <= 2 or word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']:
-                new_words.append(original_word + punctuation)
+            if len(word_clean) <= 2 or word_clean in self.common_words:
+                new_words.append(original_word)
                 i += 1
                 continue
             
-            # Single word replacement with grammar awareness
-            if word in self.replacements and random.random() < 0.7:
-                replacement = random.choice(self.replacements[word])
-                # Preserve capitalization
-                if original_word[0].isupper():
-                    replacement = replacement.capitalize()
-                new_words.append(replacement + punctuation)
+            # Extract punctuation
+            punctuation = ''
+            if original_word and not original_word[-1].isalnum():
+                punctuation = original_word[-1]
+                clean_word = original_word[:-1]
             else:
-                new_words.append(original_word + punctuation)
+                clean_word = original_word
+            
+            # Get fresh synonyms (70% replacement rate)
+            if random.random() < 0.7:
+                synonyms = self.synonym_fetcher.get_fresh_synonyms(word_clean)
+                
+                if synonyms and synonyms[0] != word_clean:
+                    replacement = random.choice(synonyms)
+                    
+                    # Preserve capitalization
+                    if clean_word[0].isupper():
+                        replacement = replacement.capitalize()
+                    
+                    new_words.append(replacement + punctuation)
+                else:
+                    new_words.append(original_word)
+            else:
+                new_words.append(original_word)
             
             i += 1
         
@@ -107,117 +180,65 @@ class GrammarCorrectedRewriter:
     
     def grammar_aware_sentence_restructure(self, text):
         """Restructure sentences with proper grammar"""
-        # Split into sentences properly
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if not sentences:
             return text
         
         restructured = []
         
-        for sentence in sentences:
+        for i, sentence in enumerate(sentences):
             words = sentence.split()
             if len(words) < 4:
                 restructured.append(sentence)
                 continue
             
-            # Choose structure based on sentence length and content
-            if len(words) > 15:
-                # Split long sentences intelligently
-                restructured.extend(self.split_long_sentence(sentence))
-            elif len(words) < 8:
-                # Expand short sentences
-                restructured.append(self.expand_short_sentence(sentence))
+            # Choose different patterns for variety
+            pattern_type = random.choice(['academic', 'emphatic', 'contextual', 'normal', 'comparative'])
+            
+            if pattern_type == 'academic':
+                frames = [
+                    f"Research indicates that {sentence.lower()}",
+                    f"Studies demonstrate that {sentence.lower()}",
+                    f"Evidence suggests that {sentence.lower()}",
+                    f"Analysis reveals that {sentence.lower()}"
+                ]
+                restructured.append(random.choice(frames))
+                
+            elif pattern_type == 'emphatic':
+                frames = [
+                    f"Notably, {sentence.lower()}",
+                    f"Significantly, {sentence.lower()}",
+                    f"Importantly, {sentence.lower()}",
+                    f"Remarkably, {sentence.lower()}"
+                ]
+                restructured.append(random.choice(frames))
+                
+            elif pattern_type == 'contextual':
+                frames = [
+                    f"In this context, {sentence.lower()}",
+                    f"Within this framework, {sentence.lower()}",
+                    f"From this perspective, {sentence.lower()}",
+                    f"Considering these factors, {sentence.lower()}"
+                ]
+                restructured.append(random.choice(frames))
+                
+            elif pattern_type == 'comparative':
+                frames = [
+                    f"Similarly, {sentence.lower()}",
+                    f"Likewise, {sentence.lower()}",
+                    f"By comparison, {sentence.lower()}",
+                    f"In contrast, {sentence.lower()}"
+                ]
+                restructured.append(random.choice(frames))
+                
             else:
-                # Restructure medium sentences
-                restructured.append(self.restructure_medium_sentence(sentence))
+                restructured.append(sentence)
         
-        # Join with proper punctuation
         result = '. '.join(restructured) + '.' if restructured else ''
         return self.clean_sentence_endings(result)
     
-    def split_long_sentence(self, sentence):
-        """Intelligently split long sentences at natural break points"""
-        words = sentence.split()
-        connectors = ['and', 'but', 'however', 'therefore', 'moreover', 'furthermore', 'although', 'while']
-        split_points = []
-        
-        # Find natural split points
-        for i, word in enumerate(words):
-            if word.lower() in connectors and 4 < i < len(words) - 4:
-                split_points.append(i)
-        
-        if split_points:
-            split_at = random.choice(split_points)
-            part1 = ' '.join(words[:split_at])
-            part2 = ' '.join(words[split_at:])
-            # Ensure part2 starts with proper capitalization
-            part2 = part2[0].upper() + part2[1:] if part2 else part2
-            return [part1 + '.', part2]
-        else:
-            # Fallback: split at relative clause or comma
-            return [sentence]
-    
-    def expand_short_sentence(self, sentence):
-        """Expand short sentences with additional context"""
-        expansions = [
-            "Research indicates that",
-            "Studies demonstrate that", 
-            "Evidence suggests that",
-            "It is evident that",
-            "One can observe that",
-            "Analysis reveals that",
-            "Findings show that"
-        ]
-        
-        # Ensure the expanded sentence flows naturally
-        base_sentence = sentence.lower()
-        if base_sentence.startswith(('the ', 'a ', 'an ')):
-            base_sentence = base_sentence
-        else:
-            base_sentence = base_sentence
-        
-        expanded = f"{random.choice(expansions)} {base_sentence}"
-        return expanded[0].upper() + expanded[1:]
-    
-    def restructure_medium_sentence(self, sentence):
-        """Restructure medium-length sentences with varied patterns"""
-        words = sentence.split()
-        pattern_choice = random.choice(['passive', 'active', 'emphatic', 'conditional'])
-        
-        if pattern_choice == 'passive' and len(words) > 6:
-            # Convert to passive voice where appropriate
-            return self.convert_to_passive(sentence)
-        elif pattern_choice == 'emphatic':
-            # Add emphasis
-            emphatic_words = ['Notably,', 'Significantly,', 'Importantly,', 'Remarkably,']
-            return f"{random.choice(emphatic_words)} {sentence.lower()}"
-        elif pattern_choice == 'conditional':
-            # Add conditional framing
-            conditionals = ['When considered,', 'In this context,', 'From this perspective,']
-            return f"{random.choice(conditionals)} {sentence.lower()}"
-        else:
-            return sentence
-    
-    def convert_to_passive(self, sentence):
-        """Simple passive voice conversion for common patterns"""
-        words = sentence.split()
-        if len(words) >= 3:
-            # Simple pattern: "A does B" -> "B is done by A"
-            if words[1].endswith('s') and len(words) >= 3:  # Simple present tense detection
-                subject = words[0]
-                verb = words[1]
-                rest = ' '.join(words[2:])
-                
-                # Convert verb to past participle
-                verb_base = verb[:-1] if verb.endswith('s') else verb
-                past_participle = verb_base + 'ed'  # Simple conversion
-                
-                return f"{rest} is {past_participle} by {subject}".capitalize()
-        
-        return sentence
-    
     def vary_sentence_lengths(self, text):
-        """Ensure sentences have different word counts while preserving meaning"""
+        """Ensure sentences have different word counts"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if len(sentences) < 2:
             return text
@@ -228,36 +249,62 @@ class GrammarCorrectedRewriter:
             words = sentence.split()
             current_length = len(words)
             
-            # Vary sentence lengths strategically
-            if current_length > 20:
-                # Split very long sentences
-                split_sentences = self.split_long_sentence(sentence)
+            # Strategic length variation
+            if current_length > 18:
+                split_sentences = self.split_intelligently(sentence)
                 processed_sentences.extend(split_sentences)
             elif current_length < 6:
-                # Expand very short sentences
-                processed_sentences.append(self.expand_short_sentence(sentence))
+                processed_sentences.append(self.expand_sentence(sentence))
             else:
-                # Moderate adjustment for medium sentences
-                if i % 2 == 0 and current_length > 8:
-                    # Make every other medium sentence slightly shorter
-                    if len(words) > 10:
-                        processed_sentences.append(' '.join(words[:8]) + '...')
-                    else:
-                        processed_sentences.append(sentence)
+                if i % 3 == 0 and current_length > 10:
+                    processed_sentences.append(' '.join(words[:8]) + '...')
                 else:
                     processed_sentences.append(sentence)
         
         result = '. '.join(processed_sentences) + '.' if processed_sentences else ''
         return self.clean_sentence_endings(result)
     
+    def split_intelligently(self, sentence):
+        """Split long sentences at natural break points"""
+        words = sentence.split()
+        connectors = ['and', 'but', 'however', 'therefore', 'moreover', 'although', 'while', 'because']
+        split_points = []
+        
+        for i, word in enumerate(words):
+            if word.lower() in connectors and 5 < i < len(words) - 5:
+                split_points.append(i)
+        
+        if split_points:
+            split_at = random.choice(split_points)
+            part1 = ' '.join(words[:split_at])
+            part2 = ' '.join(words[split_at:])
+            part2 = part2[0].upper() + part2[1:] if part2 else part2
+            return [part1 + '.', part2]
+        else:
+            return [sentence]
+    
+    def expand_sentence(self, sentence):
+        """Expand short sentences"""
+        expansions = [
+            "It is evident that",
+            "Research shows that",
+            "Studies indicate that",
+            "One can observe that",
+            "Analysis demonstrates that"
+        ]
+        
+        base_sentence = sentence.lower()
+        expanded = f"{random.choice(expansions)} {base_sentence}"
+        return expanded[0].upper() + expanded[1:]
+    
     def ensure_grammar_flow(self, text):
         """Final grammar and flow check"""
         # Fix common grammar issues
-        text = re.sub(r'\s+([.,!?])', r'\1', text)  # Remove spaces before punctuation
-        text = re.sub(r'\.\s*\.', '.', text)  # Remove consecutive dots
-        text = re.sub(r',\s*,', ',', text)  # Remove consecutive commas
+        text = re.sub(r'\s+([.,!?])', r'\1', text)
+        text = re.sub(r'\.\s*\.', '.', text)
+        text = re.sub(r',\s*,', ',', text)
         
-        # Ensure proper capitalization after sentence endings
+        # Ensure proper capitalization
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         corrected_sentences = []
         
@@ -269,24 +316,28 @@ class GrammarCorrectedRewriter:
         result = '. '.join(corrected_sentences) + '.' if corrected_sentences else ''
         return result
 
-# Initialize the grammar-corrected rewriter
-grammar_rewriter = GrammarCorrectedRewriter()
+# =========================
+# MAIN BACKEND FUNCTIONS
+# =========================
+
+# Initialize the dynamic rewriter
+dynamic_rewriter = DynamicRewriter()
 
 def extreme_rewriter(original_text):
-    """Grammar-corrected extreme rewriting"""
+    """Main rewriting function - call this from your frontend"""
     clean_text = original_text.strip().strip('"').strip("'")
     
-    # Apply transformations in logical order
+    # Apply transformations
     result = clean_text
-    result = grammar_rewriter.intelligent_word_replacement(result)
-    result = grammar_rewriter.grammar_aware_sentence_restructure(result)
-    result = grammar_rewriter.vary_sentence_lengths(result)
-    result = grammar_rewriter.ensure_grammar_flow(result)
+    result = dynamic_rewriter.intelligent_word_replacement(result)
+    result = dynamic_rewriter.grammar_aware_sentence_restructure(result)
+    result = dynamic_rewriter.vary_sentence_lengths(result)
+    result = dynamic_rewriter.ensure_grammar_flow(result)
     
     return result
 
 def calculate_similarity(original, rewritten):
-    """Calculate text similarity"""
+    """Calculate text similarity - keep this function"""
     original_words = set(re.findall(r'\b\w+\b', original.lower()))
     rewritten_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
     common_words = original_words.intersection(rewritten_words)
@@ -298,7 +349,7 @@ def calculate_similarity(original, rewritten):
     return similarity
 
 def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
-    """Keep generating until similarity is below threshold"""
+    """Keep generating until similarity is below threshold - keep this function"""
     best_result = None
     best_similarity = 100
     
@@ -312,9 +363,11 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
             
         if similarity <= max_similarity:
             return rewritten, similarity
+        
+        # Small delay to avoid rate limiting
+        time.sleep(0.3)
     
     return best_result, best_similarity
-
 
 # =========================
 # FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
