@@ -24,7 +24,7 @@ class UniversalExtremeRewriter:
             'result': ['outcome', 'finding', 'conclusion', 'product'],
             'show': ['demonstrate', 'reveal', 'illustrate', 'indicate', 'display'],
             'prove': ['substantiate', 'verify', 'confirm', 'validate'],
-            'suggest': ['indicate', 'imply', 'propose', 'point to'],
+            'suggest': ['indicate', 'imply', 'propose', 'point to'] }
             
            synonyms = {
     # your original core
