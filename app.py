@@ -24,9 +24,8 @@ class UniversalExtremeRewriter:
             'result': ['outcome', 'finding', 'conclusion', 'product'],
             'show': ['demonstrate', 'reveal', 'illustrate', 'indicate', 'display'],
             'prove': ['substantiate', 'verify', 'confirm', 'validate'],
-            'suggest': ['indicate', 'imply', 'propose', 'point to'] }
-            
-           synonyms = {
+            'suggest': ['indicate', 'imply', 'propose', 'point to'],
+       
     # your original core
     'research': ['scholarly investigation', 'academic inquiry', 'systematic study', 'empirical exploration'],
     'study': ['examination', 'analysis', 'investigation', 'scrutiny', 'assessment'],
