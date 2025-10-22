@@ -26,7 +26,6 @@ class UniversalExtremeRewriter:
             'prove': ['substantiate', 'verify', 'confirm', 'validate'],
             'suggest': ['indicate', 'imply', 'propose', 'point to'],
  
-ai_writing_synonyms = {
     # Overused AI introductory phrases
     'Certainly!': ['Of course', 'Absolutely', 'I\'d be happy to', 'Gladly', 'Yes'],
     'Here are': ['Below are', 'You\'ll find', 'I\'ve compiled', 'Consider these', 'Take a look at'],
