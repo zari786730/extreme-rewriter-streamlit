@@ -18,40 +18,59 @@ st.write("✓ General words loaded:", len(general_words))
 st.write("✓ Grammar corrector loaded")
 
 # =========================
-# SIMPLE SYNOYM FETCHER - GUARANTEED WORKING
+# AGGRESSIVE SYNONYM FINDER
 # =========================
-class SimpleSynonymFinder:
+class AggressiveSynonymFinder:
     def __init__(self):
         self.cache = {}
+        # EXPANDED FALLBACK SYNONYMS
         self.fallback_synonyms = {
-            'research': ['study', 'investigation', 'analysis', 'examination'],
-            'study': ['research', 'analysis', 'investigation', 'examination'],
-            'analysis': ['examination', 'evaluation', 'assessment', 'study'],
-            'data': ['information', 'facts', 'statistics', 'findings'],
-            'method': ['approach', 'technique', 'procedure', 'strategy'],
-            'result': ['outcome', 'finding', 'conclusion', 'product'],
-            'show': ['demonstrate', 'reveal', 'indicate', 'display'],
-            'important': ['significant', 'crucial', 'vital', 'essential'],
-            'use': ['utilize', 'employ', 'apply', 'implement'],
-            'create': ['generate', 'produce', 'develop', 'make'],
-            'help': ['assist', 'aid', 'support', 'facilitate'],
-            'understand': ['comprehend', 'grasp', 'apprehend', 'fathom'],
-            'change': ['modify', 'alter', 'adjust', 'transform'],
-            'problem': ['issue', 'challenge', 'difficulty', 'obstacle'],
-            'solution': ['resolution', 'answer', 'remedy', 'fix']
+            'research': ['investigation', 'inquiry', 'exploration', 'examination', 'scrutiny', 'analysis'],
+            'study': ['examination', 'analysis', 'scrutiny', 'survey', 'research', 'investigation'],
+            'analysis': ['examination', 'evaluation', 'assessment', 'interpretation', 'appraisal', 'scrutiny'],
+            'data': ['information', 'facts', 'statistics', 'figures', 'details', 'findings'],
+            'method': ['approach', 'technique', 'procedure', 'process', 'system', 'strategy'],
+            'result': ['outcome', 'finding', 'conclusion', 'product', 'effect', 'consequence'],
+            'show': ['demonstrate', 'reveal', 'indicate', 'display', 'exhibit', 'illustrate'],
+            'important': ['significant', 'crucial', 'vital', 'essential', 'critical', 'paramount'],
+            'use': ['utilize', 'employ', 'apply', 'implement', 'exercise', 'operate'],
+            'create': ['generate', 'produce', 'develop', 'make', 'construct', 'formulate'],
+            'help': ['assist', 'aid', 'support', 'facilitate', 'enable', 'guide'],
+            'understand': ['comprehend', 'grasp', 'apprehend', 'fathom', 'discern', 'perceive'],
+            'change': ['modify', 'alter', 'adjust', 'transform', 'convert', 'adapt'],
+            'problem': ['issue', 'challenge', 'difficulty', 'obstacle', 'complication', 'dilemma'],
+            'solution': ['resolution', 'answer', 'remedy', 'fix', 'approach', 'method'],
+            'this': ['the present', 'the current', 'the existing', 'this particular'],
+            'that': ['which', 'the aforementioned', 'the specified', 'the particular'],
+            'these': ['the present', 'the current', 'the existing', 'these particular'],
+            'those': ['the aforementioned', 'the specified', 'the particular', 'those specific'],
+            'very': ['extremely', 'highly', 'exceptionally', 'remarkably', 'particularly'],
+            'many': ['numerous', 'multiple', 'several', 'various', 'countless'],
+            'some': ['certain', 'various', 'several', 'select', 'particular'],
+            'more': ['additional', 'further', 'extra', 'supplementary', 'increased'],
+            'most': ['majority', 'bulk', 'predominance', 'largest portion'],
+            'all': ['every', 'each', 'entire', 'complete', 'total', 'whole'],
+            'has': ['possesses', 'contains', 'includes', 'comprises', 'incorporates'],
+            'have': ['possess', 'contain', 'include', 'comprise', 'incorporate'],
+            'is': ['represents', 'constitutes', 'forms', 'comprises', 'equals'],
+            'are': ['represent', 'constitute', 'form', 'comprise', 'equal'],
+            'was': ['represented', 'constituted', 'formed', 'comprised', 'equaled'],
+            'were': ['represented', 'constituted', 'formed', 'comprised', 'equaled'],
+            'be': ['exist', 'occur', 'transpire', 'materialize', 'manifest'],
+            'been': ['existed', 'occurred', 'transpired', 'materialized', 'manifested'],
+            'being': ['existing', 'occurring', 'transpiring', 'materializing', 'manifesting']
         }
     
     def get_synonyms(self, word):
-        """Simple synonym fetcher with guaranteed fallback"""
+        """Get aggressive synonyms"""
         word = word.lower().strip()
         
-        # Check cache first
         if word in self.cache:
             return self.cache[word]
         
         # Try online API
         try:
-            response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=3)
+            response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=2)
             if response.status_code == 200:
                 data = response.json()
                 synonyms = []
@@ -60,33 +79,30 @@ class SimpleSynonymFinder:
                         synonyms.extend(definition.get('synonyms', []))
                 
                 if synonyms:
-                    unique_synonyms = list(set(synonyms))[:4]
+                    unique_synonyms = list(set(synonyms))[:6]
                     self.cache[word] = unique_synonyms
-                    st.write(f"🌐 Fetched synonyms for: {word}")
                     return unique_synonyms
         except:
             pass
         
-        # Use fallback synonyms
+        # Use aggressive fallback
         if word in self.fallback_synonyms:
-            self.cache[word] = self.fallback_synonyms[word]
-            st.write(f"📚 Used fallback synonyms for: {word}")
             return self.fallback_synonyms[word]
         
         return []
 
 # =========================
-# SIMPLE REWRITER CLASS - GUARANTEED WORKING
+# AGGRESSIVE REWRITER CLASS
 # =========================
-class UniversalExtremeRewriter:
+class AggressiveRewriter:
     def __init__(self):
-        self.synonym_finder = SimpleSynonymFinder()
+        self.synonym_finder = AggressiveSynonymFinder()
         self.replacements = {}
         self.setup_vocabulary()
-        st.write("✅ Rewriter ready - synonym system active")
+        st.write("🚀 AGGRESSIVE rewriter activated!")
 
     def setup_vocabulary(self):
-        """Setup vocabulary with your existing words"""
+        """Setup vocabulary"""
         # Add health terms
         for word, replacement in health_terms.items():
             self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
@@ -95,10 +111,10 @@ class UniversalExtremeRewriter:
         for word, replacement in general_words.items():
             self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
         
-        st.write(f"📚 Loaded {len(self.replacements)} words from dictionaries")
+        st.write(f"📚 Loaded {len(self.replacements)} base words")
 
-    def intelligent_word_replacement(self, text):
-        """SIMPLE word replacement that actually works"""
+    def aggressive_word_replacement(self, text):
+        """VERY AGGRESSIVE word replacement - 90% replacement rate"""
         if not text:
             return text
             
@@ -109,67 +125,93 @@ class UniversalExtremeRewriter:
             original_word = word
             clean_word = word.lower().strip('.,!?;:"')
             
-            # Skip short/common words
-            if len(clean_word) <= 2 or clean_word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at']:
+            # Skip only VERY short words
+            if len(clean_word) <= 1:
                 new_words.append(original_word)
                 continue
             
-            # Check if word is in replacements
-            if clean_word in self.replacements:
-                replacement = random.choice(self.replacements[clean_word])
-                if word[0].isupper():
-                    replacement = replacement.capitalize()
-                new_words.append(replacement)
-                continue
-            
-            # If not in vocabulary, try to find synonyms
-            synonyms = self.synonym_finder.get_synonyms(clean_word)
-            if synonyms:
-                self.replacements[clean_word] = synonyms
-                replacement = random.choice(synonyms)
-                if word[0].isupper():
-                    replacement = replacement.capitalize()
-                new_words.append(replacement)
+            # 90% CHANCE OF REPLACEMENT for most words
+            if random.random() < 0.9:
+                # Check if word is in replacements
+                if clean_word in self.replacements:
+                    replacement = random.choice(self.replacements[clean_word])
+                    if word[0].isupper():
+                        replacement = replacement.capitalize()
+                    new_words.append(replacement)
+                    continue
+                
+                # If not in vocabulary, try to find synonyms
+                synonyms = self.synonym_finder.get_synonyms(clean_word)
+                if synonyms:
+                    self.replacements[clean_word] = synonyms
+                    replacement = random.choice(synonyms)
+                    if word[0].isupper():
+                        replacement = replacement.capitalize()
+                    new_words.append(replacement)
+                else:
+                    new_words.append(original_word)
             else:
                 new_words.append(original_word)
         
         return ' '.join(new_words)
 
-    def varied_sentence_restructure(self, text):
-        """Simple sentence restructuring"""
+    def restructure_sentences(self, text):
+        """Aggressive sentence restructuring"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if len(sentences) <= 1:
             return text
-            
-        # Just shuffle sentences for simplicity
+        
+        # Shuffle sentences
         random.shuffle(sentences)
-        return '. '.join(sentences) + '.'
+        
+        # Add variety to sentence starts
+        starters = [
+            "Research indicates that", "Studies demonstrate that", "Evidence suggests that",
+            "Analysis reveals that", "Findings show that", "Data illustrates that",
+            "It is evident that", "One can observe that", "The evidence indicates that"
+        ]
+        
+        restructured = []
+        for i, sentence in enumerate(sentences):
+            if i == 0 and random.random() < 0.7:
+                sentence = random.choice(starters) + " " + sentence.lower()
+            restructured.append(sentence)
+        
+        return '. '.join(restructured) + '.'
 
-    def smart_length_manipulation(self, text):
-        """Simple length adjustment"""
-        return text  # Skip complex manipulation for now
+    def change_sentence_structure(self, text):
+        """Change sentence structure aggressively"""
+        # Add prefixes
+        prefixes = [
+            "From this perspective,", "In this context,", "Within this framework,",
+            "Considering these factors,", "Based on the evidence,", "According to the data,"
+        ]
+        
+        if random.random() < 0.6:
+            text = random.choice(prefixes) + " " + text.lower()
+        
+        return text
 
-    def add_natural_variation(self, text):
-        """Simple variation"""
-        return text  # Skip for now
-
-# Initialize the rewriter
-universal_rewriter = UniversalExtremeRewriter()
+# Initialize the AGGRESSIVE rewriter
+aggressive_rewriter = AggressiveRewriter()
 
 def extreme_rewriter(original_text):
-    """Simple rewriting that actually works"""
+    """AGGRESSIVE rewriting that actually changes text"""
     if not original_text:
         return original_text
         
     clean_text = original_text.strip()
     
-    # Apply word replacement first
-    result = universal_rewriter.intelligent_word_replacement(clean_text)
+    # Apply AGGRESSIVE word replacement
+    result = aggressive_rewriter.aggressive_word_replacement(clean_text)
     
-    # Then sentence restructuring
-    result = universal_rewriter.varied_sentence_restructure(result)
+    # Apply sentence restructuring
+    result = aggressive_rewriter.restructure_sentences(result)
     
-    # Finally grammar correction
+    # Change sentence structure
+    result = aggressive_rewriter.change_sentence_structure(result)
+    
+    # Final grammar correction
     result = correct_grammar(result)
     
     return result
@@ -186,8 +228,8 @@ def calculate_similarity(original, rewritten):
     similarity = len(common_words) / len(original_words) * 100
     return similarity
 
-def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5):
-    """Keep generating until similarity is below threshold"""
+def guarantee_low_similarity(original_text, max_similarity=15, max_attempts=8):
+    """Keep generating until similarity is very low"""
     best_result = original_text
     best_similarity = 100
 
@@ -203,34 +245,6 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5):
             return rewritten, similarity
 
     return best_result, best_similarity
-
-# =========================
-# SIMPLE STREAMLIT UI
-# =========================
-st.title("🔁 Text Rewriter")
-st.write("Working synonym-based text rewriting")
-
-text_input = st.text_area("Enter text to rewrite:", height=150, value="This research shows important results that help understand complex problems.")
-
-if st.button("Rewrite Text"):
-    if text_input:
-        with st.spinner("Rewriting..."):
-            rewritten, similarity = guarantee_low_similarity(text_input)
-            
-            st.subheader("Original:")
-            st.write(text_input)
-            
-            st.subheader("Rewritten:")
-            st.write(rewritten)
-            
-            st.subheader("Similarity:")
-            st.write(f"{similarity:.1f}%")
-    else:
-        st.error("Please enter some text")
-
-
-
-
 
 
 # =========================
