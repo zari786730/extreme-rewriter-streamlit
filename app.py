@@ -441,6 +441,10 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
 
     return best_result, best_similarity
 
+
+
+
+
 # =========================
 # FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
 # =========================
