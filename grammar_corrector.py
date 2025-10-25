@@ -1,130 +1,127 @@
 import re
 
-class IntelligentGrammarCorrector:
+class SuperGrammarCorrector:
     def __init__(self):
-        self.grammar_rules = self.setup_grammar_rules()
-        self.common_errors = self.setup_common_errors()
+        self.sentence_starters_to_remove = [
+            'Interestingly,', 'Significantly,', 'Similarly,', 'Accordingly,', 
+            'Consequently,', 'Moreover,', 'Therefore,', 'Notably,', 'Remarkably,',
+            'In conclusion,', 'For example,', 'What explains', 'Why is it meaningful that',
+            'revealing how', 'which highlights', 'thereby illustrating'
+        ]
 
-    def setup_grammar_rules(self):
-        return {
-            r'^([a-z])': lambda m: m.group(1).upper(),
-            r'([.!?]\s+)([a-z])': lambda m: m.group(1) + m.group(2).upper(),
-            r',\s*,': ',', r'\.\s*\.': '.', r'\s+\.': '.', r'\s+,': ',',
-            r',\s*\.': '.', r';\s*;': ';', r'\s{2,}': ' ',
-            r'\s+([.,!?;])': r'\1', r'([.,!?;])([A-Za-z])': r'\1 \2',
-        }
+    def aggressive_sentence_repair(self, text):
+        """Extremely aggressive sentence fixing"""
+        if not text:
+            return text
 
-    def setup_common_errors(self):
-        return {
-            r'\bi\s': 'I ', r'\bit\'s\b': 'its', r'\bthey\'re\b': 'their',
-            r'\byour\b': 'you\'re', r'\btheir\b': 'they\'re', r'\bits\b': 'it\'s',
-            r'\bwhere\s+it\s+has\b': 'where it has',  # Fix broken phrases
-        }
+        # Step 1: Remove ALL problematic sentence starters
+        for starter in self.sentence_starters_to_remove:
+            text = text.replace(starter, '')
+            text = text.replace(starter.lower(), '')
+            text = text.replace(starter.upper(), '')
 
-    def fix_broken_sentences(self, text):
-        """Fix the specific broken sentences your rewriter creates"""
-        # Fix random words at start of sentences
-        text = re.sub(r'(Significantly, |Interestingly |Similarly |Accordingly |Consequently |Moreover |Therefore, |Notably |Remarkably, )+', '', text)
+        # Step 2: Fix broken sentence patterns
+        text = re.sub(r'\.\s*([A-Z][a-z]*)\s+to\s+', r', \1 to ', text)  # ". Biofuels to" -> ", biofuels to"
+        text = re.sub(r'\.\s+And\s+', r', and ', text)  # ". And " -> ", and "
+        text = re.sub(r'\.\s+Plays\s+', r', plays ', text)  # ". Plays " -> ", plays "
+        text = re.sub(r'\.\s+Yields\s+', r', yielding ', text)  # ". Yields " -> ", yielding "
         
-        # Fix "and" at start of sentences
-        text = re.sub(r'\. And ', '. ', text)
+        # Step 3: Fix random capitalized words mid-sentence
+        text = re.sub(r',\s+([A-Z][a-z]+)\s+', lambda m: ', ' + m.group(1).lower() + ' ', text)
         
-        # Fix sentence fragments that start with lowercase
-        text = re.sub(r'\. ([a-z])', lambda m: '. ' + m.group(1).upper(), text)
-        
-        # Fix random phrases in middle of sentences
-        text = re.sub(r', (revealing how|Methods|Similarly|Accordingly|Consequently|Moreover)', ',', text)
+        # Step 4: Remove duplicate "thereby" phrases
+        text = re.sub(r', thereby illustrating.*?, thereby', ', thereby', text)
         
         return text
 
-    def fix_sentence_structure(self, text):
-        """Fix overall sentence structure"""
-        # Split into sentences
-        sentences = re.split(r'[.!?]+', text)
-        corrected_sentences = []
+    def fix_pronouns_and_contractions(self, text):
+        """Fix it's/its, they're/their etc."""
+        fixes = {
+            r'\bit\'s\b': 'its',
+            r'\bthey\'re\b': 'their', 
+            r'\bwhere\s+it\s+has\b': 'where it has',
+            r'\bregardless of it\'s\b': 'despite its',
+            r'\bdespite it\'s\b': 'despite its',
+        }
         
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if not sentence:
-                continue
-                
-            words = sentence.split()
-            if len(words) < 4:  # Too short, merge with next or previous
-                continue
-                
-            # Capitalize first word
-            if words and words[0][0].islower():
-                words[0] = words[0].capitalize()
-                
-            corrected_sentences.append(' '.join(words))
-        
-        # Join with proper punctuation
-        result = '. '.join(corrected_sentences)
-        if result and not result.endswith('.'):
-            result += '.'
+        for error, correction in fixes.items():
+            text = re.sub(error, correction, text, flags=re.IGNORECASE)
             
-        return result
+        return text
 
-    def remove_repetitive_patterns(self, text):
-        """Remove repetitive sentence starters"""
-        patterns = [
-            r'Significantly, ',
-            r'Interestingly, ',
-            r'Similarly, ',
-            r'Accordingly, ',
-            r'Consequently, ',
-            r'Moreover, ',
-            r'Therefore, ',
-            r'Notably, ',
-            r'Remarkably, ',
-            r'In conclusion, ',
-            r'For example, ',
+    def rebuild_sentences(self, text):
+        """Completely rebuild broken sentences"""
+        # Split by periods but keep the content
+        parts = re.split(r'[.!?]+', text)
+        valid_sentences = []
+        
+        for part in parts:
+            part = part.strip()
+            words = part.split()
+            
+            # Only keep reasonable sentences (4+ words, makes sense)
+            if len(words) >= 4 and not any(word in ['what', 'why', 'how'] for word in words[:2]):
+                # Capitalize first letter
+                if words and words[0][0].islower():
+                    words[0] = words[0].capitalize()
+                valid_sentences.append(' '.join(words))
+        
+        # Rebuild text with proper punctuation
+        if valid_sentences:
+            text = '. '.join(valid_sentences) + '.'
+        else:
+            text = text[0].upper() + text[1:] if text else text
+            
+        return text
+
+    def remove_garbage_phrases(self, text):
+        """Remove nonsensical phrases"""
+        garbage_phrases = [
+            r'which highlights to clean up pollutants',
+            r'revealing how where it has revolutionized',
+            r'what explains and environmental',
+            r'why is it meaningful that and the potential',
         ]
         
-        for pattern in patterns:
-            # Remove if it appears more than once in close proximity
-            text = re.sub(f'({pattern})+', '', text)
+        for phrase in garbage_phrases:
+            text = text.replace(phrase, '')
             
         return text
 
-    def enhanced_grammar_correction(self, text):
-        """Comprehensive grammar correction for rewriter output"""
+    def correct_grammar_aggressive(self, text):
+        """Super aggressive grammar correction"""
         if not text or len(text.strip()) < 10:
             return text
 
-        # Step 1: Fix broken sentences from rewriter
-        text = self.fix_broken_sentences(text)
+        # Step 1: Remove garbage phrases
+        text = self.remove_garbage_phrases(text)
         
-        # Step 2: Remove repetitive patterns
-        text = self.remove_repetitive_patterns(text)
+        # Step 2: Aggressive sentence repair
+        text = self.aggressive_sentence_repair(text)
         
-        # Step 3: Fix basic grammar rules
-        for pattern, replacement in self.grammar_rules.items():
-            if callable(replacement):
-                text = re.sub(pattern, replacement, text)
-            else:
-                text = re.sub(pattern, replacement, text)
-
-        # Step 4: Fix common errors
-        for error, correction in self.common_errors.items():
-            text = re.sub(error, correction, text, flags=re.IGNORECASE)
-
-        # Step 5: Fix overall sentence structure
-        text = self.fix_sentence_structure(text)
-
-        # Step 6: Final cleanup
-        text = re.sub(r'\s+', ' ', text).strip()
-        text = re.sub(r'\.\s*\.', '.', text)  # Remove double periods
+        # Step 3: Fix pronouns
+        text = self.fix_pronouns_and_contractions(text)
         
-        # Ensure proper ending
-        if text and not text.endswith(('.', '!', '?')):
+        # Step 4: Rebuild sentences completely
+        text = self.rebuild_sentences(text)
+        
+        # Step 5: Final cleanup
+        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r',\s*,', ',', text)
+        text = re.sub(r'\.\s*\.', '.', text)
+        text = text.strip()
+        
+        # Ensure proper start and end
+        if text and text[0].islower():
+            text = text[0].upper() + text[1:]
+        if text and not text.endswith('.'):
             text += '.'
             
         return text
 
 # Create global instance
-grammar_corrector = IntelligentGrammarCorrector()
+grammar_corrector = SuperGrammarCorrector()
 
 def correct_grammar(text):
     """Simple function to correct grammar"""
-    return grammar_corrector.enhanced_grammar_correction(text)
+    return grammar_corrector.correct_grammar_aggressive(text)
