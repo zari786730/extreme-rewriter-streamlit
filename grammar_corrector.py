@@ -205,3 +205,51 @@ grammar_corrector = IntelligentGrammarCorrector()
 def correct_grammar(text):
     """Simple function to correct grammar"""
     return grammar_corrector.intelligent_grammar_correction(text)
+
+
+
+
+
+
+
+
+
+
+
+def enhanced_grammar_correction(self, text):
+    """More comprehensive grammar correction"""
+    if not text or len(text.strip()) < 10:
+        return text
+    
+    # Step 1: Fix basic grammar rules
+    for pattern, replacement in self.grammar_rules.items():
+        if callable(replacement):
+            text = re.sub(pattern, replacement, text)
+        else:
+            text = re.sub(pattern, replacement, text)
+    
+    # Step 2: Fix common errors
+    for error, correction in self.common_errors.items():
+        text = re.sub(error, correction, text, flags=re.IGNORECASE)
+    
+    # Step 3: Fix sentence fragments
+    text = self.fix_sentence_fragments(text)
+    
+    # Step 4: Fix comma overuse
+    text = self.fix_comma_overuse(text)
+    
+    # Step 5: Fix missing spaces after punctuation
+    text = re.sub(r'([.!?])([A-Za-z])', r'\1 \2', text)
+    
+    # Step 6: Ensure proper sentence endings
+    if not text.endswith(('.', '!', '?')):
+        text = text + '.'
+    
+    # Step 7: Final cleanup
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    return text
+
+# Update the correct_grammar function to use enhanced version
+def correct_grammar(text):
+    return grammar_corrector.enhanced_grammar_correction(text)
