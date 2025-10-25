@@ -1299,7 +1299,7 @@ general_words = { # Computer Science & Artificial Intelligence
     'prognosis': ['forecast', 'outlook', 'prediction', 'projection'],
     'remission': ['improvement', 'abatement', 'subsidence', 'respite'],
     'symptomatic': ['indicative', 'characteristic', 'suggestive', 'typical'],
-    'vaccination': ['immunization', 'inoculation', 'shot', 'jab'],
+    'vaccination': ['immunization', 'inoculation', 'shot', 'jab']}
 
 
 
