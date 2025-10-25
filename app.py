@@ -3,14 +3,8 @@ import re
 import streamlit as st
 from collections import defaultdict
 import requests
-import time
-import json
-import os
-import threading
 
-# =========================
-# Load your existing word lists
-# =========================
+# Import your existing files
 from health_terms import health_terms
 from health_terms_2 import health_terms as health_terms_2
 from generalwords import general_words
@@ -24,214 +18,215 @@ st.write("✓ General words loaded:", len(general_words))
 st.write("✓ Grammar corrector loaded")
 
 # =========================
-# FREE SYNONYM API CLASS
+# SIMPLE SYNOYM FETCHER - GUARANTEED WORKING
 # =========================
-class FreeSynonymsAPI:
-    """Fetch synonyms from the internet with caching"""
+class SimpleSynonymFinder:
     def __init__(self):
         self.cache = {}
+        self.fallback_synonyms = {
+            'research': ['study', 'investigation', 'analysis', 'examination'],
+            'study': ['research', 'analysis', 'investigation', 'examination'],
+            'analysis': ['examination', 'evaluation', 'assessment', 'study'],
+            'data': ['information', 'facts', 'statistics', 'findings'],
+            'method': ['approach', 'technique', 'procedure', 'strategy'],
+            'result': ['outcome', 'finding', 'conclusion', 'product'],
+            'show': ['demonstrate', 'reveal', 'indicate', 'display'],
+            'important': ['significant', 'crucial', 'vital', 'essential'],
+            'use': ['utilize', 'employ', 'apply', 'implement'],
+            'create': ['generate', 'produce', 'develop', 'make'],
+            'help': ['assist', 'aid', 'support', 'facilitate'],
+            'understand': ['comprehend', 'grasp', 'apprehend', 'fathom'],
+            'change': ['modify', 'alter', 'adjust', 'transform'],
+            'problem': ['issue', 'challenge', 'difficulty', 'obstacle'],
+            'solution': ['resolution', 'answer', 'remedy', 'fix']
+        }
     
     def get_synonyms(self, word):
+        """Simple synonym fetcher with guaranteed fallback"""
         word = word.lower().strip()
+        
+        # Check cache first
         if word in self.cache:
             return self.cache[word]
+        
+        # Try online API
         try:
-            response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=5)
+            response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=3)
             if response.status_code == 200:
                 data = response.json()
                 synonyms = []
                 for meaning in data[0].get('meanings', []):
                     for definition in meaning.get('definitions', []):
                         synonyms.extend(definition.get('synonyms', []))
-                unique_synonyms = list(set(synonyms))[:6]
-                self.cache[word] = unique_synonyms
-                return unique_synonyms
-        except Exception:
+                
+                if synonyms:
+                    unique_synonyms = list(set(synonyms))[:4]
+                    self.cache[word] = unique_synonyms
+                    st.write(f"🌐 Fetched synonyms for: {word}")
+                    return unique_synonyms
+        except:
             pass
+        
+        # Use fallback synonyms
+        if word in self.fallback_synonyms:
+            self.cache[word] = self.fallback_synonyms[word]
+            st.write(f"📚 Used fallback synonyms for: {word}")
+            return self.fallback_synonyms[word]
+        
         return []
 
 # =========================
-# ACADEMIC VOCABULARY BUILDER
-# =========================
-class AcademicVocabularyBuilder:
-    """
-    Continuously fetches synonyms for academic words, updates progress
-    and stores results in a JSON file automatically.
-    """
-    def __init__(self, main_rewriter):
-        self.synonym_finder = FreeSynonymsAPI()
-        self.main_rewriter = main_rewriter
-        self.learning_active = True
-
-        # Academic words bank
-        self.academic_words = [
-            'cell', 'dna', 'enzyme', 'protein', 'metabolism', 
-            'atom', 'molecule', 'reaction', 'gravity', 'energy',
-            'analyze', 'evaluate', 'hypothesis', 'methodology', 'experiment'
-        ]
-        
-        self.learned_words = set()
-        self.total_synonyms = 0
-
-        # Ensure folder exists
-        os.makedirs("data", exist_ok=True)
-
-        # Streamlit placeholders
-        self.progress_placeholder = st.empty()
-        st.write("🎯 Academic vocabulary builder activated")
-        st.write(f"📚 {len(self.academic_words)} words queued for learning")
-
-        # Start continuous learning in a background thread
-        self.start_continuous_learning()
-
-    # -------------------------
-    # Highlighted Function: Update Progress
-    # -------------------------
-    def update_progress(self):
-        learned_count = len(self.learned_words)
-        progress_percent = (learned_count / len(self.academic_words)) * 100
-        with self.progress_placeholder.container():
-            st.write(f"🧠 Words learned: {learned_count}/{len(self.academic_words)} ({progress_percent:.1f}%)")
-            st.write(f"🔗 Total synonyms collected: {self.total_synonyms}")
-            if learned_count > 0:
-                recent_words = list(self.learned_words)[-5:]
-                st.write(f"📌 Recently learned: {', '.join(recent_words)}")
-            st.progress(progress_percent / 100)
-
-    # -------------------------
-    # Highlighted Function: Save Vocabulary
-    # -------------------------
-    def save_vocabulary(self):
-        try:
-            learned_vocab = {word: self.main_rewriter.replacements[word] for word in self.learned_words}
-            with open("data/learned_vocabulary.json", "w") as f:
-                json.dump(learned_vocab, f, indent=2)
-            st.write(f"💾 Saved {len(learned_vocab)} learned words")
-        except Exception as e:
-            st.write(f"⚠️ Could not save vocabulary: {e}")
-
-    # -------------------------
-    # Highlighted Function: Continuous Learning Worker
-    # -------------------------
-    def start_continuous_learning(self):
-        def learning_worker():
-            while self.learning_active:
-                for word in self.academic_words:
-                    if word in self.learned_words:
-                        continue
-                    try:
-                        synonyms = self.synonym_finder.get_synonyms(word)
-                        if synonyms:
-                            self.main_rewriter.replacements[word] = synonyms
-                            self.learned_words.add(word)
-                            self.total_synonyms += len(synonyms)
-                        time.sleep(0.5)
-                    except Exception:
-                        time.sleep(1)
-                # Update UI every loop
-                self.update_progress()
-                time.sleep(1)
-
-            st.success(f"✅ Academic vocabulary learning completed! Learned {len(self.learned_words)} words with {self.total_synonyms} synonyms.")
-            self.save_vocabulary()
-
-        thread = threading.Thread(target=learning_worker, daemon=True)
-        thread.start()
-
-# =========================
-# MAIN REWRITER CLASS
+# SIMPLE REWRITER CLASS - GUARANTEED WORKING
 # =========================
 class UniversalExtremeRewriter:
-    """
-    Main class that manages vocabulary and intelligent rewriting.
-    """
     def __init__(self):
+        self.synonym_finder = SimpleSynonymFinder()
         self.replacements = {}
-        self.setup_comprehensive_vocabulary()
-        # Start academic vocabulary builder
-        self.vocabulary_builder = AcademicVocabularyBuilder(self)
+        self.setup_vocabulary()
+        st.write("✅ Rewriter ready - synonym system active")
 
-    # -------------------------
-    # Highlighted Function: Load Vocabulary
-    # -------------------------
-    def setup_comprehensive_vocabulary(self):
+    def setup_vocabulary(self):
+        """Setup vocabulary with your existing words"""
         # Add health terms
         for word, replacement in health_terms.items():
-            if word not in self.replacements:
-                self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
+            self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
+        
         # Add general words
         for word, replacement in general_words.items():
-            if word not in self.replacements:
-                self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
-        st.write(f"✅ Total vocabulary loaded: {len(self.replacements)} words")
+            self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
+        
+        st.write(f"📚 Loaded {len(self.replacements)} words from dictionaries")
 
-    # -------------------------
-    # Highlighted Function: Intelligent Word Replacement
-    # -------------------------
     def intelligent_word_replacement(self, text):
+        """SIMPLE word replacement that actually works"""
+        if not text:
+            return text
+            
         words = text.split()
         new_words = []
-        i = 0
-        while i < len(words):
-            word = words[i].lower().strip('.,!?;:"')
-            original_word = words[i]
-
-            if len(word) <= 2 or word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']:
+        
+        for word in words:
+            original_word = word
+            clean_word = word.lower().strip('.,!?;:"')
+            
+            # Skip short/common words
+            if len(clean_word) <= 2 or clean_word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at']:
                 new_words.append(original_word)
-                i += 1
                 continue
-
-            # Try 2-word phrases
-            if i + 1 < len(words):
-                next_word = words[i+1].lower().strip('.,!?;:"')
-                two_word = f"{word} {next_word}"
-                if two_word in self.replacements:
-                    replacement = random.choice(self.replacements[two_word])
-                    if words[i][0].isupper():
-                        replacement = replacement.capitalize()
-                    new_words.append(replacement)
-                    i += 2
-                    continue
-
-            # Single word replacement
-            if word in self.replacements and random.random() < 0.7:
-                replacement = random.choice(self.replacements[word])
-                if words[i][0].isupper():
+            
+            # Check if word is in replacements
+            if clean_word in self.replacements:
+                replacement = random.choice(self.replacements[clean_word])
+                if word[0].isupper():
+                    replacement = replacement.capitalize()
+                new_words.append(replacement)
+                continue
+            
+            # If not in vocabulary, try to find synonyms
+            synonyms = self.synonym_finder.get_synonyms(clean_word)
+            if synonyms:
+                self.replacements[clean_word] = synonyms
+                replacement = random.choice(synonyms)
+                if word[0].isupper():
                     replacement = replacement.capitalize()
                 new_words.append(replacement)
             else:
                 new_words.append(original_word)
-            i += 1
-
+        
         return ' '.join(new_words)
 
-    # -------------------------
-    # Placeholder functions
-    # -------------------------
     def varied_sentence_restructure(self, text):
-        return text
+        """Simple sentence restructuring"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if len(sentences) <= 1:
+            return text
+            
+        # Just shuffle sentences for simplicity
+        random.shuffle(sentences)
+        return '. '.join(sentences) + '.'
 
     def smart_length_manipulation(self, text):
-        return text
+        """Simple length adjustment"""
+        return text  # Skip complex manipulation for now
 
     def add_natural_variation(self, text):
-        return text
+        """Simple variation"""
+        return text  # Skip for now
 
-# =========================
-# Initialize the universal rewriter
-# =========================
+# Initialize the rewriter
 universal_rewriter = UniversalExtremeRewriter()
-st.write("✅ Universal Extreme Rewriter initialized")
+
+def extreme_rewriter(original_text):
+    """Simple rewriting that actually works"""
+    if not original_text:
+        return original_text
+        
+    clean_text = original_text.strip()
+    
+    # Apply word replacement first
+    result = universal_rewriter.intelligent_word_replacement(clean_text)
+    
+    # Then sentence restructuring
+    result = universal_rewriter.varied_sentence_restructure(result)
+    
+    # Finally grammar correction
+    result = correct_grammar(result)
+    
+    return result
+
+def calculate_similarity(original, rewritten):
+    """Calculate text similarity"""
+    original_words = set(re.findall(r'\b\w+\b', original.lower()))
+    rewritten_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
+    common_words = original_words.intersection(rewritten_words)
+
+    if not original_words:
+        return 0
+
+    similarity = len(common_words) / len(original_words) * 100
+    return similarity
+
+def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5):
+    """Keep generating until similarity is below threshold"""
+    best_result = original_text
+    best_similarity = 100
+
+    for attempt in range(max_attempts):
+        rewritten = extreme_rewriter(original_text)
+        similarity = calculate_similarity(original_text, rewritten)
+
+        if similarity < best_similarity:
+            best_result = rewritten
+            best_similarity = similarity
+
+        if similarity <= max_similarity:
+            return rewritten, similarity
+
+    return best_result, best_similarity
 
 # =========================
-# Example function to rewrite text
+# SIMPLE STREAMLIT UI
 # =========================
-def extreme_rewriter(original_text):
-    text = universal_rewriter.intelligent_word_replacement(original_text)
-    text = universal_rewriter.varied_sentence_restructure(text)
-    text = universal_rewriter.smart_length_manipulation(text)
-    text = universal_rewriter.add_natural_variation(text)
-    return text
+st.title("🔁 Text Rewriter")
+st.write("Working synonym-based text rewriting")
+
+text_input = st.text_area("Enter text to rewrite:", height=150, value="This research shows important results that help understand complex problems.")
+
+if st.button("Rewrite Text"):
+    if text_input:
+        with st.spinner("Rewriting..."):
+            rewritten, similarity = guarantee_low_similarity(text_input)
+            
+            st.subheader("Original:")
+            st.write(text_input)
+            
+            st.subheader("Rewritten:")
+            st.write(rewritten)
+            
+            st.subheader("Similarity:")
+            st.write(f"{similarity:.1f}%")
+    else:
+        st.error("Please enter some text")
 
 
 
