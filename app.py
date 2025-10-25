@@ -1,16 +1,38 @@
+import streamlit as st
 import random
 import re
-import streamlit as st
 from collections import defaultdict
-from health_terms import health_terms
-from health_terms_2 import health_terms as health_terms_2
-# Merge them
-health_terms.update(health_terms_2)
 
-st.write("✅ Health terms loaded:", len(health_terms))
-import streamlit as st
-st.write("✅ Health terms loaded:", len(health_terms))
-from generalwords import general_words 
+st.title("Debugging Import Issues")
+
+# Test imports with detailed error messages
+try:
+    from health_terms import health_terms
+    st.success("✅ health_terms imported successfully")
+    st.write("Health terms count:", len(health_terms))
+except Exception as e:
+    st.error(f"❌ Failed to import health_terms: {e}")
+
+try:
+    from health_terms_2 import health_terms as health_terms_2
+    st.success("✅ health_terms_2 imported successfully")
+    st.write("Health terms 2 count:", len(health_terms_2))
+except Exception as e:
+    st.error(f"❌ Failed to import health_terms_2: {e}")
+
+try:
+    from generalwords import general_words
+    st.success("✅ general_words imported successfully")
+    st.write("General words count:", len(general_words))
+except Exception as e:
+    st.error(f"❌ Failed to import general_words: {e}")
+
+# Only merge if imports were successful
+if 'health_terms' in locals() and 'health_terms_2' in locals():
+    health_terms.update(health_terms_2)
+    st.success(f"✅ Merged health terms: {len(health_terms)} total")
+else:
+    st.warning("⚠️ Could not merge - some imports failed") 
 
 # =========================
 # IMPROVED UNIVERSAL BACKEND
