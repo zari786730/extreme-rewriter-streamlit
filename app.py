@@ -1339,9 +1339,6 @@ class UniversalExtremeRewriter:
 
 
 
-
-
-        
         # Add health terms
         for word, replacement in health_terms.items():
             if word not in self.replacements:
@@ -1427,10 +1424,10 @@ class UniversalExtremeRewriter:
                 restructured.append(sentence)
                 continue
 
-            # DIVERSE patterns (no repetition)
+            # FIXED: Less aggressive patterns to reduce grammar issues
             pattern_choice = random.choice([
-                'reverse', 'question', 'academic', 'emphasis', 
-                'context', 'normal', 'comparative', 'result'
+                'normal', 'normal', 'normal', 'normal',  # More normal sentences
+                'academic', 'emphasis', 'context', 'comparative'  # Fewer disruptive patterns
             ])
 
             if pattern_choice == 'reverse' and len(words) > 6:
@@ -1563,7 +1560,7 @@ class UniversalExtremeRewriter:
             return text
 
         # Add variation to first sentence only (avoid over-patterning)
-        if random.random() < 0.4:
+        if random.random() < 0.3:  # REDUCED from 0.4 to 0.3 to reduce issues
             variations = [
                 f"Interestingly, {sentences[0].lower()}",
                 f"Notably, {sentences[0].lower()}",
@@ -1628,6 +1625,8 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
             return rewritten, similarity
 
     return best_result, best_similarity
+
+        
 
 # =========================
 # FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
