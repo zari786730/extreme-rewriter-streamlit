@@ -2,6 +2,9 @@ import random
 import re
 import streamlit as st
 from collections import defaultdict
+from health_terms import health_terms
+import streamlit as st
+st.write("✅ Health terms loaded:", len(health_terms))
 
 # =========================
 # IMPROVED UNIVERSAL BACKEND
