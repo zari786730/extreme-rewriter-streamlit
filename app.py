@@ -1331,70 +1331,106 @@ class UniversalExtremeRewriter:
     'future work': ['further research', 'next steps', 'subsequent study', 'follow-up research']
 }
     
-    def intelligent_word_replacement(self, text):
-    """More aggressive and intelligent word replacement"""
-    # First apply the comprehensive vocabulary replacements
-    text = self.rewrite_text(text)
-    
-    words = text.split()
-    new_words = []
+
+
+
+
+
+
+
+
         
+        # Add health terms
+        for word, replacement in health_terms.items():
+            if word not in self.replacements:
+                self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
+        
+        # Add general words
+        for word, replacement in general_words.items():
+            if word not in self.replacements:
+                self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
+        
+        st.write(f"✅ Total vocabulary loaded: {len(self.replacements)} words")
+
+    def rewrite_text(self, text):
+        """Basic text replacement using vocabulary"""
+        if not text or not self.replacements:
+            return text
+            
+        result = text
+        for original, replacement in self.replacements.items():
+            if isinstance(replacement, list):
+                # Use the first replacement option for basic rewriting
+                result = result.replace(original, replacement[0])
+            else:
+                result = result.replace(original, replacement)
+        return result
+
+    def intelligent_word_replacement(self, text):
+        """More aggressive and intelligent word replacement"""
+        words = text.split()
+        new_words = []
         i = 0
+        
         while i < len(words):
             word = words[i].lower().strip('.,!?;:"')
             original_word = words[i]
-            
+
             # Skip very short/common words
             if len(word) <= 2 or word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']:
                 new_words.append(original_word)
                 i += 1
                 continue
-            
+
             # Try 2-word phrases first
             if i + 1 < len(words):
                 next_word = words[i+1].lower().strip('.,!?;:"')
                 two_word = f"{word} {next_word}"
                 if two_word in self.replacements:
-                    replacement = random.choice(self.replacements[two_word])
+                    replacement = self.replacements[two_word]
+                    if isinstance(replacement, list):
+                        replacement = random.choice(replacement)
                     if words[i][0].isupper():
                         replacement = replacement.capitalize()
                     new_words.append(replacement)
                     i += 2
                     continue
-            
+
             # Single word replacement with high probability
             if word in self.replacements and random.random() < 0.7:  # 70% replacement rate
-                replacement = random.choice(self.replacements[word])
+                replacement = self.replacements[word]
+                if isinstance(replacement, list):
+                    replacement = random.choice(replacement)
                 if words[i][0].isupper():
                     replacement = replacement.capitalize()
                 new_words.append(replacement)
             else:
                 new_words.append(original_word)
-            
+
             i += 1
-        
+
         return ' '.join(new_words)
-    
+
     def varied_sentence_restructure(self, text):
         """More diverse sentence restructuring patterns"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if not sentences:
             return text
-        
+
         restructured = []
-        
+
         for i, sentence in enumerate(sentences):
             words = sentence.split()
             if len(words) < 4:
                 restructured.append(sentence)
                 continue
-            
+
             # DIVERSE patterns (no repetition)
             pattern_choice = random.choice([
                 'reverse', 'question', 'academic', 'emphasis', 
                 'context', 'normal', 'comparative', 'result'
             ])
-            
+
             if pattern_choice == 'reverse' and len(words) > 6:
                 split_point = random.randint(3, len(words) - 3)
                 first_part = ' '.join(words[:split_point])
@@ -1406,7 +1442,7 @@ class UniversalExtremeRewriter:
                     f"{second_part}, demonstrating that {first_part.lower()}"
                 ]
                 restructured.append(random.choice(reverse_frames))
-                
+
             elif pattern_choice == 'question':
                 question_frames = [
                     f"What explains {sentence.lower()}?",
@@ -1415,7 +1451,7 @@ class UniversalExtremeRewriter:
                     f"In what ways does {sentence.lower()}?"
                 ]
                 restructured.append(random.choice(question_frames))
-                
+
             elif pattern_choice == 'academic':
                 academic_frames = [
                     f"Research indicates that {sentence.lower()}",
@@ -1425,7 +1461,7 @@ class UniversalExtremeRewriter:
                     f"Findings show that {sentence.lower()}"
                 ]
                 restructured.append(random.choice(academic_frames))
-                
+
             elif pattern_choice == 'emphasis':
                 emphasis_frames = [
                     f"Notably, {sentence.lower()}",
@@ -1434,7 +1470,7 @@ class UniversalExtremeRewriter:
                     f"Remarkably, {sentence.lower()}"
                 ]
                 restructured.append(random.choice(emphasis_frames))
-                
+
             elif pattern_choice == 'context':
                 context_frames = [
                     f"In this context, {sentence.lower()}",
@@ -1443,7 +1479,7 @@ class UniversalExtremeRewriter:
                     f"Considering these factors, {sentence.lower()}"
                 ]
                 restructured.append(random.choice(context_frames))
-                
+
             elif pattern_choice == 'comparative':
                 comparative_frames = [
                     f"By comparison, {sentence.lower()}",
@@ -1452,7 +1488,7 @@ class UniversalExtremeRewriter:
                     f"In contrast, {sentence.lower()}"
                 ]
                 restructured.append(random.choice(comparative_frames))
-                
+
             elif pattern_choice == 'result':
                 result_frames = [
                     f"Consequently, {sentence.lower()}",
@@ -1461,34 +1497,34 @@ class UniversalExtremeRewriter:
                     f"Accordingly, {sentence.lower()}"
                 ]
                 restructured.append(random.choice(result_frames))
-                
+
             else:
                 restructured.append(sentence)
-        
+
         return '. '.join(restructured) + '.'
-    
+
     def smart_length_manipulation(self, text):
         """Better sentence length management"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if len(sentences) <= 2:
             return text
-        
+
         processed = []
-        
+
         for sentence in sentences:
             words = sentence.split()
-            
+
             # Only manipulate 50% of sentences for better flow
             if random.random() < 0.5:
                 if len(words) > 12:
                     # Smart splitting at natural break points
                     connectors = ['and', 'but', 'however', 'therefore', 'moreover', 'furthermore']
                     split_points = []
-                    
+
                     for i, word in enumerate(words):
                         if word.lower() in connectors and 4 < i < len(words) - 4:
                             split_points.append(i)
-                    
+
                     if split_points:
                         split_at = random.choice(split_points)
                         part1 = ' '.join(words[:split_at])
@@ -1515,15 +1551,15 @@ class UniversalExtremeRewriter:
                     processed.append(sentence)
             else:
                 processed.append(sentence)
-        
+
         return ' '.join(processed)
-    
+
     def add_natural_variation(self, text):
         """Add natural human writing variations"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if not sentences:
             return text
-        
+
         # Add variation to first sentence only (avoid over-patterning)
         if random.random() < 0.4:
             variations = [
@@ -1533,7 +1569,7 @@ class UniversalExtremeRewriter:
                 f"Importantly, {sentences[0].lower()}"
             ]
             sentences[0] = random.choice(variations)
-        
+
         return '. '.join(sentences) + '.'
 
 # Initialize the universal rewriter
@@ -1542,7 +1578,7 @@ universal_rewriter = UniversalExtremeRewriter()
 def extreme_rewriter(original_text):
     """Universal extreme rewriting with improved transformations"""
     clean_text = original_text.strip().strip('"').strip("'")
-    
+
     # Apply transformations in random order for variety
     transformations = [
         universal_rewriter.varied_sentence_restructure,
@@ -1551,11 +1587,11 @@ def extreme_rewriter(original_text):
         universal_rewriter.add_natural_variation
     ]
     random.shuffle(transformations)
-    
+
     result = clean_text
     for transform in transformations:
         result = transform(result)
-    
+
     return result
 
 def calculate_similarity(original, rewritten):
@@ -1563,10 +1599,10 @@ def calculate_similarity(original, rewritten):
     original_words = set(re.findall(r'\b\w+\b', original.lower()))
     rewritten_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
     common_words = original_words.intersection(rewritten_words)
-    
+
     if not original_words:
         return 0
-    
+
     similarity = len(common_words) / len(original_words) * 100
     return similarity
 
@@ -1574,20 +1610,19 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
     """Keep generating until similarity is below threshold"""
     best_result = None
     best_similarity = 100
-    
+
     for attempt in range(max_attempts):
         rewritten = extreme_rewriter(original_text)
         similarity = calculate_similarity(original_text, rewritten)
-        
+
         if similarity < best_similarity:
             best_result = rewritten
             best_similarity = similarity
-            
+
         if similarity <= max_similarity:
             return rewritten, similarity
-    
-    return best_result, best_similarity
 
+    return best_result, best_similarity
 
 # =========================
 # FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
