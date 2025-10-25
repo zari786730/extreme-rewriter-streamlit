@@ -4,13 +4,13 @@ import streamlit as st
 from collections import defaultdict
 from health_terms import health_terms
 from health_terms_2 import health_terms as health_terms_2
-from generalwords import general_words 
 # Merge them
 health_terms.update(health_terms_2)
 
 st.write("✅ Health terms loaded:", len(health_terms))
 import streamlit as st
 st.write("✅ Health terms loaded:", len(health_terms))
+from generalwords import general_words 
 
 # =========================
 # IMPROVED UNIVERSAL BACKEND
