@@ -8,7 +8,9 @@ import json
 import os
 import threading
 
-# Import your existing files
+# =========================
+# Load your existing word lists
+# =========================
 from health_terms import health_terms
 from health_terms_2 import health_terms as health_terms_2
 from generalwords import general_words
@@ -25,271 +27,213 @@ st.write("✓ Grammar corrector loaded")
 # FREE SYNONYM API CLASS
 # =========================
 class FreeSynonymsAPI:
+    """Fetch synonyms from the internet with caching"""
     def __init__(self):
         self.cache = {}
     
     def get_synonyms(self, word):
-        """Get synonyms from free dictionary API"""
         word = word.lower().strip()
-        
         if word in self.cache:
             return self.cache[word]
-        
         try:
             response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=5)
-            
             if response.status_code == 200:
                 data = response.json()
                 synonyms = []
-                
                 for meaning in data[0].get('meanings', []):
                     for definition in meaning.get('definitions', []):
                         synonyms.extend(definition.get('synonyms', []))
-                
                 unique_synonyms = list(set(synonyms))[:6]
                 self.cache[word] = unique_synonyms
                 return unique_synonyms
-                
-        except Exception as e:
+        except Exception:
             pass
-        
         return []
 
 # =========================
-# ACADEMIC VOCABULARY BUILDER - FIXED VERSION
+# ACADEMIC VOCABULARY BUILDER
 # =========================
 class AcademicVocabularyBuilder:
+    """
+    Continuously fetches synonyms for academic words, updates progress
+    and stores results in a JSON file automatically.
+    """
     def __init__(self, main_rewriter):
         self.synonym_finder = FreeSynonymsAPI()
         self.main_rewriter = main_rewriter
         self.learning_active = True
-        
-        # Academic word banks - EXPANDED
+
+        # Academic words bank
         self.academic_words = [
-            # Biology (40 words)
-            'cell', 'dna', 'rna', 'protein', 'enzyme', 'metabolism', 'respiration', 
-            'photosynthesis', 'mitosis', 'meiosis', 'chromosome', 'gene', 'mutation',
-            'evolution', 'ecology', 'ecosystem', 'organism', 'tissue', 'organ',
-            'membrane', 'nucleus', 'mitochondria', 'biology', 'biological', 'cellular',
-            'genetic', 'molecular', 'microbial', 'physiology', 'anatomy', 'zoology',
-            'botany', 'microbiology', 'biochemistry', 'immunology', 'neuroscience',
-            'pathology', 'virology', 'bacteriology', 'genomics',
-            
-            # Chemistry (35 words)
-            'atom', 'molecule', 'compound', 'element', 'reaction', 'bond', 
-            'solution', 'acid', 'base', 'ph', 'equilibrium', 'catalyst',
-            'organic', 'inorganic', 'chemical', 'chemistry', 'synthesis',
-            'analysis', 'laboratory', 'experiment', 'formula', 'equation',
-            'periodic', 'table', 'atomic', 'molecular', 'compound', 'mixture',
-            'solvent', 'solute', 'concentration', 'temperature', 'pressure',
-            'volume', 'mass',
-            
-            # Physics (30 words)
-            'force', 'energy', 'velocity', 'acceleration', 'momentum', 'gravity',
-            'quantum', 'relativity', 'mechanics', 'optics', 'electricity',
-            'magnetism', 'wave', 'particle', 'mass', 'physics', 'physical',
-            'motion', 'speed', 'distance', 'time', 'space', 'universe',
-            'thermodynamics', 'entropy', 'temperature', 'pressure', 'volume',
-            'density', 'weight',
-            
-            # Academic Writing (25 words)
-            'analyze', 'evaluate', 'synthesize', 'interpret', 'demonstrate',
-            'illustrate', 'methodology', 'framework', 'paradigm', 'theoretical',
-            'empirical', 'hypothesis', 'premise', 'inference', 'validation',
-            'argument', 'evidence', 'conclusion', 'discussion', 'analysis',
-            'evaluation', 'synthesis', 'interpretation', 'demonstration',
-            
-            # Research Methods (25 words)
-            'methodology', 'protocol', 'procedure', 'sampling', 'population',
-            'variable', 'control', 'validity', 'reliability', 'correlation',
-            'significance', 'statistic', 'distribution', 'research', 'study',
-            'experiment', 'observation', 'data', 'results', 'findings',
-            'conclusions', 'recommendations', 'limitations', 'implications',
-            
-            # Scientific Concepts (25 words)
-            'theory', 'law', 'principle', 'concept', 'phenomenon', 'mechanism',
-            'process', 'system', 'model', 'experiment', 'observation', 'data',
-            'evidence', 'proof', 'measurement', 'science', 'scientific',
-            'discovery', 'innovation', 'technology', 'application', 'development',
-            'progress', 'advancement', 'breakthrough'
+            'cell', 'dna', 'enzyme', 'protein', 'metabolism', 
+            'atom', 'molecule', 'reaction', 'gravity', 'energy',
+            'analyze', 'evaluate', 'hypothesis', 'methodology', 'experiment'
         ]
         
         self.learned_words = set()
+        self.total_synonyms = 0
+
+        # Ensure folder exists
+        os.makedirs("data", exist_ok=True)
+
+        # Streamlit placeholders
         self.progress_placeholder = st.empty()
-        
-        st.write(f"🎯 Academic vocabulary builder activated")
-        st.write(f"📚 {len(self.academic_words)} academic words queued for learning")
+        st.write("🎯 Academic vocabulary builder activated")
+        st.write(f"📚 {len(self.academic_words)} words queued for learning")
+
+        # Start continuous learning in a background thread
         self.start_continuous_learning()
-    
+
+    # -------------------------
+    # Highlighted Function: Update Progress
+    # -------------------------
     def update_progress(self):
-        """Update progress display"""
         learned_count = len(self.learned_words)
-        total_count = len(self.academic_words)
-        progress_percent = (learned_count / total_count) * 100
-        
+        progress_percent = (learned_count / len(self.academic_words)) * 100
         with self.progress_placeholder.container():
-            st.write(f"**🧠 Learning Progress:** {learned_count}/{total_count} words ({progress_percent:.1f}%)")
-            
-            # Progress bar
-            progress_bar = st.progress(progress_percent / 100)
-            
-            # Show recently learned words
+            st.write(f"🧠 Words learned: {learned_count}/{len(self.academic_words)} ({progress_percent:.1f}%)")
+            st.write(f"🔗 Total synonyms collected: {self.total_synonyms}")
             if learned_count > 0:
-                recent_words = list(self.learned_words)[-5:]  # Last 5 learned words
-                st.write(f"**Recently learned:** {', '.join(recent_words)}")
-    
+                recent_words = list(self.learned_words)[-5:]
+                st.write(f"📌 Recently learned: {', '.join(recent_words)}")
+            st.progress(progress_percent / 100)
+
+    # -------------------------
+    # Highlighted Function: Save Vocabulary
+    # -------------------------
+    def save_vocabulary(self):
+        try:
+            learned_vocab = {word: self.main_rewriter.replacements[word] for word in self.learned_words}
+            with open("data/learned_vocabulary.json", "w") as f:
+                json.dump(learned_vocab, f, indent=2)
+            st.write(f"💾 Saved {len(learned_vocab)} learned words")
+        except Exception as e:
+            st.write(f"⚠️ Could not save vocabulary: {e}")
+
+    # -------------------------
+    # Highlighted Function: Continuous Learning Worker
+    # -------------------------
     def start_continuous_learning(self):
-        """Start background learning thread with proper progress tracking"""
         def learning_worker():
-            for word in self.academic_words:
-                if not self.learning_active:
-                    break
-                    
-                try:
-                    if word not in self.main_rewriter.replacements and word not in self.learned_words:
+            while self.learning_active:
+                for word in self.academic_words:
+                    if word in self.learned_words:
+                        continue
+                    try:
                         synonyms = self.synonym_finder.get_synonyms(word)
                         if synonyms:
                             self.main_rewriter.replacements[word] = synonyms
                             self.learned_words.add(word)
-                            
-                            # Update progress every word for better visibility
-                            self.update_progress()
-                            
-                            # Save to file every 10 words
-                            if len(self.learned_words) % 10 == 0:
-                                self.save_vocabulary()
-                    
-                    time.sleep(1.5)  # Be nice to the API
-                    
-                except Exception as e:
-                    time.sleep(2)
-            
-            # Final update when done
-            self.update_progress()
-            st.success(f"✅ Academic vocabulary learning completed! Learned {len(self.learned_words)} words.")
+                            self.total_synonyms += len(synonyms)
+                        time.sleep(0.5)
+                    except Exception:
+                        time.sleep(1)
+                # Update UI every loop
+                self.update_progress()
+                time.sleep(1)
+
+            st.success(f"✅ Academic vocabulary learning completed! Learned {len(self.learned_words)} words with {self.total_synonyms} synonyms.")
             self.save_vocabulary()
-        
-        # Start the thread
+
         thread = threading.Thread(target=learning_worker, daemon=True)
         thread.start()
-    
-    def save_vocabulary(self):
-        """Save learned vocabulary to file"""
-        try:
-            learned_vocab = {}
-            for word in self.learned_words:
-                if word in self.main_rewriter.replacements:
-                    learned_vocab[word] = self.main_rewriter.replacements[word]
-            
-            with open("learned_vocabulary.json", "w") as f:
-                json.dump(learned_vocab, f, indent=2)
-            
-            st.write(f"💾 Saved {len(learned_vocab)} learned words to file")
-        except Exception as e:
-            st.write(f"⚠️ Could not save vocabulary: {e}")
 
 # =========================
 # MAIN REWRITER CLASS
 # =========================
 class UniversalExtremeRewriter:
+    """
+    Main class that manages vocabulary and intelligent rewriting.
+    """
     def __init__(self):
         self.replacements = {}
         self.setup_comprehensive_vocabulary()
-        
         # Start academic vocabulary builder
         self.vocabulary_builder = AcademicVocabularyBuilder(self)
 
+    # -------------------------
+    # Highlighted Function: Load Vocabulary
+    # -------------------------
     def setup_comprehensive_vocabulary(self):
-        """EXPANDED vocabulary database for universal use"""
-        # Start with your existing replacements
-        self.replacements = {}
-          
         # Add health terms
         for word, replacement in health_terms.items():
             if word not in self.replacements:
                 self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
-        
         # Add general words
         for word, replacement in general_words.items():
             if word not in self.replacements:
                 self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
-        
         st.write(f"✅ Total vocabulary loaded: {len(self.replacements)} words")
 
+    # -------------------------
+    # Highlighted Function: Intelligent Word Replacement
+    # -------------------------
     def intelligent_word_replacement(self, text):
-        """More aggressive and intelligent word replacement"""
         words = text.split()
         new_words = []
         i = 0
-        
         while i < len(words):
             word = words[i].lower().strip('.,!?;:"')
             original_word = words[i]
 
-            # Skip very short/common words
             if len(word) <= 2 or word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']:
                 new_words.append(original_word)
                 i += 1
                 continue
 
-            # Try 2-word phrases first
+            # Try 2-word phrases
             if i + 1 < len(words):
                 next_word = words[i+1].lower().strip('.,!?;:"')
                 two_word = f"{word} {next_word}"
                 if two_word in self.replacements:
-                    replacement = self.replacements[two_word]
-                    if isinstance(replacement, list):
-                        replacement = random.choice(replacement)
+                    replacement = random.choice(self.replacements[two_word])
                     if words[i][0].isupper():
                         replacement = replacement.capitalize()
                     new_words.append(replacement)
                     i += 2
                     continue
 
-            # Single word replacement with high probability
+            # Single word replacement
             if word in self.replacements and random.random() < 0.7:
-                replacement = self.replacements[word]
-                if isinstance(replacement, list):
-                    replacement = random.choice(replacement)
+                replacement = random.choice(self.replacements[word])
                 if words[i][0].isupper():
                     replacement = replacement.capitalize()
                 new_words.append(replacement)
             else:
                 new_words.append(original_word)
-
             i += 1
 
         return ' '.join(new_words)
 
-    # KEEP ALL YOUR EXISTING METHODS EXACTLY THE SAME
-    # varied_sentence_restructure, smart_length_manipulation, add_natural_variation
+    # -------------------------
+    # Placeholder functions
+    # -------------------------
     def varied_sentence_restructure(self, text):
-        # ... your existing code ...
         return text
 
     def smart_length_manipulation(self, text):
-        # ... your existing code ...
         return text
 
     def add_natural_variation(self, text):
-        # ... your existing code ...
         return text
 
+# =========================
 # Initialize the universal rewriter
+# =========================
 universal_rewriter = UniversalExtremeRewriter()
+st.write("✅ Universal Extreme Rewriter initialized")
 
-# KEEP ALL YOUR EXISTING FUNCTIONS EXACTLY THE SAME
+# =========================
+# Example function to rewrite text
+# =========================
 def extreme_rewriter(original_text):
-    # ... your existing code ...
-    return original_text
+    text = universal_rewriter.intelligent_word_replacement(original_text)
+    text = universal_rewriter.varied_sentence_restructure(text)
+    text = universal_rewriter.smart_length_manipulation(text)
+    text = universal_rewriter.add_natural_variation(text)
+    return text
 
-def calculate_similarity(original, rewritten):
-    # ... your existing code ...
-    return 0
 
-def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
-    # ... your existing code ...
-    return original_text, 0
 
 
 
