@@ -17,6 +17,8 @@ from generalwords import general_words
 
 st.write("✓ General words loaded:", len(general_words))
 
+from grammar_corrector import correct_grammar
+
 # =========================
 # IMPROVED UNIVERSAL BACKEND
 # =========================
@@ -1592,6 +1594,9 @@ def extreme_rewriter(original_text):
     for transform in transformations:
         result = transform(result)
 
+    # ADD INTELLIGENT GRAMMAR CORRECTION (AI-FREE)
+    result = correct_grammar(result)
+    
     return result
 
 def calculate_similarity(original, rewritten):
