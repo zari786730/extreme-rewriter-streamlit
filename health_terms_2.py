@@ -509,7 +509,7 @@ health_terms.update({
     'bioethnomedicine': ['ethnic healing system', 'cultural biotherapy', 'folk biological medicine', 'indigenous curative practice'],
     'hermetotherapy': ['occult health restoration', 'symbolic healing', 'arcane therapy', 'mystical cure'],
     'geomagnetic_therapy': ['earth-field healing', 'magnetic resonance therapy', 'telluric energy treatment', 'geomagnetic balance']
-)}
+})
 
 
 
