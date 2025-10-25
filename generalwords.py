@@ -1039,6 +1039,268 @@ general_words = { # Computer Science & Artificial Intelligence
     'compliance': ['regulation adherence', 'standard following', 'rule obedience', 'requirement meeting'],
 
 
+   # AI-Specific Technical Terms
+    'hyperparameter': ['model setting', 'configuration parameter', 'training control', 'algorithm setting'],
+    'loss function': ['error measure', 'performance metric', 'cost calculation', 'accuracy gauge'],
+    'gradient descent': ['optimization method', 'minimization algorithm', 'error reduction', 'performance improvement'],
+    'backpropagation': ['error correction', 'neural network training', 'weight adjustment', 'learning algorithm'],
+    'convolutional network': ['CNN', 'image processing network', 'visual pattern recognizer', 'spatial analyzer'],
+    'recurrent network': ['RNN', 'sequence processor', 'temporal analyzer', 'time-series network'],
+    'attention mechanism': ['focus system', 'importance weighting', 'context prioritization', 'relevance assessment'],
+    'transfer learning': ['knowledge application', 'model adaptation', 'skill transfer', 'pre-trained utilization'],
+    'fine-tuning': ['precise adjustment', 'detailed optimization', 'specific adaptation', 'targeted improvement'],
+    'zero-shot learning': ['no-example learning', 'direct application', 'immediate adaptation', 'example-free inference'],
+
+    # Emerging Concepts
+    'AGI': ['artificial general intelligence', 'human-level AI', 'general-purpose intelligence', 'comprehensive AI'],
+    'singularity': ['technological explosion', 'AI breakthrough point', 'exponential growth phase'],
+    'alignment': ['goal matching', 'value correspondence', 'objective synchronization', 'purpose harmony'],
+    'multi-modal': ['combined input types', 'mixed media processing', 'integrated modality', 'varied format handling'],
+    'embodied AI': ['physical AI', 'robot intelligence', 'real-world interaction AI', 'situated intelligence'],
+    'neuromorphic computing': ['brain-like processing', 'neural hardware', 'biological computing', 'cognitive chips'],
+    'quantum machine learning': ['QML', 'quantum AI', 'quantum-enhanced learning', 'quantum computing ML'],
+    'federated learning': ['distributed training', 'decentralized learning', 'local model training', 'privacy-preserving ML'],
+    'differential privacy': ['privacy protection', 'confidentiality preservation', 'data anonymity', 'information security'],
+    'synthetic data': ['artificial data', 'generated information', 'simulated datasets', 'created examples'],
+
+    # Common AI Limitations
+    'hallucination': ['fabrication', 'invention', 'false generation', 'imaginary content'],
+    'bias amplification': ['prejudice reinforcement', 'discrimination increase', 'skew magnification'],
+    'data drift': ['pattern change', 'distribution shift', 'concept evolution', 'environmental change'],
+    'model decay': ['performance degradation', 'accuracy decline', 'effectiveness reduction', 'capability loss'],
+    'adversarial attack': ['manipulation attempt', 'system exploitation', 'vulnerability targeting', 'security breach'],
+    'interpretability challenge': ['understanding difficulty', 'explanation problem', 'comprehension issue', 'clarity obstacle'],
+
+    # Implementation Challenges
+    'computational cost': ['processing expense', 'resource requirement', 'hardware demand', 'power consumption'],
+    'data requirement': ['information need', 'training data necessity', 'input requirement', 'dataset dependency'],
+    'deployment complexity': ['implementation difficulty', 'rollout challenge', 'production complexity', 'system integration'],
+    'maintenance overhead': ['ongoing cost', 'continuous effort', 'sustaining work', 'operational burden'],
+    'skill gap': ['expertise shortage', 'knowledge deficiency', 'talent lack', 'capability void'],
+    'ethical consideration': ['moral issue', 'privacy concern', 'fairness question', 'responsibility aspect'],
+
+
+    # Vague business speak
+    'value-added': ['beneficial', 'advantageous', 'useful', 'helpful'],
+    'core competency': ['strength', 'specialty', 'expertise', 'key skill'],
+    'best practice': ['effective method', 'proven approach', 'recommended technique'],
+    
+    # Common AI formatting habits
+    'bullet points': ['list', 'items', 'points', 'elements'],
+    'as follows': ['as below', 'listed here', 'shown next', 'detailed below'],
+    'in the following way': ['like this', 'as shown', 'in this manner', 'thus'],
+    
+    # Weak conclusions
+    'in conclusion': ['to summarize', 'overall', 'in summary', 'to wrap up'],
+    'to sum up': ['in brief', 'in short', 'ultimately', 'basically'],
+    'all things considered': ['taking everything into account', 'overall', 'when everything is considered'],
+
+    # Advanced Academic & Intellectual
+    'erudite': ['learned', 'scholarly', 'knowledgeable', 'well-read'],
+    'esoteric': ['abstruse', 'arcane', 'recondite', 'obscure'],
+    'pedantic': ['academic', 'scholastic', 'doctrinaire', 'overscrupulous'],
+    'didactic': ['instructive', 'educational', 'edifying', 'informative'],
+    'epistemological': ['cognitive', 'philosophical', 'theoretical', 'methodological'],
+    'hermeneutic': ['interpretive', 'exegetical', 'analytical', 'critical'],
+    'dichotomy': ['division', 'split', 'polarity', 'contrast'],
+    'hegemony': ['dominance', 'supremacy', 'authority', 'control'],
+    'paradigm': ['model', 'pattern', 'exemplar', 'standard'],
+    'taxonomy': ['classification', 'categorization', 'nomenclature', 'systematization'],
+
+    # Complex States & Conditions
+    'ubiquitous': ['omnipresent', 'pervasive', 'universal', 'everywhere'],
+    'equivocal': ['ambiguous', 'vague', 'unclear', 'indefinite'],
+    'laconic': ['concise', 'terse', 'succinct', 'brief'],
+    'prolific': ['productive', 'fruitful', 'copious', 'generative'],
+    'quintessential': ['typical', 'archetypal', 'ultimate', 'prime'],
+    'voracious': ['insatiable', 'ravenous', 'unquenchable', 'avid'],
+    'inexorable': ['relentless', 'unavoidable', 'inescapable', 'irresistible'],
+    'inscrutable': ['enigmatic', 'impenetrable', 'unfathomable', 'mysterious'],
+    'iconoclastic': ['nonconformist', 'maverick', 'rebellious', 'radical'],
+    'idiosyncratic': ['distinctive', 'individual', 'unique', 'peculiar'],
+
+    # Positive Traits & Qualities
+    'perspicacious': ['perceptive', 'discerning', 'astute', 'shrewd'],
+    'sagacious': ['wise', 'judicious', 'sage', 'prudent'],
+    'magnanimous': ['generous', 'benevolent', 'charitable', 'noble'],
+    'munificent': ['lavish', 'bountiful', 'liberal', 'unstinting'],
+    'indefatigable': ['tireless', 'unflagging', 'dogged', 'persistent'],
+    'resilient': ['tough', 'durable', 'robust', 'flexible'],
+    'tenacious': ['determined', 'resolute', 'steadfast', 'persistent'],
+    'assiduous': ['diligent', 'meticulous', 'conscientious', 'punctilious'],
+    'scrupulous': ['ethical', 'principled', 'honorable', 'upright'],
+    'stoic': ['unemotional', 'impassive', 'long-suffering', 'dispassionate'],
+
+    # Negative Traits & Qualities
+    'supercilious': ['arrogant', 'haughty', 'condescending', 'disdainful'],
+    'obsequious': ['servile', 'sycophantic', 'fawning', 'submissive'],
+    'parsimonious': ['stingy', 'miserly', 'penny-pinching', 'frugal'],
+    'truculent': ['defiant', 'aggressive', 'belligerent', 'hostile'],
+    'recalcitrant': ['uncooperative', 'intractable', 'defiant', 'obstinate'],
+    'dilatory': ['slow', 'tardy', 'procrastinating', 'delaying'],
+    'perfidious': ['treacherous', 'disloyal', 'traitorous', 'duplicitous'],
+    'querulous': ['complaining', 'peevish', 'fretful', 'whining'],
+    'capricious': ['fickle', 'unpredictable', 'volatile', 'whimsical'],
+    'obdurate': ['stubborn', 'inflexible', 'unbending', 'adamant'],
+
+    # Verbs of Action & Change
+    'exacerbate': ['worsen', 'intensify', 'aggravate', 'compound'],
+    'ameliorate': ['improve', 'better', 'enhance', 'alleviate'],
+    'abrogate': ['revoke', 'repeal', 'cancel', 'nullify'],
+    'disseminate': ['spread', 'circulate', 'distribute', 'propagate'],
+    'oscillate': ['swing', 'fluctuate', 'vacillate', 'waver'],
+    'coalesce': ['unite', 'combine', 'merge', 'integrate'],
+    'extricate': ['disentangle', 'free', 'release', 'liberate'],
+    'permeate': ['pervade', 'saturate', 'impregnate', 'infuse'],
+    'precipitate': ['cause', 'trigger', 'provoke', 'hasten'],
+    'quell': ['suppress', 'subdue', 'quash', 'squelch'],
+
+    # Verbs of Communication & Thought
+    'postulate': ['propose', 'suggest', 'hypothesize', 'theorize'],
+    'conjecture': ['speculate', 'guess', 'surmise', 'infer'],
+    'elucidate': ['clarify', 'explain', 'illuminate', 'explicate'],
+    'expatiate': ['elaborate', 'expound', 'dilate', 'enlarge'],
+    'vituperate': ['berate', 'revile', 'scold', 'upbraid'],
+    'equivocate': ['prevaricate', 'hedge', 'dodge', 'evade'],
+    'adumbrate': ['foreshadow', 'outline', 'sketch', 'prefigure'],
+    'propitiate': ['appease', 'placate', 'pacify', 'mollify'],
+    'obfuscate': ['confuse', 'bewilder', 'muddle', 'cloud'],
+    'recapitulate': ['summarize', 'recap', 'reiterate', 'reprise'],
+
+    # Abstract Concepts
+    'verisimilitude': ['realism', 'authenticity', 'plausibility', 'credibility'],
+    'zeitgeist': ['spirit of the age', 'cultural climate', 'mood of the era'],
+    'anachronism': ['chronological error', 'misdate', 'archaism', 'throwback'],
+    'apotheosis': ['epitome', 'quintessence', 'peak', 'pinnacle'],
+    'euphemism': ['polite term', 'indirect expression', 'understatement'],
+    'panacea': ['cure-all', 'universal remedy', 'elixir', 'magic bullet'],
+    'sycophant': ['flatterer', 'yes-man', 'toady', 'fawner'],
+    'nemesis': ['archenemy', 'adversary', 'rival', 'bane'],
+    'dystopia': ['anti-utopia', 'hellscape', 'apocalyptic vision'],
+    'utopia': ['paradise', 'ideal society', 'heaven on earth', 'Eden'],
+
+    # Sensory & Descriptive
+    'audacious': ['bold', 'daring', 'fearless', 'intrepid'],
+    'luminous': ['bright', 'radiant', 'glowing', 'incandescent'],
+    'opulent': ['luxurious', 'sumptuous', 'lavish', 'palatial'],
+    'serene': ['calm', 'peaceful', 'tranquil', 'placid'],
+    'taciturn': ['reserved', 'reticent', 'uncommunicative', 'quiet'],
+    'vociferous': ['vehement', 'outspoken', 'clamorous', 'strident'],
+    'winsome': ['charming', 'engaging', 'appealing', 'captivating'],
+    'verdant': ['green', 'lush', 'grassy', 'leafy'],
+    'desiccated': ['dried out', 'dehydrated', 'parched', 'arid'],
+    'fetid': ['stinking', 'malodorous', 'putrid', 'rank'],
+
+    # Legal & Formal
+    'acquiesce': ['consent', 'agree', 'assent', 'accede'],
+    'cogent': ['convincing', 'compelling', 'persuasive', 'forceful'],
+    'culpable': ['guilty', 'blameworthy', 'responsible', 'at fault'],
+    'egregious': ['shocking', 'outrageous', 'glaring', 'gross'],
+    'extraneous': ['irrelevant', 'immaterial', 'superfluous', 'nonessential'],
+    'facilitate': ['ease', 'simplify', 'expedite', 'assist'],
+    'gratuitous': ['unnecessary', 'unwarranted', 'unjustified', 'uncalled for'],
+    'laudable': ['praiseworthy', 'commendable', 'admirable', 'creditable'],
+    'mitigate': ['alleviate', 'reduce', 'lessen', 'diminish'],
+    'negligible': ['insignificant', 'trivial', 'minor', 'inconsequential'],
+
+    # Scientific & Technical
+    'anomalous': ['abnormal', 'atypical', 'irregular', 'deviant'],
+    'catalyst': ['stimulus', 'impetus', 'spur', 'precipitant'],
+    'homogeneous': ['uniform', 'consistent', 'unalike', 'similar'],
+    'heterogeneous': ['diverse', 'varied', 'mixed', 'assorted'],
+    'empirical': ['observational', 'experimental', 'pragmatic', 'experiential'],
+    'paradox': ['contradiction', 'inconsistency', 'puzzle', 'enigma'],
+    'phenomenon': ['occurrence', 'event', 'fact', 'situation'],
+    'theorem': ['proposition', 'formula', 'rule', 'principle'],
+    'synthesis': ['combination', 'amalgamation', 'fusion', 'composite'],
+    'volatile': ['unstable', 'explosive', 'unpredictable', 'erratic'],
+
+    # Business & Economics
+    'acquisition': ['purchase', 'buyout', 'procurement', 'takeover'],
+    'arbitrage': ['exploitation of price differences', 'trading', 'speculation'],
+    'commodity': ['product', 'good', 'article of trade', 'resource'],
+    'depreciation': ['devaluation', 'decrease in value', 'reduction', 'weakening'],
+    'derivative': ['by-product', 'offshoot', 'secondary financial instrument'],
+    'equity': ['fairness', 'ownership', 'stock', 'value'],
+    'liquidity': ['cash availability', 'fluid assets', 'marketability'],
+    'merger': ['consolidation', 'amalgamation', 'union', 'fusion'],
+    'solvent': ['financially sound', 'able to pay debts', 'creditworthy'],
+    'insolvent': ['bankrupt', 'ruined', 'unable to pay debts', 'penalized'],
+
+    # Psychological & Emotional
+    'catharsis': ['release', 'purging', 'emotional cleansing', 'abreaction'],
+    'compulsive': ['irresistible', 'uncontrollable', 'driven', 'obsessive'],
+    'eclectic': ['selective', 'diverse', 'broad', 'varied'],
+    'empathy': ['understanding', 'compassion', 'identification', 'rapport'],
+    'lethargic': ['sluggish', 'listless', 'torpid', 'languid'],
+    'nostalgia': ['longing', 'yearning', 'homesickness', 'reminiscence'],
+    'phobia': ['aversion', 'fear', 'dread', 'terror'],
+    'skeptical': ['doubtful', 'questioning', 'cynical', 'disbelieving'],
+    'ambiguous': ['vague', 'unclear', 'equivocal', 'cryptic'],
+    'ambivalent': ['uncertain', 'indecisive', 'torn', 'conflicted'],
+
+    # Art & Literature
+    'aesthetic': ['artistic', 'tasteful', 'decorative', 'ornamental'],
+    'allegory': ['parable', 'symbolic story', 'fable', 'metaphor'],
+    'caricature': ['cartoon', 'exaggerated portrayal', 'parody', 'lampoon'],
+    'collage': ['montage', 'assembly', 'collection', 'patchwork'],
+    'genre': ['category', 'style', 'type', 'classification'],
+    'metaphor': ['symbol', 'analogy', 'figure of speech', 'trope'],
+    'parody': ['satire', 'lampoon', 'spoof', 'imitation'],
+    'surreal': ['dreamlike', 'fantastic', 'bizarre', 'uncanny'],
+    'vignette': ['sketch', 'scene', 'anecdote', 'vignette'],
+    'leitmotif': ['recurring theme', 'dominant idea', 'motif', 'refrain'],
+
+    # Social & Political
+    'bipartisan': ['cross-party', 'unifying', 'cooperative', 'collaborative'],
+    'coalition': ['alliance', 'union', 'partnership', 'bloc'],
+    'demographic': ['population group', 'statistical segment', 'societal category'],
+    'ideology': ['belief system', 'doctrine', 'creed', 'philosophy'],
+    'partisan': ['biased', 'one-sided', 'factional', 'prejudiced'],
+    'pluralistic': ['diverse', 'multicultural', 'inclusive', 'varied'],
+    'sovereignty': ['autonomy', 'independence', 'self-rule', 'self-government'],
+    'totalitarian': ['authoritarian', 'dictatorial', 'oppressive', 'tyrannical'],
+    'unilateral': ['one-sided', 'independent', 'solo', 'unsupported'],
+    'xenophobia': ['prejudice', 'intolerance', 'racism', 'chauvinism'],
+
+    # Nature & Environment
+    'biome': ['ecological community', 'habitat zone', 'ecosystem'],
+    'biodiversity': ['biological variety', 'species richness', 'ecological diversity'],
+    'deforestation': ['clearing', 'logging', 'forest removal', 'denuding'],
+    'ecosystem': ['ecological system', 'environment', 'habitat', 'biota'],
+    'endemic': ['native', 'local', 'indigenous', 'restricted'],
+    'fauna': ['animal life', 'creatures', 'wildlife', 'zoology'],
+    'flora': ['plant life', 'vegetation', 'botany', 'plants'],
+    'habitat': ['environment', 'territory', 'domain', 'home'],
+    'indigenous': ['native', 'aboriginal', 'original', 'local'],
+    'sustainable': ['maintainable', 'eco-friendly', 'renewable', 'green'],
+
+
+
+    # Technology & Computing
+    'algorithmic': ['systematic', 'procedural', 'computational', 'methodical'],
+    'bandwidth': ['capacity', 'throughput', 'data rate', 'speed'],
+    'encryption': ['encoding', 'scrambling', 'cryptography', 'cyphering'],
+    'firewall': ['security barrier', 'protection system', 'digital shield'],
+    'interface': ['connection', 'link', 'gateway', 'portal'],
+    'latency': ['delay', 'lag', 'waiting time', 'response time'],
+    'scalable': ['expandable', 'growable', 'adaptable', 'flexible'],
+    'syntax': ['grammar', 'structure', 'rules', 'format'],
+    'virtualization': ['simulation', 'emulation', 'creation of virtual versions'],
+    'blockchain': ['distributed ledger', 'digital record', 'cryptographic chain'],
+
+    # Medical & Health
+    'aetiology': ['causation', 'origin', 'cause', 'source'],
+    'benign': ['harmless', 'non-cancerous', 'innocuous', 'safe'],
+    'diagnosis': ['identification', 'detection', 'determination', 'analysis'],
+    'epidemiology': ['study of disease incidence', 'public health study'],
+    'malignant': ['cancerous', 'dangerous', 'virulent', 'deadly'],
+    'palliative': ['soothing', 'alleviating', 'comforting', 'pain-relieving'],
+    'prognosis': ['forecast', 'outlook', 'prediction', 'projection'],
+    'remission': ['improvement', 'abatement', 'subsidence', 'respite'],
+    'symptomatic': ['indicative', 'characteristic', 'suggestive', 'typical'],
+    'vaccination': ['immunization', 'inoculation', 'shot', 'jab'],
+
 
 
 
