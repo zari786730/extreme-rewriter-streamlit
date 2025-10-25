@@ -360,10 +360,7 @@ health_terms.update({
     'joint mobility': ['articular movement', 'range of motion', 'synovial flexibility', 'skeletal articulation'],
     'spinal alignment': ['vertebral posture', 'axial balance', 'backbone symmetry', 'chiropractic configuration'],
     'cranial therapy': ['skull manipulation', 'craniosacral technique', 'neural head release', 'osteopathic cranial method'],
-    'manual therapy': ['therapeutic touch', 'physical manipulation', 'bodywork technique', 'manual adjustment']
-})
-
-
+    'manual therapy': ['therapeutic touch', 'physical manipulation', 'bodywork technique', 'manual adjustment'],
 'biothermodynamics': ['life energy transfer', 'metabolic heat study', 'bioenergetic flux', 'thermodynamic physiology'],
     'neurocybernetics': ['neural control systems', 'feedback brain study', 'signal regulation science', 'neuroadaptive modeling'],
     'transpersonal_psychotherapy': ['beyond-self therapy', 'spiritual counseling', 'ego-transcendence practice', 'metaconscious healing'],
@@ -512,7 +509,7 @@ health_terms.update({
     'bioethnomedicine': ['ethnic healing system', 'cultural biotherapy', 'folk biological medicine', 'indigenous curative practice'],
     'hermetotherapy': ['occult health restoration', 'symbolic healing', 'arcane therapy', 'mystical cure'],
     'geomagnetic_therapy': ['earth-field healing', 'magnetic resonance therapy', 'telluric energy treatment', 'geomagnetic balance']
-}
+)}
 
 
 
