@@ -18,57 +18,67 @@ st.write("✓ General words loaded:", len(general_words))
 st.write("✓ Grammar corrector loaded")
 
 # =========================
-# AGGRESSIVE SYNONYM FINDER
+# NUCLEAR SYNONYM SYSTEM
 # =========================
-class AggressiveSynonymFinder:
+class NuclearSynonymSystem:
     def __init__(self):
         self.cache = {}
-        # EXPANDED FALLBACK SYNONYMS
-        self.fallback_synonyms = {
-            'research': ['investigation', 'inquiry', 'exploration', 'examination', 'scrutiny', 'analysis'],
-            'study': ['examination', 'analysis', 'scrutiny', 'survey', 'research', 'investigation'],
-            'analysis': ['examination', 'evaluation', 'assessment', 'interpretation', 'appraisal', 'scrutiny'],
+        # COMPREHENSIVE SYNONYM DATABASE
+        self.synonym_db = {
+            # Academic verbs
+            'research': ['investigate', 'examine', 'scrutinize', 'probe', 'explore', 'study'],
+            'study': ['analyze', 'investigate', 'examine', 'scrutinize', 'review', 'assess'],
+            'analyze': ['examine', 'evaluate', 'assess', 'interpret', 'scrutinize', 'review'],
+            'show': ['demonstrate', 'reveal', 'indicate', 'illustrate', 'display', 'exhibit'],
+            'prove': ['verify', 'confirm', 'validate', 'substantiate', 'corroborate', 'authenticate'],
+            'suggest': ['indicate', 'imply', 'propose', 'recommend', 'advise', 'hint'],
+            'find': ['discover', 'uncover', 'detect', 'identify', 'locate', 'ascertain'],
+            'develop': ['create', 'formulate', 'construct', 'build', 'establish', 'generate'],
+            'use': ['utilize', 'employ', 'apply', 'implement', 'exercise', 'operate'],
+            'understand': ['comprehend', 'grasp', 'apprehend', 'fathom', 'discern', 'perceive'],
+            
+            # Academic nouns
+            'result': ['outcome', 'finding', 'conclusion', 'product', 'effect', 'consequence'],
             'data': ['information', 'facts', 'statistics', 'figures', 'details', 'findings'],
             'method': ['approach', 'technique', 'procedure', 'process', 'system', 'strategy'],
-            'result': ['outcome', 'finding', 'conclusion', 'product', 'effect', 'consequence'],
-            'show': ['demonstrate', 'reveal', 'indicate', 'display', 'exhibit', 'illustrate'],
-            'important': ['significant', 'crucial', 'vital', 'essential', 'critical', 'paramount'],
-            'use': ['utilize', 'employ', 'apply', 'implement', 'exercise', 'operate'],
-            'create': ['generate', 'produce', 'develop', 'make', 'construct', 'formulate'],
-            'help': ['assist', 'aid', 'support', 'facilitate', 'enable', 'guide'],
-            'understand': ['comprehend', 'grasp', 'apprehend', 'fathom', 'discern', 'perceive'],
-            'change': ['modify', 'alter', 'adjust', 'transform', 'convert', 'adapt'],
             'problem': ['issue', 'challenge', 'difficulty', 'obstacle', 'complication', 'dilemma'],
             'solution': ['resolution', 'answer', 'remedy', 'fix', 'approach', 'method'],
-            'this': ['the present', 'the current', 'the existing', 'this particular'],
+            'theory': ['concept', 'principle', 'hypothesis', 'framework', 'notion', 'postulate'],
+            'evidence': ['proof', 'confirmation', 'verification', 'substantiation', 'corroboration'],
+            
+            # Common words with academic alternatives
+            'important': ['significant', 'crucial', 'vital', 'essential', 'critical', 'paramount'],
+            'big': ['substantial', 'considerable', 'significant', 'extensive', 'large-scale'],
+            'small': ['limited', 'modest', 'minimal', 'restricted', 'narrow'],
+            'good': ['effective', 'efficient', 'superior', 'advantageous', 'beneficial'],
+            'bad': ['ineffective', 'inefficient', 'detrimental', 'adverse', 'unfavorable'],
+            
+            # Connectors and modifiers
+            'this': ['the present', 'the current', 'the existing', 'this particular', 'the aforementioned'],
             'that': ['which', 'the aforementioned', 'the specified', 'the particular'],
             'these': ['the present', 'the current', 'the existing', 'these particular'],
             'those': ['the aforementioned', 'the specified', 'the particular', 'those specific'],
             'very': ['extremely', 'highly', 'exceptionally', 'remarkably', 'particularly'],
-            'many': ['numerous', 'multiple', 'several', 'various', 'countless'],
-            'some': ['certain', 'various', 'several', 'select', 'particular'],
-            'more': ['additional', 'further', 'extra', 'supplementary', 'increased'],
-            'most': ['majority', 'bulk', 'predominance', 'largest portion'],
-            'all': ['every', 'each', 'entire', 'complete', 'total', 'whole'],
-            'has': ['possesses', 'contains', 'includes', 'comprises', 'incorporates'],
-            'have': ['possess', 'contain', 'include', 'comprise', 'incorporate'],
-            'is': ['represents', 'constitutes', 'forms', 'comprises', 'equals'],
-            'are': ['represent', 'constitute', 'form', 'comprise', 'equal'],
-            'was': ['represented', 'constituted', 'formed', 'comprised', 'equaled'],
-            'were': ['represented', 'constituted', 'formed', 'comprised', 'equaled'],
-            'be': ['exist', 'occur', 'transpire', 'materialize', 'manifest'],
-            'been': ['existed', 'occurred', 'transpired', 'materialized', 'manifested'],
-            'being': ['existing', 'occurring', 'transpiring', 'materializing', 'manifesting']
+            'many': ['numerous', 'multiple', 'several', 'various', 'countless', 'myriad'],
+            'some': ['certain', 'various', 'several', 'select', 'particular', 'specific'],
+            
+            # BE verbs with alternatives
+            'is': ['represents', 'constitutes', 'forms', 'comprises', 'equals', 'signifies'],
+            'are': ['represent', 'constitute', 'form', 'comprise', 'equal', 'signify'],
+            'was': ['represented', 'constituted', 'formed', 'comprised', 'equaled', 'signified'],
+            'were': ['represented', 'constituted', 'formed', 'comprised', 'equaled', 'signified'],
+            'be': ['exist', 'occur', 'transpire', 'materialize', 'manifest', 'take place'],
+            'been': ['existed', 'occurred', 'transpired', 'materialized', 'manifested', 'taken place'],
         }
     
     def get_synonyms(self, word):
-        """Get aggressive synonyms"""
+        """Get nuclear synonyms"""
         word = word.lower().strip()
         
         if word in self.cache:
             return self.cache[word]
         
-        # Try online API
+        # Try online API first for fresh synonyms
         try:
             response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=2)
             if response.status_code == 200:
@@ -79,45 +89,44 @@ class AggressiveSynonymFinder:
                         synonyms.extend(definition.get('synonyms', []))
                 
                 if synonyms:
-                    unique_synonyms = list(set(synonyms))[:6]
+                    unique_synonyms = list(set(synonyms))[:4]
+                    # Combine with our database
+                    if word in self.synonym_db:
+                        combined = list(set(unique_synonyms + self.synonym_db[word]))[:6]
+                        self.cache[word] = combined
+                        return combined
                     self.cache[word] = unique_synonyms
                     return unique_synonyms
         except:
             pass
         
-        # Use aggressive fallback
-        if word in self.fallback_synonyms:
-            return self.fallback_synonyms[word]
+        # Use our comprehensive database
+        if word in self.synonym_db:
+            self.cache[word] = self.synonym_db[word]
+            return self.synonym_db[word]
         
         return []
 
 # =========================
-# AGGRESSIVE REWRITER CLASS
+# NUCLEAR REWRITER - MULTI-LAYER APPROACH
 # =========================
-class AggressiveRewriter:
+class NuclearRewriter:
     def __init__(self):
-        self.synonym_finder = AggressiveSynonymFinder()
+        self.synonym_finder = NuclearSynonymSystem()
         self.replacements = {}
         self.setup_vocabulary()
-        st.write("🚀 AGGRESSIVE rewriter activated!")
+        st.write("💣 NUCLEAR rewriter activated - Multi-layer anti-detection")
 
     def setup_vocabulary(self):
         """Setup vocabulary"""
-        # Add health terms
         for word, replacement in health_terms.items():
             self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
-        
-        # Add general words
         for word, replacement in general_words.items():
             self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
-        
         st.write(f"📚 Loaded {len(self.replacements)} base words")
 
-    def aggressive_word_replacement(self, text):
-        """VERY AGGRESSIVE word replacement - 90% replacement rate"""
-        if not text:
-            return text
-            
+    def nuclear_word_replacement(self, text):
+        """NUCLEAR word replacement - 95% replacement rate"""
         words = text.split()
         new_words = []
         
@@ -125,14 +134,14 @@ class AggressiveRewriter:
             original_word = word
             clean_word = word.lower().strip('.,!?;:"')
             
-            # Skip only VERY short words
+            # Skip only single characters
             if len(clean_word) <= 1:
                 new_words.append(original_word)
                 continue
             
-            # 90% CHANCE OF REPLACEMENT for most words
-            if random.random() < 0.9:
-                # Check if word is in replacements
+            # 95% CHANCE OF REPLACEMENT - NUCLEAR LEVEL
+            if random.random() < 0.95:
+                # Check existing replacements first
                 if clean_word in self.replacements:
                     replacement = random.choice(self.replacements[clean_word])
                     if word[0].isupper():
@@ -140,7 +149,7 @@ class AggressiveRewriter:
                     new_words.append(replacement)
                     continue
                 
-                # If not in vocabulary, try to find synonyms
+                # Find new synonyms
                 synonyms = self.synonym_finder.get_synonyms(clean_word)
                 if synonyms:
                     self.replacements[clean_word] = synonyms
@@ -155,63 +164,99 @@ class AggressiveRewriter:
         
         return ' '.join(new_words)
 
-    def restructure_sentences(self, text):
-        """Aggressive sentence restructuring"""
+    def restructure_sentences_nuclear(self, text):
+        """NUCLEAR sentence restructuring"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if len(sentences) <= 1:
             return text
         
-        # Shuffle sentences
+        # Shuffle sentences aggressively
         random.shuffle(sentences)
         
-        # Add variety to sentence starts
+        # Add academic starters
         starters = [
-            "Research indicates that", "Studies demonstrate that", "Evidence suggests that",
-            "Analysis reveals that", "Findings show that", "Data illustrates that",
-            "It is evident that", "One can observe that", "The evidence indicates that"
+            "Research investigations demonstrate that", "Empirical studies reveal that", 
+            "Academic analysis indicates that", "Scholarly examination shows that",
+            "Scientific inquiry demonstrates that", "Theoretical frameworks suggest that",
+            "Methodological approaches reveal that", "Evidence-based research indicates that"
+        ]
+        
+        # Add academic connectors between sentences
+        connectors = [
+            "Furthermore,", "Moreover,", "Additionally,", "Consequently,", 
+            "Accordingly,", "Henceforth,", "Thereafter,", "Subsequently,"
         ]
         
         restructured = []
         for i, sentence in enumerate(sentences):
-            if i == 0 and random.random() < 0.7:
+            # Add starter to first sentence
+            if i == 0 and random.random() < 0.8:
                 sentence = random.choice(starters) + " " + sentence.lower()
+            # Add connectors to other sentences
+            elif i > 0 and random.random() < 0.6:
+                sentence = random.choice(connectors) + " " + sentence.lower()
+            
             restructured.append(sentence)
         
         return '. '.join(restructured) + '.'
 
-    def change_sentence_structure(self, text):
-        """Change sentence structure aggressively"""
-        # Add prefixes
-        prefixes = [
-            "From this perspective,", "In this context,", "Within this framework,",
-            "Considering these factors,", "Based on the evidence,", "According to the data,"
+    def change_voice_structure(self, text):
+        """Change sentence voice and structure"""
+        # Active to passive transformations
+        voice_changes = [
+            (r'(\w+) (\w+)s that', r'It is \2ed that \1'),
+            (r'(\w+) shows that', r'It is demonstrated that'),
+            (r'(\w+) found that', r'It was discovered that'),
+            (r'(\w+) suggests that', r'It is suggested that'),
+            (r'(\w+) proves that', r'It is proven that'),
         ]
         
-        if random.random() < 0.6:
-            text = random.choice(prefixes) + " " + text.lower()
+        for pattern, replacement in voice_changes:
+            if random.random() < 0.4:
+                text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
         
         return text
 
-# Initialize the AGGRESSIVE rewriter
-aggressive_rewriter = AggressiveRewriter()
+    def add_academic_phrases(self, text):
+        """Inject academic phrases"""
+        academic_injections = [
+            "From an analytical perspective,",
+            "Within the framework of contemporary scholarship,",
+            "Considering the empirical evidence,",
+            "Based on methodological considerations,",
+            "From a theoretical standpoint,",
+            "In the context of academic discourse,",
+        ]
+        
+        if random.random() < 0.7:
+            injection = random.choice(academic_injections)
+            text = injection + " " + text.lower()
+        
+        return text
 
-def extreme_rewriter(original_text):
-    """AGGRESSIVE rewriting that actually changes text"""
+# Initialize NUCLEAR rewriter
+nuclear_rewriter = NuclearRewriter()
+
+def nuclear_rewrite(original_text):
+    """NUCLEAR rewriting - Multi-layer approach"""
     if not original_text:
         return original_text
         
     clean_text = original_text.strip()
     
-    # Apply AGGRESSIVE word replacement
-    result = aggressive_rewriter.aggressive_word_replacement(clean_text)
+    # LAYER 1: Nuclear word replacement
+    result = nuclear_rewriter.nuclear_word_replacement(clean_text)
     
-    # Apply sentence restructuring
-    result = aggressive_rewriter.restructure_sentences(result)
+    # LAYER 2: Sentence restructuring
+    result = nuclear_rewriter.restructure_sentences_nuclear(result)
     
-    # Change sentence structure
-    result = aggressive_rewriter.change_sentence_structure(result)
+    # LAYER 3: Voice/structure changes
+    result = nuclear_rewriter.change_voice_structure(result)
     
-    # Final grammar correction
+    # LAYER 4: Academic phrase injection
+    result = nuclear_rewriter.add_academic_phrases(result)
+    
+    # LAYER 5: Final grammar correction
     result = correct_grammar(result)
     
     return result
@@ -228,13 +273,13 @@ def calculate_similarity(original, rewritten):
     similarity = len(common_words) / len(original_words) * 100
     return similarity
 
-def guarantee_low_similarity(original_text, max_similarity=15, max_attempts=8):
-    """Keep generating until similarity is very low"""
+def guarantee_nuclear_similarity(original_text, max_similarity=10, max_attempts=12):
+    """NUCLEAR similarity reduction"""
     best_result = original_text
     best_similarity = 100
 
     for attempt in range(max_attempts):
-        rewritten = extreme_rewriter(original_text)
+        rewritten = nuclear_rewrite(original_text)
         similarity = calculate_similarity(original_text, rewritten)
 
         if similarity < best_similarity:
