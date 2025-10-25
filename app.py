@@ -1331,9 +1331,12 @@ class UniversalExtremeRewriter:
 }
     
     def intelligent_word_replacement(self, text):
-        """More aggressive and intelligent word replacement"""
-        words = text.split()
-        new_words = []
+    """More aggressive and intelligent word replacement"""
+    # First apply the comprehensive vocabulary replacements
+    text = self.rewrite_text(text)
+    
+    words = text.split()
+    new_words = []
         
         i = 0
         while i < len(words):
