@@ -4,11 +4,8 @@ import streamlit as st
 from collections import defaultdict
 from health_terms import health_terms
 from health_terms_2 import health_terms as health_terms_2
-from generalwords import general_words
-
-Merge them
-
 health_terms.update(health_terms_2)
+Merge them
 
 st.write("✅ Health terms loaded:", len(health_terms))
 import streamlit as st
