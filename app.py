@@ -24,9 +24,10 @@ st.write("✓ General words loaded:", len(general_words))
 class UniversalExtremeRewriter:
     def __init__(self):
         self.setup_comprehensive_vocabulary()
-    
+
     def setup_comprehensive_vocabulary(self):
         """EXPANDED vocabulary database for universal use"""
+        # Start with your existing replacements
         self.replacements = {
             # Common academic/research words
             'research': ['scholarly investigation', 'academic inquiry', 'systematic study', 'empirical exploration'],
