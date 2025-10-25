@@ -6,22 +6,20 @@ import requests
 import time
 import json
 import os
+import threading
 
-# Import health terms
+# Import your existing files
 from health_terms import health_terms
 from health_terms_2 import health_terms as health_terms_2
+from generalwords import general_words
+from grammar_corrector import correct_grammar
 
-# Merge the two health terms dictionaries
+# Merge health terms
 health_terms.update(health_terms_2)
 
 st.write("✓ Health terms loaded:", len(health_terms))
-
-# Import general words
-from generalwords import general_words
-
 st.write("✓ General words loaded:", len(general_words))
-
-from grammar_corrector import correct_grammar
+st.write("✓ Grammar corrector loaded")
 
 # =========================
 # FREE SYNONYM API CLASS
@@ -34,7 +32,6 @@ class FreeSynonymsAPI:
         """Get synonyms from free dictionary API"""
         word = word.lower().strip()
         
-        # Check cache first
         if word in self.cache:
             return self.cache[word]
         
@@ -45,112 +42,112 @@ class FreeSynonymsAPI:
                 data = response.json()
                 synonyms = []
                 
-                # Extract synonyms from API response
                 for meaning in data[0].get('meanings', []):
                     for definition in meaning.get('definitions', []):
                         synonyms.extend(definition.get('synonyms', []))
                 
-                # Remove duplicates and limit results
-                unique_synonyms = list(set(synonyms))[:8]
-                
-                # Cache the results
+                unique_synonyms = list(set(synonyms))[:6]
                 self.cache[word] = unique_synonyms
                 return unique_synonyms
                 
         except Exception as e:
-            st.write(f"⚠️ API error for {word}: {e}")
-        
-        return []  # Return empty if no synonyms found
-
-# =========================
-# IMPROVED UNIVERSAL BACKEND WITH PERMANENT STORAGE
-# =========================
-
-class UniversalExtremeRewriter:
-    def __init__(self):
-        self.synonym_finder = FreeSynonymsAPI()
-        self.vocabulary_files = self.get_vocabulary_files()
-        self.setup_comprehensive_vocabulary()
-
-    def get_vocabulary_files(self):
-        """Get list of existing vocabulary files and create new one if needed"""
-        base_files = []
-        counter = 1
-        
-        while True:
-            filename = f"dynamic_vocabulary_{counter}.json"
-            if os.path.exists(filename):
-                base_files.append(filename)
-                counter += 1
-            else:
-                # Create new file for this session
-                self.current_vocab_file = filename
-                # Initialize empty file
-                with open(filename, 'w') as f:
-                    json.dump({}, f)
-                break
-        
-        st.write(f"📁 Vocabulary files: {base_files}")
-        st.write(f"📝 Current vocabulary file: {self.current_vocab_file}")
-        return base_files
-
-    def load_all_vocabulary(self):
-        """Load vocabulary from all files"""
-        all_vocab = {}
-        
-        # Load from all existing vocabulary files
-        for vocab_file in self.vocabulary_files:
-            try:
-                with open(vocab_file, 'r') as f:
-                    file_vocab = json.load(f)
-                    all_vocab.update(file_vocab)
-                    st.write(f"📂 Loaded {len(file_vocab)} words from {vocab_file}")
-            except Exception as e:
-                st.write(f"⚠️ Error loading {vocab_file}: {e}")
-        
-        # Load from current session file
-        try:
-            with open(self.current_vocab_file, 'r') as f:
-                current_vocab = json.load(f)
-                all_vocab.update(current_vocab)
-                st.write(f"📂 Loaded {len(current_vocab)} words from current session")
-        except:
             pass
         
-        return all_vocab
+        return []
 
-    def save_to_vocabulary_file(self, new_words):
-        """Save new words to current vocabulary file"""
-        try:
-            # Load current file content
-            try:
-                with open(self.current_vocab_file, 'r') as f:
-                    current_content = json.load(f)
-            except:
-                current_content = {}
+# =========================
+# ACADEMIC VOCABULARY BUILDER
+# =========================
+class AcademicVocabularyBuilder:
+    def __init__(self, main_rewriter):
+        self.synonym_finder = FreeSynonymsAPI()
+        self.main_rewriter = main_rewriter
+        self.learning_active = True
+        self.target_word_count = 100000
+        self.current_word_count = 0
+        self.current_vocab_file = "academic_vocabulary.json"
+        self.learned_words = set()
+        
+        # Academic word banks
+        self.academic_words = [
+            # Biology
+            'cell', 'dna', 'rna', 'protein', 'enzyme', 'metabolism', 'respiration', 
+            'photosynthesis', 'mitosis', 'meiosis', 'chromosome', 'gene', 'mutation',
+            'evolution', 'ecology', 'ecosystem', 'organism', 'tissue', 'organ',
+            'membrane', 'nucleus', 'mitochondria', 'biology', 'biological',
             
-            # Add new words
-            current_content.update(new_words)
+            # Chemistry
+            'atom', 'molecule', 'compound', 'element', 'reaction', 'bond', 
+            'solution', 'acid', 'base', 'ph', 'equilibrium', 'catalyst',
+            'organic', 'inorganic', 'chemical', 'chemistry', 'synthesis',
             
-            # Check if file is getting too large (>700 words)
-            if len(current_content) > 700:
-                st.write("📦 Current vocabulary file reached 700+ words, creating new file...")
-                self.vocabulary_files.append(self.current_vocab_file)
-                # Create new file
-                counter = len(self.vocabulary_files) + 1
-                self.current_vocab_file = f"dynamic_vocabulary_{counter}.json"
-                # Start fresh with new words only
-                current_content = new_words
+            # Physics
+            'force', 'energy', 'velocity', 'acceleration', 'momentum', 'gravity',
+            'quantum', 'relativity', 'mechanics', 'optics', 'electricity',
+            'magnetism', 'wave', 'particle', 'mass', 'physics', 'physical',
             
-            # Save to file
-            with open(self.current_vocab_file, 'w') as f:
-                json.dump(current_content, f, indent=2)
+            # Academic Writing
+            'analyze', 'evaluate', 'synthesize', 'interpret', 'demonstrate',
+            'illustrate', 'methodology', 'framework', 'paradigm', 'theoretical',
+            'empirical', 'hypothesis', 'premise', 'inference', 'validation',
             
-            total_words = len(self.load_all_vocabulary())
-            st.write(f"💾 Saved {len(new_words)} new words. Total vocabulary: {total_words} words")
+            # Research Methods
+            'methodology', 'protocol', 'procedure', 'sampling', 'population',
+            'variable', 'control', 'validity', 'reliability', 'correlation',
+            'significance', 'statistic', 'distribution', 'research', 'study',
             
-        except Exception as e:
-            st.write(f"⚠️ Error saving vocabulary: {e}")
+            # Scientific Concepts
+            'theory', 'law', 'principle', 'concept', 'phenomenon', 'mechanism',
+            'process', 'system', 'model', 'experiment', 'observation', 'data',
+            'evidence', 'proof', 'measurement', 'science', 'scientific'
+        ]
+        
+        st.write(f"🎯 Academic vocabulary builder activated")
+        st.write(f"📚 {len(self.academic_words)} academic words queued for learning")
+        self.start_continuous_learning()
+    
+    def start_continuous_learning(self):
+        """Start background learning thread"""
+        def learning_worker():
+            word_index = 0
+            
+            while self.learning_active and word_index < len(self.academic_words):
+                try:
+                    word = self.academic_words[word_index]
+                    
+                    if word not in self.main_rewriter.replacements and word not in self.learned_words:
+                        synonyms = self.synonym_finder.get_synonyms(word)
+                        if synonyms:
+                            self.main_rewriter.replacements[word] = synonyms
+                            self.learned_words.add(word)
+                            self.current_word_count = len(self.main_rewriter.replacements)
+                            
+                            # Show progress every 10 words
+                            if len(self.learned_words) % 10 == 0:
+                                progress = (len(self.learned_words) / len(self.academic_words)) * 100
+                                st.write(f"🧠 Learned {len(self.learned_words)}/{len(self.academic_words)} words ({progress:.1f}%)")
+                    
+                    word_index += 1
+                    time.sleep(1)  # Be nice to the API
+                    
+                except Exception as e:
+                    time.sleep(2)
+            
+            st.write(f"✅ Academic vocabulary learning completed: {len(self.learned_words)} words")
+        
+        thread = threading.Thread(target=learning_worker, daemon=True)
+        thread.start()
+
+# =========================
+# MAIN REWRITER CLASS
+# =========================
+class UniversalExtremeRewriter:
+    def __init__(self):
+        self.replacements = {}
+        self.setup_comprehensive_vocabulary()
+        
+        # Start academic vocabulary builder
+        self.vocabulary_builder = AcademicVocabularyBuilder(self)
 
     def setup_comprehensive_vocabulary(self):
         """EXPANDED vocabulary database for universal use"""
@@ -167,43 +164,7 @@ class UniversalExtremeRewriter:
             if word not in self.replacements:
                 self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
         
-        # Load dynamically saved vocabulary
-        dynamic_vocab = self.load_all_vocabulary()
-        self.replacements.update(dynamic_vocab)
-        
-        total_words = len(self.replacements)
-        st.write(f"✅ Total vocabulary loaded: {total_words} words")
-        st.write(f"📚 Breakdown: {len(health_terms)} health + {len(general_words)} general + {len(dynamic_vocab)} dynamic words")
-        st.write("🔄 Dynamic synonym fetching with permanent storage enabled")
-
-    def enhance_vocabulary_dynamically(self, text):
-        """Find and add synonyms for words not in existing dictionaries"""
-        words = text.split()
-        new_words_added = 0
-        new_vocab = {}
-        
-        for word in words:
-            clean_word = word.lower().strip('.,!?;:"')
-            
-            # Skip short/common words
-            if len(clean_word) <= 3 or clean_word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']:
-                continue
-            
-            # If word not in vocabulary, try to find synonyms from internet
-            if clean_word not in self.replacements:
-                synonyms = self.synonym_finder.get_synonyms(clean_word)
-                if synonyms:
-                    self.replacements[clean_word] = synonyms
-                    new_vocab[clean_word] = synonyms
-                    new_words_added += 1
-                    st.write(f"➕ Added '{clean_word}': {synonyms}")
-        
-        if new_words_added > 0:
-            st.write(f"🎯 Enhanced vocabulary with {new_words_added} new words from internet")
-            # Save new words to permanent storage
-            self.save_to_vocabulary_file(new_vocab)
-        
-        return new_words_added
+        st.write(f"✅ Total vocabulary loaded: {len(self.replacements)} words")
 
     def rewrite_text(self, text):
         """Basic text replacement using vocabulary"""
@@ -221,9 +182,6 @@ class UniversalExtremeRewriter:
 
     def intelligent_word_replacement(self, text):
         """More aggressive and intelligent word replacement"""
-        # First enhance vocabulary with words from this text
-        self.enhance_vocabulary_dynamically(text)
-        
         words = text.split()
         new_words = []
         i = 0
@@ -281,7 +239,7 @@ class UniversalExtremeRewriter:
                 restructured.append(sentence)
                 continue
 
-            # FIXED: Less aggressive patterns to reduce grammar issues
+            # Less aggressive patterns to reduce grammar issues
             pattern_choice = random.choice([
                 'normal', 'normal', 'normal', 'normal',  # More normal sentences
                 'academic', 'emphasis', 'context', 'comparative'  # Fewer disruptive patterns
@@ -482,7 +440,6 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
             return rewritten, similarity
 
     return best_result, best_similarity
-        
 
 # =========================
 # FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
