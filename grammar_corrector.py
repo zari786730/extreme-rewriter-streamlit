@@ -6,204 +6,120 @@ class IntelligentGrammarCorrector:
         self.common_errors = self.setup_common_errors()
 
     def setup_grammar_rules(self):
-        """Comprehensive grammar rules without AI"""
         return {
-            # Capitalization rules
             r'^([a-z])': lambda m: m.group(1).upper(),
             r'([.!?]\s+)([a-z])': lambda m: m.group(1) + m.group(2).upper(),
-
-            # Punctuation fixes
-            r',\s*,': ',',
-            r'\.\s*\.': '.',
-            r'\s+\.': '.',
-            r'\s+,': ',',
-            r',\s*\.': '.',
-            r';\s*;': ';',
-
-            # Spacing fixes
-            r'\s{2,}': ' ',
-            r'\s+([.,!?;])': r'\1',
-            r'([.,!?;])([A-Za-z])': r'\1 \2',
-            r'\(\s*': '(',
-            r'\s*\)': ')',
-
-            # Sentence structure
-            r'\.([A-Za-z])': r'. \1',
-            r'\!([A-Za-z])': r'! \1',
-            r'\?([A-Za-z])': r'? \1',
+            r',\s*,': ',', r'\.\s*\.': '.', r'\s+\.': '.', r'\s+,': ',',
+            r',\s*\.': '.', r';\s*;': ';', r'\s{2,}': ' ',
+            r'\s+([.,!?;])': r'\1', r'([.,!?;])([A-Za-z])': r'\1 \2',
         }
 
     def setup_common_errors(self):
-        """Common grammatical errors and their corrections"""
         return {
-            r'\bi\s': 'I ',
-            r'\balot\b': 'a lot',
-            r'\bnoone\b': 'no one',
-            r'\beverytime\b': 'every time',
-            r'\banytime\b': 'any time',
-            r'\bsometime\b': 'some time',
-
-            # Verb agreement
-            r'\bthey is\b': 'they are',
-            r'\bhe are\b': 'he is',
-            r'\bshe are\b': 'she is',
-            r'\bit are\b': 'it is',
-
-            # Common confusions
-            r'\byour\b': 'you\'re',
-            r'\btheir\b': 'they\'re',
-            r'\bits\b': 'it\'s',
-            r'\bwhos\b': 'who\'s',
-
-            # Double words
-            r'\bthe the\b': 'the',
-            r'\band and\b': 'and',
-            r'\bin in\b': 'in',
-            r'\bis is\b': 'is',
+            r'\bi\s': 'I ', r'\bit\'s\b': 'its', r'\bthey\'re\b': 'their',
+            r'\byour\b': 'you\'re', r'\btheir\b': 'they\'re', r'\bits\b': 'it\'s',
+            r'\bwhere\s+it\s+has\b': 'where it has',  # Fix broken phrases
         }
 
-    def fix_sentence_fragments(self, text):
-        """Fix incomplete sentences and fragments"""
-        sentences = re.split(r'([.!?]+)', text)
-        corrected = []
-
-        for i in range(0, len(sentences), 2):
-            if i < len(sentences):
-                sentence = sentences[i].strip()
-                punctuation = sentences[i + 1] if i + 1 < len(sentences) else '.'
-
-                if sentence:
-                    # Check if sentence is too short to stand alone
-                    words = sentence.split()
-                    if len(words) < 3 and len(corrected) > 0:
-                        # Merge with previous sentence
-                        if corrected:
-                            corrected[-1] = corrected[-1].rstrip('.,!?') + ', ' + sentence.lower()
-                        else:
-                            corrected.append(sentence.capitalize() + punctuation)
-                    else:
-                        corrected.append(sentence.capitalize() + punctuation)
-
-        return ' '.join(corrected)
-
-    def fix_comma_overuse(self, text):
-        """Remove excessive commas while keeping necessary ones"""
-        # Remove commas before short words
-        text = re.sub(r',\s+(and|or|but)\s+', r' \1 ', text)
-
-        # Remove commas in simple lists
-        text = re.sub(r'(\w+), (\w+), (\w+)', r'\1, \2 and \3', text)
-
-        # Remove commas between very short phrases
-        sentences = re.split(r'[.!?]', text)
-        corrected_sentences = []
-
-        for sentence in sentences:
-            if sentence.strip():
-                parts = sentence.split(',')
-                if len(parts) > 3:  # Too many commas
-                    # Keep only necessary commas
-                    cleaned = parts[0] + ', ' + ' '.join(parts[1:])
-                    corrected_sentences.append(cleaned)
-                else:
-                    corrected_sentences.append(sentence)
-
-        return '. '.join(corrected_sentences) + '.'
-
-    def fix_article_agreement(self, text):
-        """Fix a/an article usage"""
-        text = re.sub(r'\ba ([aeiouAEIOU])', r'an \1', text)
-        text = re.sub(r'\ban ([^aeiouAEIOU])', r'a \1', text)
+    def fix_broken_sentences(self, text):
+        """Fix the specific broken sentences your rewriter creates"""
+        # Fix random words at start of sentences
+        text = re.sub(r'(Significantly, |Interestingly |Similarly |Accordingly |Consequently |Moreover |Therefore, |Notably |Remarkably, )+', '', text)
+        
+        # Fix "and" at start of sentences
+        text = re.sub(r'\. And ', '. ', text)
+        
+        # Fix sentence fragments that start with lowercase
+        text = re.sub(r'\. ([a-z])', lambda m: '. ' + m.group(1).upper(), text)
+        
+        # Fix random phrases in middle of sentences
+        text = re.sub(r', (revealing how|Methods|Similarly|Accordingly|Consequently|Moreover)', ',', text)
+        
         return text
 
-    def fix_repeated_words(self, text):
-        """Remove accidentally repeated words"""
-        words = text.split()
-        corrected_words = []
+    def fix_sentence_structure(self, text):
+        """Fix overall sentence structure"""
+        # Split into sentences
+        sentences = re.split(r'[.!?]+', text)
+        corrected_sentences = []
+        
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+                
+            words = sentence.split()
+            if len(words) < 4:  # Too short, merge with next or previous
+                continue
+                
+            # Capitalize first word
+            if words and words[0][0].islower():
+                words[0] = words[0].capitalize()
+                
+            corrected_sentences.append(' '.join(words))
+        
+        # Join with proper punctuation
+        result = '. '.join(corrected_sentences)
+        if result and not result.endswith('.'):
+            result += '.'
+            
+        return result
 
-        for i, word in enumerate(words):
-            if i == 0 or word.lower() != words[i-1].lower():
-                corrected_words.append(word)
-
-        return ' '.join(corrected_words)
-
-    def fix_capitalization_consistency(self, text):
-        """Ensure consistent capitalization in sentences"""
-        sentences = re.split(r'([.!?]+\s*)', text)
-        corrected = []
-
-        for i in range(0, len(sentences), 2):
-            if i < len(sentences):
-                sentence = sentences[i].strip()
-                punctuation = sentences[i + 1] if i + 1 < len(sentences) else ''
-
-                if sentence:
-                    # Capitalize first letter
-                    sentence = sentence[0].upper() + sentence[1:]
-                    corrected.append(sentence + punctuation)
-
-        return ''.join(corrected)
-
-    def fix_spacing_issues(self, text):
-        """Fix all spacing problems"""
-        # Remove spaces before punctuation
-        text = re.sub(r'\s+([.,!?;])', r'\1', text)
-
-        # Add spaces after punctuation
-        text = re.sub(r'([.,!?;])([A-Za-z])', r'\1 \2', text)
-
-        # Fix space after commas
-        text = re.sub(r',(\S)', r', \1', text)
-
-        # Remove multiple spaces
-        text = re.sub(r'\s+', ' ', text)
-
-        return text.strip()
+    def remove_repetitive_patterns(self, text):
+        """Remove repetitive sentence starters"""
+        patterns = [
+            r'Significantly, ',
+            r'Interestingly, ',
+            r'Similarly, ',
+            r'Accordingly, ',
+            r'Consequently, ',
+            r'Moreover, ',
+            r'Therefore, ',
+            r'Notably, ',
+            r'Remarkably, ',
+            r'In conclusion, ',
+            r'For example, ',
+        ]
+        
+        for pattern in patterns:
+            # Remove if it appears more than once in close proximity
+            text = re.sub(f'({pattern})+', '', text)
+            
+        return text
 
     def enhanced_grammar_correction(self, text):
-        """More comprehensive grammar correction"""
+        """Comprehensive grammar correction for rewriter output"""
         if not text or len(text.strip()) < 10:
             return text
 
-        # Step 1: Fix basic grammar rules
+        # Step 1: Fix broken sentences from rewriter
+        text = self.fix_broken_sentences(text)
+        
+        # Step 2: Remove repetitive patterns
+        text = self.remove_repetitive_patterns(text)
+        
+        # Step 3: Fix basic grammar rules
         for pattern, replacement in self.grammar_rules.items():
             if callable(replacement):
                 text = re.sub(pattern, replacement, text)
             else:
                 text = re.sub(pattern, replacement, text)
 
-        # Step 2: Fix common errors
+        # Step 4: Fix common errors
         for error, correction in self.common_errors.items():
             text = re.sub(error, correction, text, flags=re.IGNORECASE)
 
-        # Step 3: Fix article agreement
-        text = self.fix_article_agreement(text)
+        # Step 5: Fix overall sentence structure
+        text = self.fix_sentence_structure(text)
 
-        # Step 4: Fix repeated words
-        text = self.fix_repeated_words(text)
-
-        # Step 5: Fix comma overuse
-        text = self.fix_comma_overuse(text)
-
-        # Step 6: Fix sentence fragments
-        text = self.fix_sentence_fragments(text)
-
-        # Step 7: Fix spacing issues
-        text = self.fix_spacing_issues(text)
-
-        # Step 8: Fix missing spaces after punctuation
-        text = re.sub(r'([.!?])([A-Za-z])', r'\1 \2', text)
-
-        # Step 9: Ensure proper sentence endings
-        if not text.endswith(('.', '!', '?')):
-            text = text + '.'
-
-        # Step 10: Ensure consistent capitalization
-        text = self.fix_capitalization_consistency(text)
-
-        # Final cleanup
+        # Step 6: Final cleanup
         text = re.sub(r'\s+', ' ', text).strip()
-
+        text = re.sub(r'\.\s*\.', '.', text)  # Remove double periods
+        
+        # Ensure proper ending
+        if text and not text.endswith(('.', '!', '?')):
+            text += '.'
+            
         return text
 
 # Create global instance
