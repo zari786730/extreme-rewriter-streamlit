@@ -4,7 +4,7 @@ import streamlit as st
 from collections import defaultdict
 from health_terms import health_terms
 from health_terms_2 import health_terms as health_terms_2
-
+from gernalwords import gernal words 
 # Merge them
 health_terms.update(health_terms_2)
 
