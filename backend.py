@@ -7,9 +7,12 @@ import re
 import requests
 import nltk
 
+# Download required NLTK data once
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('wordnet')
+
+# Imports after downloading resources
 from nltk import pos_tag, word_tokenize
 from nltk.corpus import wordnet
 
