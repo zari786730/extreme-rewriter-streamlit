@@ -1,11 +1,14 @@
 # =========================
-# PURE REWRITER (OFFLINE & NO NLTK)
+# EXTREME REWRITER STREAMLIT (OFFLINE & NO NLTK)
 # =========================
 
+import streamlit as st
 import random
 import re
 
-# Import your existing files
+# -------------------------
+# IMPORT YOUR LOCAL FILES
+# -------------------------
 from health_terms import health_terms
 from health_terms_2 import health_terms as health_terms_2
 from generalwords import general_words
@@ -14,6 +17,9 @@ from grammar_corrector import correct_grammar
 # Merge health terms
 health_terms.update(health_terms_2)
 
+# -------------------------
+# PURE REWRITER (OFFLINE)
+# -------------------------
 class PureRewriter:
     def __init__(self):
         self.replacements = {}
@@ -89,12 +95,12 @@ class PureRewriter:
                 sentences[0] = random.choice(['Interestingly, ','Notably, ','Importantly, ']) + first_sentence.lower()
         return '. '.join(sentences) + '.'
 
-# Initialize pure rewriter
+# Initialize rewriter
 pure_rewriter = PureRewriter()
 
-# =========================
+# -------------------------
 # EXTREME REWRITER FUNCTION
-# =========================
+# -------------------------
 def extreme_rewriter(original_text):
     clean_text = original_text.strip().strip('"').strip("'")
     transformations = [
@@ -110,9 +116,9 @@ def extreme_rewriter(original_text):
     result = correct_grammar(result)
     return result
 
-# =========================
-# SIMILARITY CALCULATION (NO NLTK)
-# =========================
+# -------------------------
+# SIMILARITY CALCULATION
+# -------------------------
 def calculate_similarity(original, rewritten):
     original_words = set(re.findall(r'\w+', original.lower()))
     rewritten_words = set(re.findall(r'\w+', rewritten.lower()))
@@ -121,9 +127,9 @@ def calculate_similarity(original, rewritten):
         return 0
     return len(common_words) / len(original_words) * 100
 
-# =========================
+# -------------------------
 # GUARANTEE LOW SIMILARITY
-# =========================
+# -------------------------
 def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
     best_result = None
     best_similarity = 100
@@ -136,3 +142,32 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
         if similarity <= max_similarity:
             return rewritten, similarity
     return best_result, best_similarity
+
+# =========================
+# FRONTEND
+# =========================
+st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
+
+# ... [Paste your full CSS, bubble layers, header, input area, buttons, and footer here] ...
+
+# --- REWRITE BUTTON ---
+if st.button("🚀 Rewrite Now"):
+    if not input_text.strip():
+        st.warning("⚠️ Please enter some text first!")
+    else:
+        with st.spinner("Rewriting your text..."):
+            rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
+        st.markdown(f"""
+        <div class="glass-box" style="border:1px solid rgba(0,255,255,0.3);">
+            <h3 style="color:#00eaff;">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
+            <textarea readonly rows="10" style="
+                width:100%;
+                background:rgba(0,15,25,0.8);
+                color:#e6faff;
+                border-radius:15px;
+                border:1px solid rgba(0,180,255,0.2);
+                padding:1rem;
+                font-size:1rem;
+            ">{rewritten}</textarea>
+        </div>
+        """, unsafe_allow_html=True)
