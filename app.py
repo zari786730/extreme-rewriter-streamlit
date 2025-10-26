@@ -1,7 +1,5 @@
 =========================
-
 NON-AI EXTREME REWRITER BACKEND (MULTI-PASS & CLAUSE-LEVEL)
-
 =========================
 
 import random
