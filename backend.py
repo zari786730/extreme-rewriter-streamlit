@@ -1,5 +1,5 @@
 # =========================
-# NON-AI EXTREME REWRITER BACKEND
+# NON-AI EXTREME REWRITER BACKEND (MULTI-PASS & CLAUSE-LEVEL)
 # =========================
 
 import random
@@ -50,6 +50,20 @@ def get_synonyms(word, pos=None):
                 lemmas.add(lemma_name)
     return list(lemmas)
 
+def split_clauses(sentence):
+    """Split a sentence into smaller clauses for clause-level rewriting"""
+    return re.split(r',|;| - |: ', sentence)
+
+def join_clauses(clauses):
+    """Rejoin clauses into a sentence with mild connectors"""
+    if not clauses:
+        return ""
+    sentence = clauses[0].strip().capitalize()
+    connectors = [", ", ", and ", ", but ", "; "]
+    for clause in clauses[1:]:
+        sentence += random.choice(connectors) + clause.strip().lower()
+    return sentence
+
 # =========================
 # PURE REWRITER
 # =========================
@@ -66,8 +80,8 @@ class PureRewriter:
         for w, r in general_words.items():
             self.replacements[w] = [r] if isinstance(r, str) else r
 
-    def synonym_replace(self, sentence):
-        """Replace nouns, verbs, adjectives, adverbs with synonyms"""
+    def synonym_replace_sentence(self, sentence):
+        """Replace nouns, verbs, adjectives, adverbs with synonyms (one pass)"""
         words = sentence.split()
         tagged = pos_tag(words)
         new_words = []
@@ -75,7 +89,7 @@ class PureRewriter:
         for word, tag in tagged:
             clean_word = word.strip('.,!?;:"')
             wn_pos = get_wordnet_pos(tag)
-            
+
             # Skip very short/common words
             if len(clean_word) <= 2 or clean_word.lower() in ['the','a','an','and','or','but','in','on','at']:
                 new_words.append(word)
@@ -100,41 +114,36 @@ class PureRewriter:
 
         return ' '.join(new_words)
 
-    def restructure_sentences(self, text):
-        """Reorder clauses and sentences to make text unique but meaningful"""
+    def multi_pass_synonym_replace(self, sentence, passes=2):
+        """Apply synonym replacement multiple times for better coverage"""
+        for _ in range(passes):
+            # Clause-level replacement
+            clauses = split_clauses(sentence)
+            clauses = [self.synonym_replace_sentence(c) for c in clauses]
+            sentence = join_clauses(clauses)
+        return sentence
+
+    def restructure_paragraph(self, text):
+        """Shuffle sentences lightly and add connectors throughout paragraph"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if len(sentences) <= 1:
             return text
 
-        # Shuffle sentences lightly (not completely random)
-        if random.random() < 0.5:
-            first = sentences.pop(0)
-            insert_at = random.randint(0, len(sentences))
-            sentences.insert(insert_at, first)
+        # Shuffle sentences randomly
+        for i in range(len(sentences)):
+            if random.random() < 0.5:
+                swap_idx = random.randint(0, len(sentences)-1)
+                sentences[i], sentences[swap_idx] = sentences[swap_idx], sentences[i]
 
-        # Add connectors
-        connectors = ['Moreover, ', 'In addition, ', 'Notably, ', 'Importantly, ']
-        for i in range(1, len(sentences)):
-            if random.random() < 0.3:
-                sentences[i] = random.choice(connectors) + sentences[i].lower()
-
-        return '. '.join(sentences) + '.'
-
-    def smart_length_adjustment(self, text):
-        """Split or expand sentences for variation"""
-        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        result = []
-        for s in sentences:
-            words = s.split()
-            if len(words) > 20 and random.random() < 0.4:
-                mid = len(words) // 2
-                result.append(' '.join(words[:mid]) + '.')
-                result.append(' '.join(words[mid:]).capitalize())
-            elif len(words) < 5 and random.random() < 0.3:
-                result.append(f"This involves {s.lower()}")
+        # Add connectors between sentences
+        connectors = ['Furthermore, ', 'Moreover, ', 'In addition, ', 'Notably, ']
+        paragraph = sentences[0]
+        for s in sentences[1:]:
+            if random.random() < 0.4:
+                paragraph += ' ' + random.choice(connectors) + s.lower()
             else:
-                result.append(s)
-        return ' '.join(result)
+                paragraph += '. ' + s
+        return paragraph + '.'
 
 # Initialize rewriter
 rewriter = PureRewriter()
@@ -144,16 +153,18 @@ rewriter = PureRewriter()
 # =========================
 def extreme_rewriter(text):
     text = text.strip().strip('"').strip("'")
-    transformations = [
-        rewriter.synonym_replace,
-        rewriter.restructure_sentences,
-        rewriter.smart_length_adjustment
-    ]
-    random.shuffle(transformations)
-    for func in transformations:
-        text = func(text)
-    # Grammar correction
+
+    # Multi-pass synonym replacement on all sentences
+    sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+    sentences = [rewriter.multi_pass_synonym_replace(s, passes=2) for s in sentences]
+    text = '. '.join(sentences)
+
+    # Paragraph-level restructuring
+    text = rewriter.restructure_paragraph(text)
+
+    # Final grammar correction
     text = correct_grammar(text)
+
     return text
 
 # =========================
