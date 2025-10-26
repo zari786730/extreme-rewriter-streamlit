@@ -7,6 +7,22 @@ import random
 import re
 import math
 
+import os
+import importlib
+
+vocab_modules = []
+vocab_folder = "vocabulary"  # GitHub folder with all 45 files
+
+for file in os.listdir(vocab_folder):
+    if file.endswith(".py") and file != "__init__.py":
+        module_name = file[:-3]
+        module = importlib.import_module(f"vocabulary.{module_name}")
+        vocab_modules.append(module)
+
+# Example: print first 5 words from each file
+for module in vocab_modules:
+    print(module.synonyms_list[:5])
+
 # -------------------------
 # IMPORT YOUR LOCAL FILES
 # -------------------------
