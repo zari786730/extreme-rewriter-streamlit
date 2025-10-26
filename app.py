@@ -1,206 +1,274 @@
 import random
 import re
 import streamlit as st
+import requests
+
+# Import your existing files
+from health_terms import health_terms
+from health_terms_2 import health_terms as health_terms_2
+from generalwords import general_words
+from grammar_corrector import correct_grammar
+
+# Merge health terms
+health_terms.update(health_terms_2)
+
+st.write("✓ Health terms loaded:", len(health_terms))
+st.write("✓ General words loaded:", len(general_words))
+st.write("✓ Grammar corrector loaded")
 
 # =========================
-# IMPROVED SENTENCE REWRITER
+# PURE INTERNET SYNONYM FINDER
 # =========================
-class ImprovedSentenceRewriter:
+class PureInternetSynonymFinder:
     def __init__(self):
-        self.sentence_patterns = {
-            # Original pattern: "Health care is far more than the mere treatment of illness"
-            'pattern1': [
-                "Healthcare extends well beyond simply addressing sickness",
-                "The scope of medical care transcends basic disease treatment",
-                "Medical services encompass much more than just curing ailments",
-                "Healthcare delivery involves far greater complexity than illness management"
-            ],
-            
-            # Original: "it is a comprehensive and essential system"
-            'pattern2': [
-                "representing an all-encompassing and vital framework",
-                "constituting a thorough and indispensable structure", 
-                "forming an integrated and crucial mechanism",
-                "establishing a complete and fundamental infrastructure"
-            ],
-            
-            # Original: "fundamental to the well-being and prosperity of any society"
-            'pattern3': [
-                "essential for community welfare and societal advancement",
-                "critical to population health and economic development",
-                "fundamental for public wellbeing and national progress",
-                "crucial for citizen health and social prosperity"
-            ],
-            
-            # Original: "encompasses a vast spectrum of services"
-            'pattern4': [
-                "includes an extensive array of medical provisions",
-                "covers a broad range of healthcare services",
-                "incorporates diverse medical interventions",
-                "involves multiple tiers of health services"
-            ],
-            
-            # Original: "from preventive measures to diagnostic, curative, and palliative care"
-            'pattern5': [
-                "ranging from preventative approaches to identification, treatment, and comfort care",
-                "including proactive health strategies alongside detection, therapy, and symptom management",
-                "extending from health maintenance to diagnosis, healing, and supportive care",
-                "spanning illness prevention through assessment, intervention, and pain relief"
-            ],
-            
-            # Original: "An effective system seamlessly integrates these elements"
-            'pattern6': [
-                "A well-functioning healthcare network harmoniously combines these components",
-                "An efficient medical framework smoothly unites these aspects",
-                "A successful health system coherently merges these elements",
-                "An optimal care structure effectively coordinates these facets"
-            ]
-        }
+        self.cache = {}
     
-    def rewrite_paragraph(self, original_text):
-        """Rewrite entire paragraph with improved patterns"""
-        # Split into sentences
-        sentences = [s.strip() for s in re.split(r'[.!?]+', original_text) if s.strip()]
+    def get_synonyms(self, word):
+        """Get synonyms ONLY from internet API"""
+        word = word.lower().strip()
         
-        rewritten_sentences = []
+        if word in self.cache:
+            return self.cache[word]
         
-        for sentence in sentences:
-            rewritten = self.rewrite_single_sentence(sentence)
-            rewritten_sentences.append(rewritten)
+        try:
+            response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=3)
+            if response.status_code == 200:
+                data = response.json()
+                synonyms = []
+                for meaning in data[0].get('meanings', []):
+                    for definition in meaning.get('definitions', []):
+                        synonyms.extend(definition.get('synonyms', []))
+                
+                # Filter and clean synonyms
+                clean_synonyms = []
+                for synonym in synonyms:
+                    if (synonym.lower() != word and 
+                        len(synonym.split()) <= 2 and  # Avoid long phrases
+                        synonym.isalpha()):  # Only alphabetic words
+                        clean_synonyms.append(synonym)
+                
+                unique_synonyms = list(set(clean_synonyms))[:6]  # Limit to 6
+                
+                if unique_synonyms:
+                    self.cache[word] = unique_synonyms
+                    return unique_synonyms
+                    
+        except Exception as e:
+            pass
         
-        # Join with proper punctuation and flow
-        result = '. '.join(rewritten_sentences) + '.'
+        return []
+
+# =========================
+# PURE REWRITER - ONLY YOUR LIBRARIES + INTERNET
+# =========================
+class PureRewriter:
+    def __init__(self):
+        self.synonym_finder = PureInternetSynonymFinder()
+        self.replacements = {}
+        self.setup_vocabulary()
+        st.write("🔄 Pure rewriter activated - Only your libraries + internet")
+    
+    def setup_vocabulary(self):
+        """Setup vocabulary from your existing files ONLY"""
+        # Add health terms from your files
+        for word, replacement in health_terms.items():
+            self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
         
-        # Final cleanup
-        result = re.sub(r'\.\.', '.', result)
-        result = re.sub(r'\s+', ' ', result)
+        # Add general words from your files
+        for word, replacement in general_words.items():
+            self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
+        
+        st.write(f"📚 Loaded {len(self.replacements)} words from your libraries")
+
+    def intelligent_word_replacement(self, text):
+        """Word replacement using ONLY your libraries + internet"""
+        if not text:
+            return text
+            
+        words = text.split()
+        new_words = []
+        
+        for word in words:
+            original_word = word
+            clean_word = word.lower().strip('.,!?;:"')
+            
+            # Skip very short/common words
+            if len(clean_word) <= 2 or clean_word in ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at']:
+                new_words.append(original_word)
+                continue
+            
+            # 80% chance of replacement
+            if random.random() < 0.8:
+                # First check your existing libraries
+                if clean_word in self.replacements:
+                    replacement = random.choice(self.replacements[clean_word])
+                    if word[0].isupper():
+                        replacement = replacement.capitalize()
+                    new_words.append(replacement)
+                    continue
+                
+                # If not in libraries, try internet
+                synonyms = self.synonym_finder.get_synonyms(clean_word)
+                if synonyms:
+                    # Add to replacements for future use
+                    self.replacements[clean_word] = synonyms
+                    replacement = random.choice(synonyms)
+                    if word[0].isupper():
+                        replacement = replacement.capitalize()
+                    new_words.append(replacement)
+                    continue
+            
+            # Keep original if no replacement found
+            new_words.append(original_word)
+        
+        return ' '.join(new_words)
+
+    def varied_sentence_restructure(self, text):
+        """Sentence restructuring without hardcoded patterns"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        
+        if len(sentences) <= 1:
+            return text
+        
+        # Simple sentence shuffling
+        if random.random() < 0.6:
+            random.shuffle(sentences)
+        
+        # Simple connector addition
+        connectors = ['. ', '. Additionally, ', '. Moreover, ', '. Furthermore, ']
+        result = sentences[0] + '. '
+        
+        for i in range(1, len(sentences)):
+            if random.random() < 0.4:
+                result += random.choice(connectors) + sentences[i].lower()
+            else:
+                result += sentences[i] + '. '
         
         return result.strip()
+
+    def smart_length_manipulation(self, text):
+        """Basic length management"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if len(sentences) <= 2:
+            return text
+
+        processed = []
+        for sentence in sentences:
+            words = sentence.split()
+            if random.random() < 0.4:
+                if len(words) > 15:
+                    # Simple split at middle
+                    mid = len(words) // 2
+                    part1 = ' '.join(words[:mid])
+                    part2 = ' '.join(words[mid:])
+                    processed.extend([part1 + '.', part2.capitalize()])
+                elif len(words) < 5:
+                    # Simple expansion
+                    expanded = f"This involves {sentence.lower()}"
+                    processed.append(expanded)
+                else:
+                    processed.append(sentence)
+            else:
+                processed.append(sentence)
+
+        return ' '.join(processed)
+
+    def add_natural_variation(self, text):
+        """Simple natural variation"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if not sentences:
+            return text
+
+        if random.random() < 0.3:
+            # Simple variation without hardcoded patterns
+            first_sentence = sentences[0]
+            if not first_sentence.lower().startswith(('interestingly', 'notably', 'importantly')):
+                variations = ['Interestingly, ', 'Notably, ', 'Importantly, ']
+                sentences[0] = random.choice(variations) + first_sentence.lower()
+
+        return '. '.join(sentences) + '.'
+
+# Initialize pure rewriter
+pure_rewriter = PureRewriter()
+
+def extreme_rewriter(original_text):
+    """Pure rewriting using ONLY your libraries + internet"""
+    clean_text = original_text.strip().strip('"').strip("'")
+
+    # Apply transformations in random order
+    transformations = [
+        pure_rewriter.varied_sentence_restructure,
+        pure_rewriter.intelligent_word_replacement, 
+        pure_rewriter.smart_length_manipulation,
+        pure_rewriter.add_natural_variation
+    ]
+    random.shuffle(transformations)
+
+    result = clean_text
+    for transform in transformations:
+        result = transform(result)
+
+    # Final grammar correction from your file
+    result = correct_grammar(result)
     
-    def rewrite_single_sentence(self, sentence):
-        """Rewrite a single sentence using improved patterns"""
-        original_lower = sentence.lower()
-        
-        # Pattern 1: "Health care is far more than the mere treatment of illness"
-        if 'health care is far more than' in original_lower:
-            part1 = random.choice(self.sentence_patterns['pattern1'])
-            return part1
-        
-        # Pattern 2: "it is a comprehensive and essential system"
-        elif 'it is a comprehensive and essential system' in original_lower:
-            part2 = random.choice(self.sentence_patterns['pattern2'])
-            # Combine with next part
-            if 'fundamental to the well-being' in original_lower:
-                part3 = random.choice(self.sentence_patterns['pattern3'])
-                return f"{part2} {part3}"
-            return part2
-        
-        # Pattern 3: "At its core, it encompasses a vast spectrum of services"
-        elif 'encompasses a vast spectrum' in original_lower:
-            part4 = random.choice(self.sentence_patterns['pattern4'])
-            if 'from preventive measures' in original_lower:
-                part5 = random.choice(self.sentence_patterns['pattern5'])
-                return f"{part4}, {part5}"
-            return part4
-        
-        # Pattern 4: "An effective system seamlessly integrates these elements"
-        elif 'an effective system seamlessly integrates' in original_lower:
-            part6 = random.choice(self.sentence_patterns['pattern6'])
-            if 'ensuring accessibility' in original_lower:
-                return f"{part6}, guaranteeing availability for all residents irrespective of economic standing"
-            return part6
-        
-        # Pattern 5: "This holistic approach not only saves lives..."
-        elif 'this holistic approach not only' in original_lower:
-            return "This comprehensive strategy preserves lives and reduces suffering while simultaneously enhancing workforce productivity, strengthening communities, and stimulating economic development through diminished chronic disease impacts"
-        
-        # Pattern 6: "However, achieving this ideal remains a significant global challenge"
-        elif 'however, achieving this ideal' in original_lower:
-            return "Nevertheless, realizing this vision presents considerable worldwide obstacles, frequently impeded by concerns of cost, fairness, and structural development"
-        
-        # Pattern 7: "The true measure of a nation's health care..."
-        elif "the true measure of a nation's health care" in original_lower:
-            return "The genuine evaluation of a country's medical system relies not merely on sophisticated hospital technology but primarily on its capacity to provide excellent, empathetic, and reliable care to each person, confirming the doctrine that wellness constitutes a fundamental human entitlement and the essential basis for flourishing communities"
-        
-        # Fallback: return original with minor changes
-        return self.fallback_rewrite(sentence)
-    
-    def fallback_rewrite(self, sentence):
-        """Fallback rewriting for unmatched patterns"""
-        replacements = {
-            'health care': 'healthcare system',
-            'treatment of illness': 'disease management',
-            'comprehensive': 'thorough',
-            'essential': 'vital',
-            'well-being': 'welfare',
-            'prosperity': 'advancement',
-            'society': 'community',
-            'encompasses': 'includes',
-            'vast spectrum': 'broad range',
-            'preventive measures': 'preventative approaches',
-            'diagnostic': 'identification',
-            'curative': 'therapeutic',
-            'palliative care': 'comfort care',
-            'seamlessly integrates': 'effectively combines',
-            'accessibility': 'availability',
-            'socioeconomic status': 'economic circumstances',
-            'holistic approach': 'comprehensive strategy',
-            'alleviates suffering': 'reduces distress',
-            'productive workforce': 'efficient labor force',
-            'stabilizes communities': 'strengthens populations',
-            'economic growth': 'financial development',
-            'burden of disease': 'impact of illness',
-            'global challenge': 'worldwide obstacle',
-            'affordability': 'cost',
-            'equity': 'fairness', 
-            'infrastructure': 'structural framework',
-            'true measure': 'actual assessment',
-            'advanced technology': 'sophisticated equipment',
-            'urban hospitals': 'city medical centers',
-            'compassionate': 'empathetic',
-            'consistent services': 'reliable care',
-            'basic human right': 'fundamental entitlement',
-            'very foundation': 'essential basis',
-            'thriving societies': 'prosperous communities'
-        }
-        
-        result = sentence
-        for old, new in replacements.items():
-            result = result.replace(old, new)
-            result = result.replace(old.title(), new.title())
-            result = result.replace(old.upper(), new.upper())
-        
-        return result
+    return result
+
+def calculate_similarity(original, rewritten):
+    """Calculate text similarity"""
+    original_words = set(re.findall(r'\b\w+\b', original.lower()))
+    rewritten_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
+    common_words = original_words.intersection(rewritten_words)
+
+    if not original_words:
+        return 0
+
+    similarity = len(common_words) / len(original_words) * 100
+    return similarity
+
+def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
+    """Keep generating until similarity is below threshold"""
+    best_result = None
+    best_similarity = 100
+
+    for attempt in range(max_attempts):
+        rewritten = extreme_rewriter(original_text)
+        similarity = calculate_similarity(original_text, rewritten)
+
+        if similarity < best_similarity:
+            best_result = rewritten
+            best_similarity = similarity
+
+        if similarity <= max_similarity:
+            return rewritten, similarity
+
+    return best_result, best_similarity
 
 # =========================
-# STREAMLIT UI
+# YOUR EXISTING STREAMLIT UI
 # =========================
-st.title("🎯 Improved Sentence Rewriter")
-st.write("Better grammar and natural phrasing")
+st.title("🔁 Pure Text Rewriter")
+st.write("Using ONLY your libraries + internet synonyms")
 
-# Initialize rewriter
-rewriter = ImprovedSentenceRewriter()
+text_input = st.text_area("Enter text to rewrite:", height=200)
 
-original_paragraph = """Health care is far more than the mere treatment of illness; it is a comprehensive and essential system fundamental to the well-being and prosperity of any society. At its core, it encompasses a vast spectrum of services, from preventive measures like vaccinations and health education to diagnostic, curative, and long-term palliative care. An effective system seamlessly integrates these elements, ensuring accessibility for all citizens regardless of their socioeconomic status. This holistic approach not only saves lives and alleviates suffering but also fosters a more productive workforce, stabilizes communities, and drives economic growth by reducing the long-term burden of disease. However, achieving this ideal remains a significant global challenge, often hindered by issues of affordability, equity, and infrastructure. The true measure of a nation's health care, therefore, lies not just in the advanced technology of its urban hospitals, but in its ability to deliver quality, compassionate, and consistent services to every individual, affirming the principle that health is a basic human right and the very foundation upon which thriving societies are built."""
-
-if st.button("Generate Improved Version"):
-    with st.spinner("Creating improved version..."):
-        improved_version = rewriter.rewrite_paragraph(original_paragraph)
-        
-        st.subheader("Original:")
-        st.write(original_paragraph)
-        
-        st.subheader("🎯 Improved Rewritten:")
-        st.success(improved_version)
-        
-        # Calculate similarity
-        original_words = set(re.findall(r'\b\w+\b', original_paragraph.lower()))
-        improved_words = set(re.findall(r'\b\w+\b', improved_version.lower()))
-        common_words = original_words.intersection(improved_words)
-        similarity = len(common_words) / len(original_words) * 100
-        
-        st.subheader("Similarity Score:")
-        st.info(f"{similarity:.1f}%")
+if st.button("Rewrite Text"):
+    if text_input:
+        with st.spinner("Rewriting with pure approach..."):
+            rewritten, similarity = guarantee_low_similarity(text_input)
+            
+            st.subheader("Original Text:")
+            st.write(text_input)
+            
+            st.subheader("Rewritten Text:")
+            st.write(rewritten)
+            
+            st.subheader("Similarity Score:")
+            st.write(f"{similarity:.1f}%")
+            
+            if similarity > 20:
+                st.warning("Similarity is higher than target. Try running again.")
+    else:
+        st.error("Please enter some text")
 
 
 
