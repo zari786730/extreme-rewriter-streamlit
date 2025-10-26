@@ -1,9 +1,14 @@
-# =========================
-# NON-AI EXTREME REWRITER BACKEND (MULTI-PASS & CLAUSE-LEVEL)
-# =========================
+=========================
+
+NON-AI EXTREME REWRITER BACKEND (MULTI-PASS & CLAUSE-LEVEL)
+
+=========================
 
 import random
 import re
+import os
+import zipfile
+from pathlib import Path
 from nltk import pos_tag
 from nltk.corpus import wordnet
 from nltk.tokenize import RegexpTokenizer
@@ -20,9 +25,50 @@ health_terms.update(health_terms_2)
 # Initialize tokenizer
 tokenizer = RegexpTokenizer(r'\w+')
 
-# =========================
-# UTILITY FUNCTIONS
-# =========================
+=========================
+
+NLTK DATA EXTRACTION
+
+=========================
+
+def extract_nltk_data():
+    """Extract all zip files in nltk_data folders when backend starts"""
+    nltk_base_path = Path("nltk_data")
+    
+    if not nltk_base_path.exists():
+        print("NLTK data directory not found. Skipping extraction.")
+        return
+    
+    print("Extracting NLTK data zip files...")
+    
+    # Walk through all subdirectories
+    for root, dirs, files in os.walk(nltk_base_path):
+        for file in files:
+            if file.endswith('.zip'):
+                zip_path = Path(root) / file
+                extract_path = Path(root) / file.replace('.zip', '')
+                
+                # Create extraction directory if it doesn't exist
+                extract_path.mkdir(exist_ok=True)
+                
+                try:
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extractall(extract_path)
+                    print(f"✓ Extracted: {zip_path} -> {extract_path}")
+                except Exception as e:
+                    print(f"✗ Failed to extract {zip_path}: {str(e)}")
+    
+    print("NLTK data extraction completed!")
+
+# Run extraction on startup
+extract_nltk_data()
+
+=========================
+
+UTILITY FUNCTIONS
+
+=========================
+
 def get_wordnet_pos(treebank_tag):
     """Map POS tag to WordNet POS for synonym lookup"""
     if treebank_tag.startswith('J'):
@@ -64,112 +110,121 @@ def join_clauses(clauses):
         sentence += random.choice(connectors) + clause.strip().lower()
     return sentence
 
-# =========================
-# PURE REWRITER
-# =========================
+=========================
+
+PURE REWRITER
+
+=========================
+
 class PureRewriter:
     def __init__(self):
         self.replacements = {}
         self.load_libraries()
 
-    def load_libraries(self):
-        # Health terms
-        for w, r in health_terms.items():
-            self.replacements[w] = [r] if isinstance(r, str) else r
-        # General words
-        for w, r in general_words.items():
-            self.replacements[w] = [r] if isinstance(r, str) else r
+    def load_libraries(self):  
+        # Health terms  
+        for w, r in health_terms.items():  
+            self.replacements[w] = [r] if isinstance(r, str) else r  
+        # General words  
+        for w, r in general_words.items():  
+            self.replacements[w] = [r] if isinstance(r, str) else r  
 
-    def synonym_replace_sentence(self, sentence):
-        """Replace nouns, verbs, adjectives, adverbs with synonyms (one pass)"""
-        words = sentence.split()
-        tagged = pos_tag(words)
-        new_words = []
+    def synonym_replace_sentence(self, sentence):  
+        """Replace nouns, verbs, adjectives, adverbs with synonyms (one pass)"""  
+        words = sentence.split()  
+        tagged = pos_tag(words)  
+        new_words = []  
 
-        for word, tag in tagged:
-            clean_word = word.strip('.,!?;:"')
-            wn_pos = get_wordnet_pos(tag)
+        for word, tag in tagged:  
+            clean_word = word.strip('.,!?;:"')  
+            wn_pos = get_wordnet_pos(tag)  
 
-            # Skip very short/common words
-            if len(clean_word) <= 2 or clean_word.lower() in ['the','a','an','and','or','but','in','on','at']:
-                new_words.append(word)
-                continue
+            # Skip very short/common words  
+            if len(clean_word) <= 2 or clean_word.lower() in ['the','a','an','and','or','but','in','on','at']:  
+                new_words.append(word)  
+                continue  
 
-            # Library replacement
-            if clean_word.lower() in self.replacements:
-                replacement = random.choice(self.replacements[clean_word.lower()])
-                replacement = replacement.capitalize() if word[0].isupper() else replacement
-                new_words.append(replacement)
-                continue
+            # Library replacement  
+            if clean_word.lower() in self.replacements:  
+                replacement = random.choice(self.replacements[clean_word.lower()])  
+                replacement = replacement.capitalize() if word[0].isupper() else replacement  
+                new_words.append(replacement)  
+                continue  
 
-            # WordNet synonym replacement
-            synonyms = get_synonyms(clean_word, wn_pos)
-            if synonyms:
-                replacement = random.choice(synonyms)
-                replacement = replacement.capitalize() if word[0].isupper() else replacement
-                new_words.append(replacement)
-                continue
+            # WordNet synonym replacement  
+            synonyms = get_synonyms(clean_word, wn_pos)  
+            if synonyms:  
+                replacement = random.choice(synonyms)  
+                replacement = replacement.capitalize() if word[0].isupper() else replacement  
+                new_words.append(replacement)  
+                continue  
 
-            new_words.append(word)
+            new_words.append(word)  
 
-        return ' '.join(new_words)
+        return ' '.join(new_words)  
 
-    def multi_pass_synonym_replace(self, sentence, passes=2):
-        """Apply synonym replacement multiple times for better coverage"""
-        for _ in range(passes):
-            # Clause-level replacement
-            clauses = split_clauses(sentence)
-            clauses = [self.synonym_replace_sentence(c) for c in clauses]
-            sentence = join_clauses(clauses)
-        return sentence
+    def multi_pass_synonym_replace(self, sentence, passes=2):  
+        """Apply synonym replacement multiple times for better coverage"""  
+        for _ in range(passes):  
+            # Clause-level replacement  
+            clauses = split_clauses(sentence)  
+            clauses = [self.synonym_replace_sentence(c) for c in clauses]  
+            sentence = join_clauses(clauses)  
+        return sentence  
 
-    def restructure_paragraph(self, text):
-        """Shuffle sentences lightly and add connectors throughout paragraph"""
-        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        if len(sentences) <= 1:
-            return text
+    def restructure_paragraph(self, text):  
+        """Shuffle sentences lightly and add connectors throughout paragraph"""  
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]  
+        if len(sentences) <= 1:  
+            return text  
 
-        # Shuffle sentences randomly
-        for i in range(len(sentences)):
-            if random.random() < 0.5:
-                swap_idx = random.randint(0, len(sentences)-1)
-                sentences[i], sentences[swap_idx] = sentences[swap_idx], sentences[i]
+        # Shuffle sentences randomly  
+        for i in range(len(sentences)):  
+            if random.random() < 0.5:  
+                swap_idx = random.randint(0, len(sentences)-1)  
+                sentences[i], sentences[swap_idx] = sentences[swap_idx], sentences[i]  
 
-        # Add connectors between sentences
-        connectors = ['Furthermore, ', 'Moreover, ', 'In addition, ', 'Notably, ']
-        paragraph = sentences[0]
-        for s in sentences[1:]:
-            if random.random() < 0.4:
-                paragraph += ' ' + random.choice(connectors) + s.lower()
-            else:
-                paragraph += '. ' + s
+        # Add connectors between sentences  
+        connectors = ['Furthermore, ', 'Moreover, ', 'In addition, ', 'Notably, ']  
+        paragraph = sentences[0]  
+        for s in sentences[1:]:  
+            if random.random() < 0.4:  
+                paragraph += ' ' + random.choice(connectors) + s.lower()  
+            else:  
+                paragraph += '. ' + s  
         return paragraph + '.'
 
 # Initialize rewriter
 rewriter = PureRewriter()
 
-# =========================
-# EXTREME REWRITER
-# =========================
+=========================
+
+EXTREME REWRITER
+
+=========================
+
 def extreme_rewriter(text):
     text = text.strip().strip('"').strip("'")
 
-    # Multi-pass synonym replacement on all sentences
-    sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-    sentences = [rewriter.multi_pass_synonym_replace(s, passes=2) for s in sentences]
-    text = '. '.join(sentences)
+    # Multi-pass synonym replacement on all sentences  
+    sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]  
+    sentences = [rewriter.multi_pass_synonym_replace(s, passes=2) for s in sentences]  
+    text = '. '.join(sentences)  
 
-    # Paragraph-level restructuring
-    text = rewriter.restructure_paragraph(text)
+    # Paragraph-level restructuring  
+    text = rewriter.restructure_paragraph(text)  
 
-    # Final grammar correction
-    text = correct_grammar(text)
+    # Final grammar correction  
+    text = correct_grammar(text)  
 
     return text
 
-# =========================
-# SIMILARITY CALCULATION
-# =========================
+=========================
+
+SIMILARITY CALCULATION
+
+=========================
+
 def calculate_similarity(original, rewritten):
     original_words = set(tokenizer.tokenize(original.lower()))
     rewritten_words = set(tokenizer.tokenize(rewritten.lower()))
@@ -178,9 +233,12 @@ def calculate_similarity(original, rewritten):
         return 0
     return len(common)/len(original_words)*100
 
-# =========================
-# GUARANTEE LOW SIMILARITY
-# =========================
+=========================
+
+GUARANTEE LOW SIMILARITY
+
+=========================
+
 def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
     best_result = None
     best_similarity = 100
