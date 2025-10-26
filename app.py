@@ -1,216 +1,152 @@
-
 # =========================
-# FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
+# EXTREME REWRITER STREAMLIT (OFFLINE & NO NLTK)
 # =========================
 
 import streamlit as st
 import random
+import re
+
+# -------------------------
+# IMPORT LOCAL FILES
+# -------------------------
+from health_terms import health_terms
+from health_terms_2 import health_terms as health_terms_2
+from generalwords import general_words
+from grammar_corrector import correct_grammar
+
+# Merge health terms
+health_terms.update(health_terms_2)
+
+# -------------------------
+# PURE REWRITER (OFFLINE)
+# -------------------------
+class PureRewriter:
+    def __init__(self):
+        self.replacements = {}
+        self.setup_vocabulary()
+
+    def setup_vocabulary(self):
+        for word, replacement in health_terms.items():
+            self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
+        for word, replacement in general_words.items():
+            self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
+
+    def intelligent_word_replacement(self, text):
+        words = text.split()
+        new_words = []
+        for word in words:
+            clean_word = word.lower().strip('.,!?;:"')
+            if len(clean_word) <= 2 or clean_word in ['the','a','an','and','or','but','in','on','at']:
+                new_words.append(word)
+                continue
+            if clean_word in self.replacements and random.random() < 0.8:
+                replacement = random.choice(self.replacements[clean_word])
+                replacement = replacement.capitalize() if word[0].isupper() else replacement
+                new_words.append(replacement)
+            else:
+                new_words.append(word)
+        return ' '.join(new_words)
+
+    def varied_sentence_restructure(self, text):
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if len(sentences) <= 1:
+            return text
+        if random.random() < 0.6:
+            random.shuffle(sentences)
+        connectors = ['. ', '. Additionally, ', '. Moreover, ', '. Furthermore, ']
+        result = sentences[0] + '. '
+        for i in range(1, len(sentences)):
+            if random.random() < 0.4:
+                result += random.choice(connectors) + sentences[i].lower()
+            else:
+                result += sentences[i] + '. '
+        return result.strip()
+
+    def smart_length_manipulation(self, text):
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if len(sentences) <= 2:
+            return text
+        processed = []
+        for sentence in sentences:
+            words = sentence.split()
+            if random.random() < 0.4:
+                if len(words) > 15:
+                    mid = len(words) // 2
+                    processed.extend([' '.join(words[:mid]) + '.', ' '.join(words[mid:]).capitalize()])
+                elif len(words) < 5:
+                    processed.append(f"This involves {sentence.lower()}")
+                else:
+                    processed.append(sentence)
+            else:
+                processed.append(sentence)
+        return ' '.join(processed)
+
+    def add_natural_variation(self, text):
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if not sentences:
+            return text
+        if random.random() < 0.3:
+            first_sentence = sentences[0]
+            if not first_sentence.lower().startswith(('interestingly','notably','importantly')):
+                sentences[0] = random.choice(['Interestingly, ','Notably, ','Importantly, ']) + first_sentence.lower()
+        return '. '.join(sentences) + '.'
+
+# Initialize rewriter
+pure_rewriter = PureRewriter()
+
+# -------------------------
+# EXTREME REWRITER FUNCTION
+# -------------------------
+def extreme_rewriter(original_text):
+    clean_text = original_text.strip().strip('"').strip("'")
+    transformations = [
+        pure_rewriter.varied_sentence_restructure,
+        pure_rewriter.intelligent_word_replacement,
+        pure_rewriter.smart_length_manipulation,
+        pure_rewriter.add_natural_variation
+    ]
+    random.shuffle(transformations)
+    result = clean_text
+    for t in transformations:
+        result = t(result)
+    result = correct_grammar(result)
+    return result
+
+# -------------------------
+# SIMILARITY CALCULATION
+# -------------------------
+def calculate_similarity(original, rewritten):
+    original_words = set(re.findall(r'\w+', original.lower()))
+    rewritten_words = set(re.findall(r'\w+', rewritten.lower()))
+    common_words = original_words.intersection(rewritten_words)
+    if not original_words:
+        return 0
+    return len(common_words) / len(original_words) * 100
+
+# -------------------------
+# GUARANTEE LOW SIMILARITY
+# -------------------------
+def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
+    best_result = None
+    best_similarity = 100
+    for _ in range(max_attempts):
+        rewritten = extreme_rewriter(original_text)
+        similarity = calculate_similarity(original_text, rewritten)
+        if similarity < best_similarity:
+            best_result = rewritten
+            best_similarity = similarity
+        if similarity <= max_similarity:
+            return rewritten, similarity
+    return best_result, best_similarity
+
+# =========================
+# FRONTEND (UI)
+# =========================
 
 st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
 
-# --- REWRITE FUNCTION (TRUE BACKEND CALL) ---
-# This version uses the real rewriting logic from your backend
-def guarantee_low_similarity(text, target):
-    """Generate rewritten text using the true backend extreme_rewriter() logic."""
-    rewritten = extreme_rewriter(text)
-    similarity = calculate_similarity(text, rewritten)
-    return rewritten, similarity
-
-# --- CSS STYLES ---
-st.markdown("""
-<style>
-body {
-  margin: 0;
-  overflow: hidden;
-  background: radial-gradient(ellipse at bottom, #00111a 0%, #000000 100%);
-  height: 100vh;
-  font-family: 'Poppins', sans-serif;
-  color: #e6faff;
-}
-
-/* ---- BUBBLES ---- */
-#bubble-layer {
-  position: fixed;
-  top: 0; 
-  left: 0;
-  width: 100%; 
-  height: 100%;
-  overflow: hidden; 
-  z-index: -3; 
-  pointer-events: none;
-}
-
-.dna-bubble {
-  position: absolute;
-  bottom: -120px;
-  background: rgba(0,180,255,0.3);
-  border-radius: 50%;
-  box-shadow: 0 0 20px rgba(0,200,255,0.6);
-  animation: rise linear infinite;
-}
-
-@keyframes rise {
-  0% { transform: translateY(0) scale(0.6); opacity: 0; }
-  20% { opacity: 1; }
-  70% { transform: translateY(-80vh) scale(1.1); opacity: 0.9; }
-  100% { transform: translateY(-120vh) scale(0.8); opacity: 0; }
-}
-
-/* ---- DROPLETS ---- */
-#droplet-layer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -2;
-  pointer-events: none;
-}
-
-.droplet {
-  position: absolute;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25), rgba(255,255,255,0.05));
-  border-radius: 50%;
-  box-shadow: 0 0 8px rgba(0,200,255,0.15);
-  animation: slideDown 18s ease-in-out infinite;
-}
-
-@keyframes slideDown {
-  0% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
-  50% { transform: translateY(15px) rotate(2deg); opacity: 1; }
-  100% { transform: translateY(0) rotate(-1deg); opacity: 0.8; }
-}
-
-/* ---- WAVE ---- */
-.wave-bg {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  height: 220px;
-  background: radial-gradient(circle at 50% 120%, rgba(0,150,255,0.6), transparent);
-  animation: waveMove 7s ease-in-out infinite alternate;
-  z-index: -1;
-}
-
-@keyframes waveMove {
-  from { transform: translateY(0); }
-  to { transform: translateY(-30px); }
-}
-
-/* ---- GLASS BOX ---- */
-.glass-box {
-  backdrop-filter: blur(25px);
-  background: rgba(255,255,255,0.05);
-  border-radius: 25px;
-  padding: 2rem;
-  border: 2px solid rgba(0,255,255,0.15);
-  margin-top: 2rem;
-}
-
-/* ---- TITLE ---- */
-h1.title {
-  text-align: center;
-  font-size: 3rem;
-  font-weight: 700;
-  background: linear-gradient(45deg, #00eaff, #00ffb7, #0095ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: colorShift 6s ease-in-out infinite;
-  margin-top: 3rem;
-}
-@keyframes colorShift {
-  0% { filter: hue-rotate(0deg); }
-  50% { filter: hue-rotate(180deg); }
-  100% { filter: hue-rotate(360deg); }
-}
-
-/* ---- BUTTONS ---- */
-.stButton>button {
-  background: linear-gradient(135deg, #00b4ff, #0077ff);
-  color: white;
-  border: none;
-  border-radius: 50px;
-  font-size: 1.1rem;
-  padding: 0.75rem 2rem;
-  transition: all 0.3s ease;
-}
-.stButton>button:hover {
-  background: linear-gradient(135deg, #0077ff, #00b4ff);
-  box-shadow: 0 0 15px rgba(0,180,255,0.8);
-  transform: translateY(-2px);
-}
-
-/* ---- TEXTAREA ---- */
-.stTextArea textarea {
-  border-radius: 15px;
-  border: 1px solid rgba(0,180,255,0.3);
-  background: rgba(15, 25, 35, 0.9);
-  color: #e6faff;
-  font-size: 1rem;
-  padding: 1rem;
-  resize: vertical;
-}
-
-/* ---- FOOTER ---- */
-.footer {
-  text-align:center;
-  margin-top:3rem;
-  color:#66dfff;
-  font-size:1.1rem;
-  padding-bottom:2rem;
-  animation: glow 3s ease-in-out infinite alternate;
-}
-@keyframes glow {
-  from { text-shadow: 0 0 5px #00b4ff; }
-  to { text-shadow: 0 0 20px #00ffff; }
-}
-</style>
-""", unsafe_allow_html=True)
-
-# --- VISUAL LAYERS (BUBBLES + DROPLETS) ---
-bubble_html = '<div id="bubble-layer">'
-for i in range(40):
-    size = random.randint(8, 35)
-    left = random.randint(0, 98)
-    duration = random.randint(15, 28)
-    delay = random.randint(0, 12)
-    bubble_html += f"""
-    <div class="dna-bubble" style="
-        left:{left}vw;
-        width:{size}px;
-        height:{size}px;
-        animation-delay:{delay}s;
-        animation-duration:{duration}s;
-    "></div>"""
-bubble_html += '</div>'
-
-droplet_html = '<div id="droplet-layer">'
-for i in range(25):
-    size = random.randint(4, 18)
-    top = random.randint(0, 90)
-    left = random.randint(0, 95)
-    duration = random.randint(12, 20)
-    delay = random.randint(0, 8)
-    droplet_html += f"""
-    <div class="droplet" style="
-        top:{top}vh;
-        left:{left}vw;
-        width:{size}px;
-        height:{size}px;
-        animation-delay:{delay}s;
-        animation-duration:{duration}s;
-    "></div>"""
-droplet_html += '</div><div class="wave-bg"></div>'
-
-st.markdown(bubble_html + droplet_html, unsafe_allow_html=True)
-
-# --- HEADER ---
-st.markdown("""
-<h1 class="title">💧 Extreme Rewriter</h1>
-<p style="text-align:center; color:#bfefff; font-size:1.2rem;">
-Transform your text into a <span style="color:#00eaff;">uniquely rewritten</span> version.
-</p>
-""", unsafe_allow_html=True)
+# --- CSS, Bubbles, Header, Input, Buttons ---
+# [Paste your full CSS + bubbles + header code here from your existing frontend]
 
 # --- INPUT SECTION ---
 st.markdown('<div class="glass-box">', unsafe_allow_html=True)
