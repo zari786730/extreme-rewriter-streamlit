@@ -6,6 +6,45 @@ import streamlit as st
 import random
 import re
 
+
+from flask import Flask
+import os
+import importlib
+
+app = Flask(__name__)
+
+# ---------------------------
+# Load all vocabulary files
+# ---------------------------
+vocab_folder = "vocabulary"
+vocab_modules = []
+
+for file in os.listdir(vocab_folder):
+    if file.endswith(".py") and file != "__init__.py":
+        module_name = file[:-3]  # remove .py extension
+        module = importlib.import_module(f"vocabulary.{module_name}")
+        vocab_modules.append(module)
+
+# Combine all words into one list
+all_words = []
+for module in vocab_modules:
+    all_words.extend(module.synonyms_list)
+
+total_words = len(all_words)
+
+# ---------------------------
+# Web route to show total
+# ---------------------------
+@app.route("/")
+def home():
+    return f"<h1>Total words in vocabulary: {total_words}</h1>"
+
+# ---------------------------
+# Run the web app
+# ---------------------------
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)
+
 # -------------------------
 # IMPORT LOCAL FILES
 # -------------------------
