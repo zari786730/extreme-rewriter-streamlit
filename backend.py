@@ -1,27 +1,15 @@
 # =========================
-# EXTREME REWRITER BACKEND
+# EXTREME REWRITER BACKEND (NO NLTK DOWNLOADS NEEDED)
 # =========================
 
 import random
 import re
 import requests
-import nltk
-
-# Download required NLTK data once
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('wordnet')
-
-# Imports after downloading resources
-from nltk import pos_tag, word_tokenize
+from nltk import pos_tag
 from nltk.corpus import wordnet
+from nltk.tokenize import RegexpTokenizer
 
-# Ensure NLTK resources are downloaded
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('wordnet')
-
-# --- IMPORT YOUR LIBRARIES ---
+# Import your existing files
 from health_terms import health_terms
 from health_terms_2 import health_terms as health_terms_2
 from generalwords import general_words
@@ -30,7 +18,12 @@ from grammar_corrector import correct_grammar
 # Merge health terms
 health_terms.update(health_terms_2)
 
-# --- PURE INTERNET SYNONYM FINDER ---
+# Initialize RegexpTokenizer (no Punkt needed)
+tokenizer = RegexpTokenizer(r'\w+')
+
+# =========================
+# PURE INTERNET SYNONYM FINDER
+# =========================
 class PureInternetSynonymFinder:
     def __init__(self):
         self.cache = {}
@@ -39,6 +32,7 @@ class PureInternetSynonymFinder:
         word = word.lower().strip()
         if word in self.cache:
             return self.cache[word]
+        
         try:
             response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=3)
             if response.status_code == 200:
@@ -47,19 +41,22 @@ class PureInternetSynonymFinder:
                 for meaning in data[0].get('meanings', []):
                     for definition in meaning.get('definitions', []):
                         synonyms.extend(definition.get('synonyms', []))
+                
                 clean_synonyms = [
-                    syn for syn in synonyms
-                    if syn.lower() != word and len(syn.split()) <= 2 and syn.isalpha()
+                    s for s in synonyms
+                    if s.isalpha() and s.lower() != word and len(s.split()) <= 2
                 ]
                 unique_synonyms = list(set(clean_synonyms))[:6]
                 if unique_synonyms:
                     self.cache[word] = unique_synonyms
                     return unique_synonyms
         except:
-            return []
+            pass
         return []
 
-# --- PURE REWRITER ---
+# =========================
+# PURE REWRITER
+# =========================
 class PureRewriter:
     def __init__(self):
         self.synonym_finder = PureInternetSynonymFinder()
@@ -67,116 +64,123 @@ class PureRewriter:
         self.setup_vocabulary()
     
     def setup_vocabulary(self):
-        """Load your existing libraries"""
-        for d in [health_terms, general_words]:
-            for word, replacement in d.items():
-                self.replacements[word.lower()] = [replacement] if isinstance(replacement, str) else replacement
-
-    def pos_to_wordnet(self, tag):
-        """Convert POS tag to WordNet format for synonym selection"""
-        if tag.startswith('J'): return wordnet.ADJ
-        if tag.startswith('V'): return wordnet.VERB
-        if tag.startswith('N'): return wordnet.NOUN
-        if tag.startswith('R'): return wordnet.ADV
-        return None
+        # Load health terms
+        for word, replacement in health_terms.items():
+            self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
+        
+        # Load general words
+        for word, replacement in general_words.items():
+            self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
 
     def intelligent_word_replacement(self, text):
-        """Replace words intelligently with synonyms or library words"""
-        tokens = word_tokenize(text)
-        tags = pos_tag(tokens)
-        new_tokens = []
+        words = text.split()
+        new_words = []
 
-        for token, tag in tags:
-            clean_token = token.lower()
-            wn_tag = self.pos_to_wordnet(tag)
-
-            # Skip short/common words
-            if len(clean_token) <= 2 or clean_token in ['the','a','an','and','or','but','in','on','at']:
-                new_tokens.append(token)
+        for word in words:
+            clean_word = word.lower().strip('.,!?;:"')
+            if len(clean_word) <= 2 or clean_word in ['the','a','an','and','or','but','in','on','at']:
+                new_words.append(word)
                 continue
+            
+            if random.random() < 0.8:
+                # Library replacement
+                if clean_word in self.replacements:
+                    replacement = random.choice(self.replacements[clean_word])
+                    replacement = replacement.capitalize() if word[0].isupper() else replacement
+                    new_words.append(replacement)
+                    continue
+                
+                # Internet synonyms
+                synonyms = self.synonym_finder.get_synonyms(clean_word)
+                if synonyms:
+                    self.replacements[clean_word] = synonyms
+                    replacement = random.choice(synonyms)
+                    replacement = replacement.capitalize() if word[0].isupper() else replacement
+                    new_words.append(replacement)
+                    continue
 
-            replaced = False
-            if random.random() < 0.85:  # 85% chance replacement
-                # Library-based
-                if clean_token in self.replacements:
-                    rep = random.choice(self.replacements[clean_token])
-                    if token[0].isupper(): rep = rep.capitalize()
-                    new_tokens.append(rep)
-                    replaced = True
-                else:
-                    # Internet synonym
-                    synonyms = self.synonym_finder.get_synonyms(clean_token)
-                    if synonyms:
-                        rep = random.choice(synonyms)
-                        if token[0].isupper(): rep = rep.capitalize()
-                        new_tokens.append(rep)
-                        self.replacements[clean_token] = synonyms
-                        replaced = True
+            new_words.append(word)
+        return ' '.join(new_words)
 
-            if not replaced:
-                new_tokens.append(token)
-
-        return ' '.join(new_tokens)
-
-    def sentence_restructure(self, text):
-        """Restructure sentences intelligently without losing meaning"""
-        sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', text)]
+    def varied_sentence_restructure(self, text):
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         if len(sentences) <= 1:
             return text
-
-        # Reorder some sentences
-        if random.random() < 0.5:
+        if random.random() < 0.6:
             random.shuffle(sentences)
-
-        # Merge or split sentences
-        merged = []
-        for s in sentences:
-            words = s.split()
-            if len(words) > 18 and random.random() < 0.5:
-                mid = len(words)//2
-                merged.extend([' '.join(words[:mid])+'.', ' '.join(words[mid:]).capitalize()])
-            elif len(words) < 6 and random.random() < 0.4:
-                merged.append("This relates to " + s.lower())
+        connectors = ['. ', '. Additionally, ', '. Moreover, ', '. Furthermore, ']
+        result = sentences[0] + '. '
+        for i in range(1, len(sentences)):
+            if random.random() < 0.4:
+                result += random.choice(connectors) + sentences[i].lower()
             else:
-                merged.append(s)
-        return ' '.join(merged)
+                result += sentences[i] + '. '
+        return result.strip()
+
+    def smart_length_manipulation(self, text):
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if len(sentences) <= 2:
+            return text
+        processed = []
+        for sentence in sentences:
+            words = sentence.split()
+            if random.random() < 0.4:
+                if len(words) > 15:
+                    mid = len(words) // 2
+                    processed.extend([' '.join(words[:mid]) + '.', ' '.join(words[mid:]).capitalize()])
+                elif len(words) < 5:
+                    processed.append(f"This involves {sentence.lower()}")
+                else:
+                    processed.append(sentence)
+            else:
+                processed.append(sentence)
+        return ' '.join(processed)
 
     def add_natural_variation(self, text):
-        """Add variation like 'Importantly', 'Interestingly' for natural flow"""
-        sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', text)]
-        if not sentences: return text
-
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if not sentences:
+            return text
         if random.random() < 0.3:
-            variations = ['Interestingly, ', 'Notably, ', 'Importantly, ']
-            if not sentences[0].lower().startswith(tuple(v.lower() for v in variations)):
-                sentences[0] = random.choice(variations) + sentences[0].lower()
+            first_sentence = sentences[0]
+            if not first_sentence.lower().startswith(('interestingly','notably','importantly')):
+                sentences[0] = random.choice(['Interestingly, ','Notably, ','Importantly, ']) + first_sentence.lower()
+        return '. '.join(sentences) + '.'
 
-        return ' '.join(sentences)
-
-# Initialize rewriter
+# Initialize pure rewriter
 pure_rewriter = PureRewriter()
 
-# --- EXTREME REWRITER ---
-def extreme_rewriter(text):
-    text = text.strip()
+# =========================
+# EXTREME REWRITER FUNCTION
+# =========================
+def extreme_rewriter(original_text):
+    clean_text = original_text.strip().strip('"').strip("'")
     transformations = [
+        pure_rewriter.varied_sentence_restructure,
         pure_rewriter.intelligent_word_replacement,
-        pure_rewriter.sentence_restructure,
+        pure_rewriter.smart_length_manipulation,
         pure_rewriter.add_natural_variation
     ]
     random.shuffle(transformations)
+    result = clean_text
     for t in transformations:
-        text = t(text)
-    return correct_grammar(text)
+        result = t(result)
+    result = correct_grammar(result)
+    return result
 
-# --- SIMILARITY CALCULATION ---
+# =========================
+# SIMILARITY CALCULATION
+# =========================
 def calculate_similarity(original, rewritten):
-    orig_words = set(re.findall(r'\b\w+\b', original.lower()))
-    rew_words = set(re.findall(r'\b\w+\b', rewritten.lower()))
-    common = orig_words & rew_words
-    return (len(common) / len(orig_words) * 100) if orig_words else 0
+    original_words = set(tokenizer.tokenize(original.lower()))
+    rewritten_words = set(tokenizer.tokenize(rewritten.lower()))
+    common_words = original_words.intersection(rewritten_words)
+    if not original_words:
+        return 0
+    return len(common_words) / len(original_words) * 100
 
-# --- GUARANTEE LOW SIMILARITY ---
+# =========================
+# GUARANTEE LOW SIMILARITY
+# =========================
 def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
     best_result = None
     best_similarity = 100
@@ -187,5 +191,5 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
             best_result = rewritten
             best_similarity = similarity
         if similarity <= max_similarity:
-            break
+            return rewritten, similarity
     return best_result, best_similarity
