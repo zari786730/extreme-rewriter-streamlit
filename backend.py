@@ -1,67 +1,21 @@
 # =========================
-# EXTREME REWRITER BACKEND (NO NLTK)
+# PURE REWRITER (OFFLINE & NO NLTK)
 # =========================
 
 import random
 import re
-import requests
 
 # Import your existing files
-try:
-    from health_terms import health_terms
-    from health_terms_2 import health_terms as health_terms_2
-    from generalwords import general_words
-    from grammar_corrector import correct_grammar
-    # Merge health terms
-    health_terms.update(health_terms_2)
-except ImportError:
-    # Fallback empty dictionaries if files not found
-    health_terms = {}
-    general_words = {}
-    
-    # Fallback grammar corrector
-    def correct_grammar(text):
-        return text
+from health_terms import health_terms
+from health_terms_2 import health_terms as health_terms_2
+from generalwords import general_words
+from grammar_corrector import correct_grammar
 
-# =========================
-# PURE INTERNET SYNONYM FINDER
-# =========================
-class PureInternetSynonymFinder:
-    def __init__(self):
-        self.cache = {}
+# Merge health terms
+health_terms.update(health_terms_2)
 
-    def get_synonyms(self, word):
-        word = word.lower().strip()
-        if word in self.cache:
-            return self.cache[word]
-
-        try:
-            response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=3)
-            if response.status_code == 200:
-                data = response.json()
-                synonyms = []
-                for meaning in data[0].get('meanings', []):
-                    for definition in meaning.get('definitions', []):
-                        synonyms.extend(definition.get('synonyms', []))
-
-                clean_synonyms = [
-                    s for s in synonyms
-                    if s.isalpha() and s.lower() != word and len(s.split()) <= 2
-                ]
-                unique_synonyms = list(set(clean_synonyms))[:6]
-                if unique_synonyms:
-                    self.cache[word] = unique_synonyms
-                    return unique_synonyms
-        except:
-            pass
-        return []
-
-# =========================
-# PURE REWRITER
-# =========================
 class PureRewriter:
     def __init__(self):
-        self.synonym_finder = PureInternetSynonymFinder()
         self.replacements = {}
         self.setup_vocabulary()
 
@@ -69,7 +23,6 @@ class PureRewriter:
         # Load health terms
         for word, replacement in health_terms.items():
             self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
-
         # Load general words
         for word, replacement in general_words.items():
             self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
@@ -84,24 +37,12 @@ class PureRewriter:
                 new_words.append(word)
                 continue
 
-            if random.random() < 0.8:
-                # Library replacement
-                if clean_word in self.replacements:
-                    replacement = random.choice(self.replacements[clean_word])
-                    replacement = replacement.capitalize() if word[0].isupper() else replacement
-                    new_words.append(replacement)
-                    continue
-
-                # Internet synonyms
-                synonyms = self.synonym_finder.get_synonyms(clean_word)
-                if synonyms:
-                    self.replacements[clean_word] = synonyms
-                    replacement = random.choice(synonyms)
-                    replacement = replacement.capitalize() if word[0].isupper() else replacement
-                    new_words.append(replacement)
-                    continue
-
-            new_words.append(word)
+            if clean_word in self.replacements and random.random() < 0.8:
+                replacement = random.choice(self.replacements[clean_word])
+                replacement = replacement.capitalize() if word[0].isupper() else replacement
+                new_words.append(replacement)
+            else:
+                new_words.append(word)
         return ' '.join(new_words)
 
     def varied_sentence_restructure(self, text):
@@ -170,14 +111,11 @@ def extreme_rewriter(original_text):
     return result
 
 # =========================
-# SIMILARITY CALCULATION
+# SIMILARITY CALCULATION (NO NLTK)
 # =========================
 def calculate_similarity(original, rewritten):
-    def simple_tokenize(text):
-        return re.findall(r'\b\w+\b', text.lower())
-    
-    original_words = set(simple_tokenize(original))
-    rewritten_words = set(simple_tokenize(rewritten))
+    original_words = set(re.findall(r'\w+', original.lower()))
+    rewritten_words = set(re.findall(r'\w+', rewritten.lower()))
     common_words = original_words.intersection(rewritten_words)
     if not original_words:
         return 0
