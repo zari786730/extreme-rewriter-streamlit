@@ -3,6 +3,8 @@ import re
 import streamlit as st
 from collections import defaultdict
 import requests
+import json
+import os
 
 # Import your existing files
 from health_terms import health_terms
@@ -18,245 +20,231 @@ st.write("✓ General words loaded:", len(general_words))
 st.write("✓ Grammar corrector loaded")
 
 # =========================
-# NUCLEAR SYNONYM SYSTEM
+# UNIVERSAL SYNONYM FINDER
 # =========================
-class NuclearSynonymSystem:
+class UniversalSynonymFinder:
     def __init__(self):
         self.cache = {}
-        # COMPREHENSIVE SYNONYM DATABASE
-        self.synonym_db = {
-            # Academic verbs
-            'research': ['investigate', 'examine', 'scrutinize', 'probe', 'explore', 'study'],
-            'study': ['analyze', 'investigate', 'examine', 'scrutinize', 'review', 'assess'],
-            'analyze': ['examine', 'evaluate', 'assess', 'interpret', 'scrutinize', 'review'],
-            'show': ['demonstrate', 'reveal', 'indicate', 'illustrate', 'display', 'exhibit'],
-            'prove': ['verify', 'confirm', 'validate', 'substantiate', 'corroborate', 'authenticate'],
-            'suggest': ['indicate', 'imply', 'propose', 'recommend', 'advise', 'hint'],
-            'find': ['discover', 'uncover', 'detect', 'identify', 'locate', 'ascertain'],
-            'develop': ['create', 'formulate', 'construct', 'build', 'establish', 'generate'],
-            'use': ['utilize', 'employ', 'apply', 'implement', 'exercise', 'operate'],
-            'understand': ['comprehend', 'grasp', 'apprehend', 'fathom', 'discern', 'perceive'],
-            
-            # Academic nouns
-            'result': ['outcome', 'finding', 'conclusion', 'product', 'effect', 'consequence'],
-            'data': ['information', 'facts', 'statistics', 'figures', 'details', 'findings'],
-            'method': ['approach', 'technique', 'procedure', 'process', 'system', 'strategy'],
-            'problem': ['issue', 'challenge', 'difficulty', 'obstacle', 'complication', 'dilemma'],
-            'solution': ['resolution', 'answer', 'remedy', 'fix', 'approach', 'method'],
-            'theory': ['concept', 'principle', 'hypothesis', 'framework', 'notion', 'postulate'],
-            'evidence': ['proof', 'confirmation', 'verification', 'substantiation', 'corroboration'],
-            
-            # Common words with academic alternatives
-            'important': ['significant', 'crucial', 'vital', 'essential', 'critical', 'paramount'],
-            'big': ['substantial', 'considerable', 'significant', 'extensive', 'large-scale'],
-            'small': ['limited', 'modest', 'minimal', 'restricted', 'narrow'],
-            'good': ['effective', 'efficient', 'superior', 'advantageous', 'beneficial'],
-            'bad': ['ineffective', 'inefficient', 'detrimental', 'adverse', 'unfavorable'],
-            
-            # Connectors and modifiers
-            'this': ['the present', 'the current', 'the existing', 'this particular', 'the aforementioned'],
-            'that': ['which', 'the aforementioned', 'the specified', 'the particular'],
-            'these': ['the present', 'the current', 'the existing', 'these particular'],
-            'those': ['the aforementioned', 'the specified', 'the particular', 'those specific'],
-            'very': ['extremely', 'highly', 'exceptionally', 'remarkably', 'particularly'],
-            'many': ['numerous', 'multiple', 'several', 'various', 'countless', 'myriad'],
-            'some': ['certain', 'various', 'several', 'select', 'particular', 'specific'],
-            
-            # BE verbs with alternatives
-            'is': ['represents', 'constitutes', 'forms', 'comprises', 'equals', 'signifies'],
-            'are': ['represent', 'constitute', 'form', 'comprise', 'equal', 'signify'],
-            'was': ['represented', 'constituted', 'formed', 'comprised', 'equaled', 'signified'],
-            'were': ['represented', 'constituted', 'formed', 'comprised', 'equaled', 'signified'],
-            'be': ['exist', 'occur', 'transpire', 'materialize', 'manifest', 'take place'],
-            'been': ['existed', 'occurred', 'transpired', 'materialized', 'manifested', 'taken place'],
-        }
     
     def get_synonyms(self, word):
-        """Get nuclear synonyms"""
         word = word.lower().strip()
-        
         if word in self.cache:
             return self.cache[word]
         
-        # Try online API first for fresh synonyms
         try:
-            response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=2)
+            response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=3)
             if response.status_code == 200:
                 data = response.json()
                 synonyms = []
                 for meaning in data[0].get('meanings', []):
                     for definition in meaning.get('definitions', []):
                         synonyms.extend(definition.get('synonyms', []))
-                
                 if synonyms:
-                    unique_synonyms = list(set(synonyms))[:4]
-                    # Combine with our database
-                    if word in self.synonym_db:
-                        combined = list(set(unique_synonyms + self.synonym_db[word]))[:6]
-                        self.cache[word] = combined
-                        return combined
+                    unique_synonyms = list(set(synonyms))[:6]
                     self.cache[word] = unique_synonyms
                     return unique_synonyms
         except:
             pass
-        
-        # Use our comprehensive database
-        if word in self.synonym_db:
-            self.cache[word] = self.synonym_db[word]
-            return self.synonym_db[word]
-        
         return []
 
 # =========================
-# NUCLEAR REWRITER - MULTI-LAYER APPROACH
+# SENTENCE-LEVEL REWRITER (YOUR IDEA)
 # =========================
-class NuclearRewriter:
+class SentenceLevelRewriter:
     def __init__(self):
-        self.synonym_finder = NuclearSynonymSystem()
+        self.synonym_finder = UniversalSynonymFinder()
         self.replacements = {}
         self.setup_vocabulary()
-        st.write("💣 NUCLEAR rewriter activated - Multi-layer anti-detection")
-
+    
     def setup_vocabulary(self):
-        """Setup vocabulary"""
         for word, replacement in health_terms.items():
             self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
         for word, replacement in general_words.items():
             self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
-        st.write(f"📚 Loaded {len(self.replacements)} base words")
 
-    def nuclear_word_replacement(self, text):
-        """NUCLEAR word replacement - 95% replacement rate"""
+    def rewrite_sentence_completely(self, sentence):
+        """Your idea: completely rewrite sentences"""
+        original = sentence.strip()
+        if len(original.split()) < 4:
+            return original
+        
+        # Different restructuring strategies
+        strategies = [
+            self._academic_restructure,
+            self._change_sentence_focus,
+            self._simplify_complex,
+            self._split_combine_ideas
+        ]
+        
+        for strategy in random.sample(strategies, len(strategies)):
+            rewritten = strategy(original)
+            if rewritten != original:
+                return rewritten
+        
+        return original
+
+    def _academic_restructure(self, sentence):
+        patterns = [
+            (r'(\w+) is far more than the mere (.+?); it is (.+)', r'Beyond simply \2, \1 fundamentally represents \3'),
+            (r'At its core, it encompasses (.+)', r'The fundamental nature involves \1'),
+            (r'An effective system seamlessly integrates (.+)', r'A successful framework combines \1'),
+            (r'This holistic approach not only (.+?) but also (.+)', r'This comprehensive method both \1 and additionally \2'),
+            (r'The true measure of (.+) lies not just in (.+), but in (.+)', r'The actual assessment of \1 depends not only on \2 but fundamentally on \3')
+        ]
+        for pattern, replacement in patterns:
+            if re.search(pattern, sentence, re.IGNORECASE):
+                return re.sub(pattern, replacement, sentence, flags=re.IGNORECASE)
+        return sentence
+
+    def _change_sentence_focus(self, sentence):
+        focus_changes = [
+            (r'Health care is', 'The healthcare system represents'),
+            (r'it is a', 'this constitutes a'),
+            (r'it encompasses', 'this includes'),
+            (r'An effective system', 'A successful framework'),
+        ]
+        for old, new in focus_changes:
+            if old in sentence.lower():
+                return sentence.lower().replace(old, new).capitalize()
+        return sentence
+
+    def _simplify_complex(self, sentence):
+        if len(sentence.split()) > 20:
+            clauses = re.split(r'[,;]', sentence)
+            if len(clauses) >= 2:
+                main = clauses[0].strip()
+                rest = '. '.join([c.strip() for c in clauses[1:] if c.strip()])
+                return f"{main}. {rest}."
+        return sentence
+
+    def _split_combine_ideas(self, sentence):
+        if 'not only' in sentence and 'but also' in sentence:
+            parts = sentence.split(' but also ')
+            if len(parts) == 2:
+                first_part = parts[0].replace(' not only', '')
+                second_part = parts[1]
+                return f"{first_part}. Additionally, {second_part}"
+        return sentence
+
+    def intelligent_word_replacement(self, text):
+        """Traditional word replacement as backup"""
         words = text.split()
         new_words = []
         
         for word in words:
-            original_word = word
             clean_word = word.lower().strip('.,!?;:"')
             
-            # Skip only single characters
-            if len(clean_word) <= 1:
-                new_words.append(original_word)
+            if len(clean_word) <= 2 or clean_word in ['the', 'a', 'an', 'and', 'or', 'but']:
+                new_words.append(word)
                 continue
             
-            # 95% CHANCE OF REPLACEMENT - NUCLEAR LEVEL
-            if random.random() < 0.95:
-                # Check existing replacements first
-                if clean_word in self.replacements:
-                    replacement = random.choice(self.replacements[clean_word])
-                    if word[0].isupper():
-                        replacement = replacement.capitalize()
-                    new_words.append(replacement)
-                    continue
-                
-                # Find new synonyms
-                synonyms = self.synonym_finder.get_synonyms(clean_word)
-                if synonyms:
-                    self.replacements[clean_word] = synonyms
-                    replacement = random.choice(synonyms)
-                    if word[0].isupper():
-                        replacement = replacement.capitalize()
-                    new_words.append(replacement)
-                else:
-                    new_words.append(original_word)
+            if clean_word in self.replacements and random.random() < 0.7:
+                replacement = random.choice(self.replacements[clean_word])
+                if word[0].isupper():
+                    replacement = replacement.capitalize()
+                new_words.append(replacement)
             else:
-                new_words.append(original_word)
+                new_words.append(word)
         
         return ' '.join(new_words)
 
-    def restructure_sentences_nuclear(self, text):
-        """NUCLEAR sentence restructuring"""
+# =========================
+# MAIN UNIVERSAL REWRITER CLASS
+# =========================
+class UniversalExtremeRewriter:
+    def __init__(self):
+        self.sentence_rewriter = SentenceLevelRewriter()
+        self.replacements = self.sentence_rewriter.replacements
+        st.write("✅ Universal rewriter activated - Sentence-level + Word-level")
+
+    def intelligent_word_replacement(self, text):
+        """Word-level replacement"""
+        return self.sentence_rewriter.intelligent_word_replacement(text)
+
+    def varied_sentence_restructure(self, text):
+        """Sentence-level restructuring (YOUR IDEA)"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        if len(sentences) <= 1:
+        
+        rewritten_sentences = []
+        for sentence in sentences:
+            # Use your sentence-level rewriting idea
+            rewritten = self.sentence_rewriter.rewrite_sentence_completely(sentence)
+            rewritten_sentences.append(rewritten)
+        
+        # Join with academic connectors
+        connectors = ['. ', '. Furthermore, ', '. Moreover, ', '. Additionally, ']
+        result = ''
+        for i, sentence in enumerate(rewritten_sentences):
+            if i > 0 and random.random() < 0.4:
+                result += random.choice(connectors) + sentence.lower()
+            else:
+                result += sentence + '. '
+        
+        return result.strip()
+
+    def smart_length_manipulation(self, text):
+        """Sentence length management"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if len(sentences) <= 2:
             return text
-        
-        # Shuffle sentences aggressively
-        random.shuffle(sentences)
-        
-        # Add academic starters
-        starters = [
-            "Research investigations demonstrate that", "Empirical studies reveal that", 
-            "Academic analysis indicates that", "Scholarly examination shows that",
-            "Scientific inquiry demonstrates that", "Theoretical frameworks suggest that",
-            "Methodological approaches reveal that", "Evidence-based research indicates that"
-        ]
-        
-        # Add academic connectors between sentences
-        connectors = [
-            "Furthermore,", "Moreover,", "Additionally,", "Consequently,", 
-            "Accordingly,", "Henceforth,", "Thereafter,", "Subsequently,"
-        ]
-        
-        restructured = []
-        for i, sentence in enumerate(sentences):
-            # Add starter to first sentence
-            if i == 0 and random.random() < 0.8:
-                sentence = random.choice(starters) + " " + sentence.lower()
-            # Add connectors to other sentences
-            elif i > 0 and random.random() < 0.6:
-                sentence = random.choice(connectors) + " " + sentence.lower()
-            
-            restructured.append(sentence)
-        
-        return '. '.join(restructured) + '.'
 
-    def change_voice_structure(self, text):
-        """Change sentence voice and structure"""
-        # Active to passive transformations
-        voice_changes = [
-            (r'(\w+) (\w+)s that', r'It is \2ed that \1'),
-            (r'(\w+) shows that', r'It is demonstrated that'),
-            (r'(\w+) found that', r'It was discovered that'),
-            (r'(\w+) suggests that', r'It is suggested that'),
-            (r'(\w+) proves that', r'It is proven that'),
-        ]
-        
-        for pattern, replacement in voice_changes:
-            if random.random() < 0.4:
-                text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
-        
-        return text
+        processed = []
+        for sentence in sentences:
+            words = sentence.split()
+            if random.random() < 0.5:
+                if len(words) > 12:
+                    mid = len(words) // 2
+                    part1 = ' '.join(words[:mid])
+                    part2 = ' '.join(words[mid:])
+                    processed.extend([part1 + '.', part2.capitalize()])
+                elif len(words) < 6:
+                    expansions = ["It is evident that", "Research indicates that", "Studies demonstrate that"]
+                    expanded = f"{random.choice(expansions)} {sentence.lower()}"
+                    processed.append(expanded)
+                else:
+                    processed.append(sentence)
+            else:
+                processed.append(sentence)
 
-    def add_academic_phrases(self, text):
-        """Inject academic phrases"""
-        academic_injections = [
-            "From an analytical perspective,",
-            "Within the framework of contemporary scholarship,",
-            "Considering the empirical evidence,",
-            "Based on methodological considerations,",
-            "From a theoretical standpoint,",
-            "In the context of academic discourse,",
-        ]
-        
-        if random.random() < 0.7:
-            injection = random.choice(academic_injections)
-            text = injection + " " + text.lower()
-        
-        return text
+        return ' '.join(processed)
 
-# Initialize NUCLEAR rewriter
-nuclear_rewriter = NuclearRewriter()
+    def add_natural_variation(self, text):
+        """Add natural writing variations"""
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        if not sentences:
+            return text
 
-def nuclear_rewrite(original_text):
-    """NUCLEAR rewriting - Multi-layer approach"""
-    if not original_text:
-        return original_text
-        
-    clean_text = original_text.strip()
-    
-    # LAYER 1: Nuclear word replacement
-    result = nuclear_rewriter.nuclear_word_replacement(clean_text)
-    
-    # LAYER 2: Sentence restructuring
-    result = nuclear_rewriter.restructure_sentences_nuclear(result)
-    
-    # LAYER 3: Voice/structure changes
-    result = nuclear_rewriter.change_voice_structure(result)
-    
-    # LAYER 4: Academic phrase injection
-    result = nuclear_rewriter.add_academic_phrases(result)
-    
-    # LAYER 5: Final grammar correction
+        if random.random() < 0.3:
+            variations = [
+                f"Interestingly, {sentences[0].lower()}",
+                f"Notably, {sentences[0].lower()}",
+                f"Importantly, {sentences[0].lower()}"
+            ]
+            sentences[0] = random.choice(variations)
+
+        return '. '.join(sentences) + '.'
+
+# Initialize the universal rewriter
+universal_rewriter = UniversalExtremeRewriter()
+
+def extreme_rewriter(original_text):
+    """Universal rewriting with sentence-level approach"""
+    clean_text = original_text.strip().strip('"').strip("'")
+
+    # Apply transformations in random order
+    transformations = [
+        universal_rewriter.varied_sentence_restructure,  # YOUR IDEA
+        universal_rewriter.intelligent_word_replacement, 
+        universal_rewriter.smart_length_manipulation,
+        universal_rewriter.add_natural_variation
+    ]
+    random.shuffle(transformations)
+
+    result = clean_text
+    for transform in transformations:
+        result = transform(result)
+
+    # Final grammar correction
     result = correct_grammar(result)
     
     return result
@@ -273,13 +261,13 @@ def calculate_similarity(original, rewritten):
     similarity = len(common_words) / len(original_words) * 100
     return similarity
 
-def guarantee_nuclear_similarity(original_text, max_similarity=10, max_attempts=12):
-    """NUCLEAR similarity reduction"""
-    best_result = original_text
+def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
+    """Keep generating until similarity is below threshold"""
+    best_result = None
     best_similarity = 100
 
     for attempt in range(max_attempts):
-        rewritten = nuclear_rewrite(original_text)
+        rewritten = extreme_rewriter(original_text)
         similarity = calculate_similarity(original_text, rewritten)
 
         if similarity < best_similarity:
@@ -290,6 +278,32 @@ def guarantee_nuclear_similarity(original_text, max_similarity=10, max_attempts=
             return rewritten, similarity
 
     return best_result, best_similarity
+
+# =========================
+# STREAMLIT UI
+# =========================
+st.title("🔁 Universal Text Rewriter")
+st.write("Sentence-level + Word-level rewriting")
+
+text_input = st.text_area("Enter text to rewrite:", height=200)
+
+if st.button("Rewrite Text"):
+    if text_input:
+        with st.spinner("Rewriting with universal approach..."):
+            rewritten, similarity = guarantee_low_similarity(text_input)
+            
+            st.subheader("Original Text:")
+            st.write(text_input)
+            
+            st.subheader("Rewritten Text:")
+            st.write(rewritten)
+            
+            st.subheader("Similarity Score:")
+            st.write(f"{similarity:.1f}%")
+    else:
+        st.error("Please enter some text")
+
+
 
 
 # =========================
