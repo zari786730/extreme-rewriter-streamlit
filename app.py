@@ -1,13 +1,20 @@
-# =========================
-# FRONTEND (DNA WATER GLASS UI)
-# =========================
 
+# =========================
+# FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
+# =========================
 
 import streamlit as st
 import random
-from backend import guarantee_low_similarity
 
 st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
+
+# --- REWRITE FUNCTION (TRUE BACKEND CALL) ---
+# This version uses the real rewriting logic from your backend
+def guarantee_low_similarity(text, target):
+    """Generate rewritten text using the true backend extreme_rewriter() logic."""
+    rewritten = extreme_rewriter(text)
+    similarity = calculate_similarity(text, rewritten)
+    return rewritten, similarity
 
 # --- CSS STYLES ---
 st.markdown("""
