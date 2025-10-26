@@ -228,6 +228,9 @@ if col1.button("🚀 Rewrite Now"):
     else:
         with st.spinner("Rewriting your text..."):
             rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
+    else:
+        with st.spinner("Rewriting your text..."):
+            rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
         st.markdown(f"""
         <div class="glass-box" style="border:1px solid rgba(0,255,255,0.3);">
             <h3 style="color:#00eaff;">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
