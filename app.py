@@ -1,5 +1,5 @@
 # =========================
-# FRONTEND (DNA MOLECULE UI - COMPLETE VERSION)
+# FRONTEND (DNA MOLECULE UI - COMPLETE FIXED VERSION)
 # =========================
 
 import streamlit as st
@@ -427,135 +427,108 @@ h1.title {
 def create_continuous_bubbles():
     """Create continuous background bubbles"""
     bubbles_html = '<div id="continuous-bubbles">'
-    for i in range(20):  # Reduced for better performance
+    for i in range(20):
         size = random.randint(10, 40)
         left = random.randint(0, 98)
         duration = random.randint(20, 35)
         delay = random.randint(0, 25)
-        bubbles_html += f"""
-        <div class="continuous-bubble" style="
-            left:{left}vw;
-            width:{size}px;
-            height:{size}px;
-            animation-delay:{delay}s;
-            animation-duration:{duration}s;
-        "></div>"""
+        bubbles_html += f'<div class="continuous-bubble" style="left:{left}vw; width:{size}px; height:{size}px; animation-delay:{delay}s; animation-duration:{duration}s;"></div>'
     bubbles_html += '</div>'
     return bubbles_html
 
 def create_dna_molecules():
     """Create beautiful 3D DNA molecules with JavaScript"""
     dna_html = '''
-    <div id="dna-container">
-        <div class="dna-helix dna-molecule-1" id="dna1"></div>
-        <div class="dna-helix dna-molecule-2" id="dna2"></div>
-        <div class="dna-helix dna-molecule-3" id="dna3"></div>
-        <div class="dna-helix dna-molecule-4" id="dna4"></div>
-    </div>
-    <div class="wave-bg"></div>
+<div id="dna-container">
+    <div class="dna-helix dna-molecule-1" id="dna1"></div>
+    <div class="dna-helix dna-molecule-2" id="dna2"></div>
+    <div class="dna-helix dna-molecule-3" id="dna3"></div>
+    <div class="dna-helix dna-molecule-4" id="dna4"></div>
+</div>
+<div class="wave-bg"></div>
+
+<script>
+function createDNAStructure(containerId, segments, radius, height) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
     
-    <script>
-        function createDNAStructure(containerId, segments = 16, radius = 25, height = 120) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
+    for (let strand = 0; strand < 2; strand++) {
+        for (let i = 0; i < segments; i++) {
+            const angle = (i / segments) * Math.PI * 2;
+            const nodeAngle = angle + (strand * Math.PI);
             
-            // Clear existing content
-            container.innerHTML = '';
+            const node = document.createElement('div');
+            node.className = 'dna-node';
+            const x = Math.cos(nodeAngle) * radius;
+            const y = (i / segments) * height - height / 2;
+            const z = Math.sin(nodeAngle) * radius;
+            node.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, ' + z + 'px)';
+            container.appendChild(node);
             
-            // Create two strands
-            for (let strand = 0; strand < 2; strand++) {
-                for (let i = 0; i < segments; i++) {
-                    const angle = (i / segments) * Math.PI * 2;
-                    const nodeAngle = angle + (strand * Math.PI); // Opposite sides
-                    
-                    // DNA node (base pair connection point)
-                    const node = document.createElement('div');
-                    node.className = 'dna-node';
-                    
-                    const x = Math.cos(nodeAngle) * radius;
-                    const y = (i / segments) * height - height / 2;
-                    const z = Math.sin(nodeAngle) * radius;
-                    
-                    node.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
-                    container.appendChild(node);
-                    
-                    // Vertical strands between nodes
-                    if (i < segments - 1) {
-                        const nextAngle = ((i + 1) / segments) * Math.PI * 2;
-                        const nextNodeAngle = nextAngle + (strand * Math.PI);
-                        
-                        const nextX = Math.cos(nextNodeAngle) * radius;
-                        const nextY = ((i + 1) / segments) * height - height / 2;
-                        const nextZ = Math.sin(nextNodeAngle) * radius;
-                        
-                        // Calculate strand properties
-                        const dx = nextX - x;
-                        const dy = nextY - y;
-                        const dz = nextZ - z;
-                        
-                        const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                        const rotX = Math.atan2(dz, Math.sqrt(dx * dx + dy * dy)) * 180 / Math.PI;
-                        const rotZ = Math.atan2(dy, dx) * 180 / Math.PI;
-                        
-                        const strandElement = document.createElement('div');
-                        strandElement.className = 'dna-strand';
-                        strandElement.style.height = length + 'px';
-                        strandElement.style.transform = `
-                            translate3d(${x}px, ${y}px, ${z}px)
-                            rotateZ(${rotZ}deg)
-                            rotateX(${rotX}deg)
-                        `;
-                        container.appendChild(strandElement);
-                    }
-                    
-                    // Horizontal base pairs between strands
-                    if (strand === 0 && i % 2 === 0) {
-                        const oppositeAngle = angle + Math.PI;
-                        const oppositeX = Math.cos(oppositeAngle) * radius;
-                        const oppositeZ = Math.sin(oppositeAngle) * radius;
-                        
-                        const hDx = oppositeX - x;
-                        const hDz = oppositeZ - z;
-                        const hLength = Math.sqrt(hDx * hDx + hDz * hDz);
-                        const hRotY = Math.atan2(hDz, hDx) * 180 / Math.PI;
-                        
-                        const basePair = document.createElement('div');
-                        basePair.className = 'base-pair';
-                        basePair.style.height = hLength + 'px';
-                        basePair.style.transform = `
-                            translate3d(${x}px, ${y}px, ${z}px)
-                            rotateY(${hRotY}deg)
-                            rotateZ(90deg)
-                        `;
-                        container.appendChild(basePair);
-                    }
-                }
+            if (i < segments - 1) {
+                const nextAngle = ((i + 1) / segments) * Math.PI * 2;
+                const nextNodeAngle = nextAngle + (strand * Math.PI);
+                const nextX = Math.cos(nextNodeAngle) * radius;
+                const nextY = ((i + 1) / segments) * height - height / 2;
+                const nextZ = Math.sin(nextNodeAngle) * radius;
+                
+                const dx = nextX - x;
+                const dy = nextY - y;
+                const dz = nextZ - z;
+                const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                const rotX = Math.atan2(dz, Math.sqrt(dx * dx + dy * dy)) * 180 / Math.PI;
+                const rotZ = Math.atan2(dy, dx) * 180 / Math.PI;
+                
+                const strandElement = document.createElement('div');
+                strandElement.className = 'dna-strand';
+                strandElement.style.height = length + 'px';
+                strandElement.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, ' + z + 'px) rotateZ(' + rotZ + 'deg) rotateX(' + rotX + 'deg)';
+                container.appendChild(strandElement);
+            }
+            
+            if (strand === 0 && i % 2 === 0) {
+                const oppositeAngle = angle + Math.PI;
+                const oppositeX = Math.cos(oppositeAngle) * radius;
+                const oppositeZ = Math.sin(oppositeAngle) * radius;
+                
+                const hDx = oppositeX - x;
+                const hDz = oppositeZ - z;
+                const hLength = Math.sqrt(hDx * hDx + hDz * hDz);
+                const hRotY = Math.atan2(hDz, hDx) * 180 / Math.PI;
+                
+                const basePair = document.createElement('div');
+                basePair.className = 'base-pair';
+                basePair.style.height = hLength + 'px';
+                basePair.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, ' + z + 'px) rotateY(' + hRotY + 'deg) rotateZ(90deg)';
+                container.appendChild(basePair);
             }
         }
-        
-        // Initialize DNA molecules when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                createDNAStructure('dna1', 12, 20, 100);
-                createDNAStructure('dna2', 16, 18, 90);
-                createDNAStructure('dna3', 14, 22, 110);
-                createDNAStructure('dna4', 18, 19, 95);
-            }, 500);
-        });
-        
-        // Recreate DNA on page navigation (for Streamlit)
-        if (window.streamlitDebug) {
-            setInterval(() => {
-                const containers = ['dna1', 'dna2', 'dna3', 'dna4'];
-                containers.forEach(container => {
-                    if (!document.getElementById(container)?.children.length) {
-                        createDNAStructure(container);
-                    }
-                });
-            }, 2000);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        createDNAStructure('dna1', 12, 20, 100);
+        createDNAStructure('dna2', 16, 18, 90);
+        createDNAStructure('dna3', 14, 22, 110);
+        createDNAStructure('dna4', 18, 19, 95);
+    }, 500);
+});
+
+setInterval(() => {
+    const containers = ['dna1', 'dna2', 'dna3', 'dna4'];
+    containers.forEach(container => {
+        if (!document.getElementById(container) || !document.getElementById(container).children.length) {
+            if (container === 'dna1') createDNAStructure('dna1', 12, 20, 100);
+            else if (container === 'dna2') createDNAStructure('dna2', 16, 18, 90);
+            else if (container === 'dna3') createDNAStructure('dna3', 14, 22, 110);
+            else if (container === 'dna4') createDNAStructure('dna4', 18, 19, 95);
         }
-    </script>
-    '''
+    });
+}, 3000);
+</script>
+'''
     return dna_html
 
 def create_event_bubbles(count=15):
@@ -566,14 +539,7 @@ def create_event_bubbles(count=15):
         left = random.randint(10, 90)
         duration = random.uniform(2, 4)
         delay = random.uniform(0, 1)
-        bubbles_html += f"""
-        <div class="event-bubble" style="
-            left:{left}vw;
-            width:{size}px;
-            height:{size}px;
-            animation-delay:{delay}s;
-            animation-duration:{duration}s;
-        "></div>"""
+        bubbles_html += f'<div class="event-bubble" style="left:{left}vw; width:{size}px; height:{size}px; animation-delay:{delay}s; animation-duration:{duration}s;"></div>'
     bubbles_html += '</div>'
     return bubbles_html
 
@@ -681,12 +647,17 @@ if col_btn1.button("🚀 **Rewrite with DNA Technology**", use_container_width=T
                 time.sleep(0.01)
                 progress_bar.progress(i + 1)
             
-            # Perform rewriting
-            rewritten, similarity = guarantee_low_similarity(
-                input_text, 
-                target_similarity,
-                aggressiveness=rewrite_aggressiveness
-            )
+            # Perform rewriting with error handling
+            try:
+                rewritten, similarity = guarantee_low_similarity(
+                    input_text, 
+                    target_similarity,
+                    aggressiveness=rewrite_aggressiveness
+                )
+            except Exception as e:
+                st.error(f"❌ Rewriting failed: {str(e)}")
+                rewritten = "Error: Could not rewrite text. Please check backend connection."
+                similarity = 100
         
         # Display results
         st.markdown(f"""
@@ -708,15 +679,6 @@ if col_btn1.button("🚀 **Rewrite with DNA Technology**", use_container_width=T
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
-        # Show additional stats if available
-        try:
-            stats = get_vocabulary_stats()
-            if 'synonym_usage' in stats:
-                usage = stats['synonym_usage']
-                st.info(f"📊 **Rewrite Stats:** {usage.get('words_found', 0)} words replaced • Success rate: {usage.get('success_rate', 0):.1f}%")
-        except:
-            pass
 
 # Clear button
 if col_btn2.button("🧹 **Clear All**", use_container_width=True):
@@ -732,16 +694,6 @@ if col_btn3.button("📝 **Load Sample**", use_container_width=True):
 # Load sample text if available
 if 'sample_text' in st.session_state:
     input_text = st.session_state.sample_text
-    # Use JavaScript to set the textarea value
-    st.markdown(f"""
-    <script>
-        const textareas = document.querySelectorAll('textarea');
-        if (textareas.length > 0) {{
-            textareas[0].value = `{st.session_state.sample_text}`;
-            textareas[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
-        }}
-    </script>
-    """, unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -785,40 +737,4 @@ st.markdown("""
     💻 Developed with 💙 by <strong style="color:#00ffff;">Zariab</strong> • 
     🧬 Inspired by Genetic Algorithms & DNA Sequencing
 </div>
-""", unsafe_allow_html=True)
-
-# =========================
-# PERFORMANCE OPTIMIZATION SCRIPT
-# =========================
-st.markdown("""
-<script>
-// Performance optimization for DNA molecules
-let animationFrameId;
-function optimizeAnimations() {
-    const dnaElements = document.querySelectorAll('.dna-helix');
-    dnaElements.forEach(element => {
-        // Reduce animation intensity when tab is not visible
-        if (document.hidden) {
-            element.style.animationPlayState = 'paused';
-        } else {
-            element.style.animationPlayState = 'running';
-        }
-    });
-    
-    animationFrameId = requestAnimationFrame(optimizeAnimations);
-}
-
-// Start optimization
-optimizeAnimations();
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-    }
-});
-
-// Handle page visibility changes
-document.addEventListener('visibilitychange', optimizeAnimations);
-</script>
 """, unsafe_allow_html=True)
