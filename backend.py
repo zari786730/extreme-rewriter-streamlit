@@ -1,19 +1,25 @@
 # =========================
-# EXTREME REWRITER BACKEND (NO INTERNET, NO NLTK DOWNLOADS NEEDED)
+# EXTREME REWRITER BACKEND (NO NLTK - SIMPLIFIED)
 # =========================
 
 import random
 import re
 import importlib
-from nltk import pos_tag
-from nltk.corpus import wordnet
-from nltk.tokenize import RegexpTokenizer
 
 # Import your existing files
-from health_terms import health_terms
-from health_terms_2 import health_terms as health_terms_2
-from generalwords import general_words
-from grammar_corrector import correct_grammar
+try:
+    from health_terms import health_terms
+    from health_terms_2 import health_terms as health_terms_2
+    from generalwords import general_words
+    from grammar_corrector import correct_grammar
+except ImportError:
+    # Fallback if these files don't exist
+    health_terms = {}
+    health_terms_2 = {}
+    general_words = {}
+    
+    def correct_grammar(text):
+        return text  # Fallback function
 
 # =========================
 # VOCABULARY LOADER - DYNAMICALLY LOAD ALL 45 SYNONYM FILES
@@ -61,7 +67,7 @@ class VocabularyLoader:
         """Get vocabulary statistics for frontend display"""
         return {
             "total_words": self.total_words,
-            "loaded_files": 45,  # You have 45 files
+            "loaded_files": 45,
             "health_terms": len(health_terms) + len(health_terms_2),
             "general_words": len(general_words)
         }
@@ -69,11 +75,11 @@ class VocabularyLoader:
 # Initialize vocabulary loader
 vocabulary_loader = VocabularyLoader()
 
-# Merge health terms (already done in loader, but keeping for compatibility)
-health_terms.update(health_terms_2)
-
-# Initialize RegexpTokenizer (no Punkt needed)
-tokenizer = RegexpTokenizer(r'\w+')
+# Simple tokenizer without NLTK
+def simple_tokenize(text):
+    """Simple tokenizer that doesn't require NLTK"""
+    words = re.findall(r'\b\w+\b', text.lower())
+    return words
 
 # =========================
 # OFFLINE SYNONYM FINDER (USES ONLY LOCAL VOCABULARY)
@@ -81,10 +87,9 @@ tokenizer = RegexpTokenizer(r'\w+')
 class OfflineSynonymFinder:
     def __init__(self, vocabulary):
         self.vocabulary = vocabulary
-        self.used_synonyms = {}
     
     def get_synonyms(self, word):
-        """Get synonyms from local vocabulary only - no internet calls"""
+        """Get synonyms from local vocabulary only"""
         word = word.lower().strip()
         
         # Direct match in vocabulary
@@ -97,19 +102,22 @@ class OfflineSynonymFinder:
             else:
                 return [str(synonyms)]
         
-        # Try plural/singular variations
-        if word.endswith('s') and word[:-1] in self.vocabulary:
-            synonyms = self.vocabulary[word[:-1]]
-            return [synonyms] if isinstance(synonyms, str) else synonyms
+        # Try variations
+        variations = [
+            word + 's',  # plural
+            word[:-1] if word.endswith('s') else None,  # singular
+            word + 'ing',
+            word[:-3] if word.endswith('ing') else None,
+            word + 'ed',
+            word[:-2] if word.endswith('ed') else None,
+        ]
         
-        # Try without common suffixes
-        for suffix in ['ing', 'ed', 'ly', 'es']:
-            if word.endswith(suffix) and word[:-len(suffix)] in self.vocabulary:
-                base_word = word[:-len(suffix)]
-                synonyms = self.vocabulary[base_word]
+        for variation in variations:
+            if variation and variation in self.vocabulary:
+                synonyms = self.vocabulary[variation]
                 return [synonyms] if isinstance(synonyms, str) else synonyms
         
-        return []  # No synonyms found in local database
+        return []
 
 # =========================
 # PURE REWRITER (ENHANCED WITH VOCABULARY - OFFLINE ONLY)
@@ -117,7 +125,7 @@ class OfflineSynonymFinder:
 class PureRewriter:
     def __init__(self):
         self.synonym_finder = OfflineSynonymFinder(vocabulary_loader.all_synonyms)
-        self.replacements = vocabulary_loader.all_synonyms  # Use loaded vocabulary
+        self.replacements = vocabulary_loader.all_synonyms
         self.vocabulary_stats = vocabulary_loader.get_vocabulary_stats()
 
     def intelligent_word_replacement(self, text):
@@ -127,18 +135,17 @@ class PureRewriter:
         for word in words:
             clean_word = word.lower().strip('.,!?;:"')
             
-            # Skip common short words and stop words
-            if len(clean_word) <= 2 or clean_word in ['the','a','an','and','or','but','in','on','at','to','for','of','with','by','as','is','was','be','are','were']:
+            # Skip common short words
+            skip_words = ['the','a','an','and','or','but','in','on','at','to','for','of','with','by','as','is','was','be','are','were']
+            if len(clean_word) <= 2 or clean_word in skip_words:
                 new_words.append(word)
                 continue
 
             # Apply replacement with probability
-            if random.random() < 0.7:  # Slightly lower probability since we have massive vocabulary
-                # Get synonyms from local vocabulary
+            if random.random() < 0.7:
                 synonyms = self.synonym_finder.get_synonyms(clean_word)
                 
                 if synonyms:
-                    # Filter valid synonyms
                     valid_synonyms = [
                         s for s in synonyms 
                         if s.lower() != clean_word and len(s.split()) <= 2
@@ -146,12 +153,10 @@ class PureRewriter:
                     
                     if valid_synonyms:
                         replacement = random.choice(valid_synonyms)
-                        # Preserve capitalization
                         replacement = replacement.capitalize() if word[0].isupper() else replacement
                         new_words.append(replacement)
                         continue
 
-            # Keep original word if no replacement found or probability missed
             new_words.append(word)
             
         return ' '.join(new_words)
@@ -201,7 +206,6 @@ class PureRewriter:
         return '. '.join(sentences) + '.'
 
     def get_vocabulary_info(self):
-        """Get vocabulary statistics for frontend display"""
         return self.vocabulary_stats
 
 # Initialize pure rewriter
@@ -222,15 +226,21 @@ def extreme_rewriter(original_text):
     result = clean_text
     for t in transformations:
         result = t(result)
-    result = correct_grammar(result)
+    
+    # Try grammar correction if available
+    try:
+        result = correct_grammar(result)
+    except:
+        pass  # Skip if grammar corrector not available
+    
     return result
 
 # =========================
-# SIMILARITY CALCULATION
+# SIMILARITY CALCULATION (NO NLTK)
 # =========================
 def calculate_similarity(original, rewritten):
-    original_words = set(tokenizer.tokenize(original.lower()))
-    rewritten_words = set(tokenizer.tokenize(rewritten.lower()))
+    original_words = set(simple_tokenize(original))
+    rewritten_words = set(simple_tokenize(rewritten))
     common_words = original_words.intersection(rewritten_words)
     if not original_words:
         return 0
@@ -253,13 +263,12 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
     return best_result, best_similarity
 
 # =========================
-# VOCABULARY STATISTICS ENDPOINT (For Frontend)
+# VOCABULARY STATISTICS ENDPOINT
 # =========================
 def get_vocabulary_stats():
-    """Returns vocabulary statistics for frontend display"""
     return pure_rewriter.get_vocabulary_info()
 
-# Example usage when this file runs directly
+# Test when run directly
 if __name__ == "__main__":
     stats = get_vocabulary_stats()
     print("\n" + "="*50)
@@ -271,7 +280,7 @@ if __name__ == "__main__":
     print(f"General Words: {stats['general_words']:,}")
     print("="*50)
     
-    # Test the rewriter
+    # Test
     test_text = "The quick brown fox jumps over the lazy dog."
     print(f"\nTest Text: {test_text}")
     rewritten = extreme_rewriter(test_text)
