@@ -1,10 +1,10 @@
 # =========================
-# EXTREME REWRITER BACKEND (NO NLTK DOWNLOADS NEEDED)
+# EXTREME REWRITER BACKEND (NO INTERNET, NO NLTK DOWNLOADS NEEDED)
 # =========================
 
 import random
 import re
-import requests
+import importlib
 from nltk import pos_tag
 from nltk.corpus import wordnet
 from nltk.tokenize import RegexpTokenizer
@@ -15,62 +15,110 @@ from health_terms_2 import health_terms as health_terms_2
 from generalwords import general_words
 from grammar_corrector import correct_grammar
 
-# Merge health terms
+# =========================
+# VOCABULARY LOADER - DYNAMICALLY LOAD ALL 45 SYNONYM FILES
+# =========================
+class VocabularyLoader:
+    def __init__(self):
+        self.all_synonyms = {}
+        self.total_words = 0
+        self.load_all_vocabulary()
+    
+    def load_all_vocabulary(self):
+        """Dynamically load all 45 synonym files"""
+        print("Loading vocabulary database...")
+        
+        # Merge health terms first
+        health_terms.update(health_terms_2)
+        self.all_synonyms.update(health_terms)
+        
+        # Load general words
+        self.all_synonyms.update(general_words)
+        
+        # Dynamically load all 45 synonym files
+        loaded_files = 0
+        for i in range(1, 46):  # 1 to 45
+            try:
+                module_name = f"vocabulary.synonyms_{i:02d}"
+                module = importlib.import_module(module_name)
+                synonyms_dict = getattr(module, 'synonyms', {})
+                self.all_synonyms.update(synonyms_dict)
+                loaded_files += 1
+                print(f"✓ Loaded {module_name} with {len(synonyms_dict)} words")
+            except ImportError as e:
+                print(f"✗ Failed to load {module_name}: {e}")
+            except Exception as e:
+                print(f"✗ Error loading {module_name}: {e}")
+        
+        self.total_words = len(self.all_synonyms)
+        print(f"Vocabulary loading complete!")
+        print(f"Total files loaded: {loaded_files}/45")
+        print(f"Total unique words in database: {self.total_words:,}")
+        
+        return self.total_words, self.all_synonyms
+    
+    def get_vocabulary_stats(self):
+        """Get vocabulary statistics for frontend display"""
+        return {
+            "total_words": self.total_words,
+            "loaded_files": 45,  # You have 45 files
+            "health_terms": len(health_terms) + len(health_terms_2),
+            "general_words": len(general_words)
+        }
+
+# Initialize vocabulary loader
+vocabulary_loader = VocabularyLoader()
+
+# Merge health terms (already done in loader, but keeping for compatibility)
 health_terms.update(health_terms_2)
 
 # Initialize RegexpTokenizer (no Punkt needed)
 tokenizer = RegexpTokenizer(r'\w+')
 
 # =========================
-# PURE INTERNET SYNONYM FINDER
+# OFFLINE SYNONYM FINDER (USES ONLY LOCAL VOCABULARY)
 # =========================
-class PureInternetSynonymFinder:
-    def __init__(self):
-        self.cache = {}
-
+class OfflineSynonymFinder:
+    def __init__(self, vocabulary):
+        self.vocabulary = vocabulary
+        self.used_synonyms = {}
+    
     def get_synonyms(self, word):
+        """Get synonyms from local vocabulary only - no internet calls"""
         word = word.lower().strip()
-        if word in self.cache:
-            return self.cache[word]
-
-        try:
-            response = requests.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}", timeout=3)
-            if response.status_code == 200:
-                data = response.json()
-                synonyms = []
-                for meaning in data[0].get('meanings', []):
-                    for definition in meaning.get('definitions', []):
-                        synonyms.extend(definition.get('synonyms', []))
-
-                clean_synonyms = [
-                    s for s in synonyms
-                    if s.isalpha() and s.lower() != word and len(s.split()) <= 2
-                ]
-                unique_synonyms = list(set(clean_synonyms))[:6]
-                if unique_synonyms:
-                    self.cache[word] = unique_synonyms
-                    return unique_synonyms
-        except:
-            pass
-        return []
+        
+        # Direct match in vocabulary
+        if word in self.vocabulary:
+            synonyms = self.vocabulary[word]
+            if isinstance(synonyms, str):
+                return [synonyms]
+            elif isinstance(synonyms, list):
+                return synonyms
+            else:
+                return [str(synonyms)]
+        
+        # Try plural/singular variations
+        if word.endswith('s') and word[:-1] in self.vocabulary:
+            synonyms = self.vocabulary[word[:-1]]
+            return [synonyms] if isinstance(synonyms, str) else synonyms
+        
+        # Try without common suffixes
+        for suffix in ['ing', 'ed', 'ly', 'es']:
+            if word.endswith(suffix) and word[:-len(suffix)] in self.vocabulary:
+                base_word = word[:-len(suffix)]
+                synonyms = self.vocabulary[base_word]
+                return [synonyms] if isinstance(synonyms, str) else synonyms
+        
+        return []  # No synonyms found in local database
 
 # =========================
-# PURE REWRITER
+# PURE REWRITER (ENHANCED WITH VOCABULARY - OFFLINE ONLY)
 # =========================
 class PureRewriter:
     def __init__(self):
-        self.synonym_finder = PureInternetSynonymFinder()
-        self.replacements = {}
-        self.setup_vocabulary()
-
-    def setup_vocabulary(self):
-        # Load health terms
-        for word, replacement in health_terms.items():
-            self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
-
-        # Load general words
-        for word, replacement in general_words.items():
-            self.replacements[word] = [replacement] if isinstance(replacement, str) else replacement
+        self.synonym_finder = OfflineSynonymFinder(vocabulary_loader.all_synonyms)
+        self.replacements = vocabulary_loader.all_synonyms  # Use loaded vocabulary
+        self.vocabulary_stats = vocabulary_loader.get_vocabulary_stats()
 
     def intelligent_word_replacement(self, text):
         words = text.split()
@@ -78,28 +126,34 @@ class PureRewriter:
 
         for word in words:
             clean_word = word.lower().strip('.,!?;:"')
-            if len(clean_word) <= 2 or clean_word in ['the','a','an','and','or','but','in','on','at']:
+            
+            # Skip common short words and stop words
+            if len(clean_word) <= 2 or clean_word in ['the','a','an','and','or','but','in','on','at','to','for','of','with','by','as','is','was','be','are','were']:
                 new_words.append(word)
                 continue
 
-            if random.random() < 0.8:
-                # Library replacement
-                if clean_word in self.replacements:
-                    replacement = random.choice(self.replacements[clean_word])
-                    replacement = replacement.capitalize() if word[0].isupper() else replacement
-                    new_words.append(replacement)
-                    continue
-
-                # Internet synonyms
+            # Apply replacement with probability
+            if random.random() < 0.7:  # Slightly lower probability since we have massive vocabulary
+                # Get synonyms from local vocabulary
                 synonyms = self.synonym_finder.get_synonyms(clean_word)
+                
                 if synonyms:
-                    self.replacements[clean_word] = synonyms
-                    replacement = random.choice(synonyms)
-                    replacement = replacement.capitalize() if word[0].isupper() else replacement
-                    new_words.append(replacement)
-                    continue
+                    # Filter valid synonyms
+                    valid_synonyms = [
+                        s for s in synonyms 
+                        if s.lower() != clean_word and len(s.split()) <= 2
+                    ]
+                    
+                    if valid_synonyms:
+                        replacement = random.choice(valid_synonyms)
+                        # Preserve capitalization
+                        replacement = replacement.capitalize() if word[0].isupper() else replacement
+                        new_words.append(replacement)
+                        continue
 
+            # Keep original word if no replacement found or probability missed
             new_words.append(word)
+            
         return ' '.join(new_words)
 
     def varied_sentence_restructure(self, text):
@@ -145,6 +199,10 @@ class PureRewriter:
             if not first_sentence.lower().startswith(('interestingly','notably','importantly')):
                 sentences[0] = random.choice(['Interestingly, ','Notably, ','Importantly, ']) + first_sentence.lower()
         return '. '.join(sentences) + '.'
+
+    def get_vocabulary_info(self):
+        """Get vocabulary statistics for frontend display"""
+        return self.vocabulary_stats
 
 # Initialize pure rewriter
 pure_rewriter = PureRewriter()
@@ -193,3 +251,30 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
         if similarity <= max_similarity:
             return rewritten, similarity
     return best_result, best_similarity
+
+# =========================
+# VOCABULARY STATISTICS ENDPOINT (For Frontend)
+# =========================
+def get_vocabulary_stats():
+    """Returns vocabulary statistics for frontend display"""
+    return pure_rewriter.get_vocabulary_info()
+
+# Example usage when this file runs directly
+if __name__ == "__main__":
+    stats = get_vocabulary_stats()
+    print("\n" + "="*50)
+    print("VOCABULARY DATABASE STATISTICS")
+    print("="*50)
+    print(f"Total Unique Words: {stats['total_words']:,}")
+    print(f"Synonym Files Loaded: {stats['loaded_files']}/45")
+    print(f"Health Terms: {stats['health_terms']:,}")
+    print(f"General Words: {stats['general_words']:,}")
+    print("="*50)
+    
+    # Test the rewriter
+    test_text = "The quick brown fox jumps over the lazy dog."
+    print(f"\nTest Text: {test_text}")
+    rewritten = extreme_rewriter(test_text)
+    print(f"Rewritten: {rewritten}")
+    similarity = calculate_similarity(test_text, rewritten)
+    print(f"Similarity: {similarity:.1f}%")
