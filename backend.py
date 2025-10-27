@@ -1,65 +1,117 @@
 # =========================
-# EXTREME REWRITER BACKEND (NO NLTK - SIMPLIFIED)
+# EXTREME REWRITER BACKEND (NO NLTK - FIXED VOCABULARY LOADING)
 # =========================
 
 import random
 import re
 import importlib
+import os
+import sys
+
+# Add current directory to Python path to ensure imports work
+sys.path.append(os.path.dirname(__file__))
 
 # Import your existing files
 try:
     from health_terms import health_terms
-    from health_terms_2 import health_terms as health_terms_2
-    from generalwords import general_words
-    from grammar_corrector import correct_grammar
-except ImportError:
-    # Fallback if these files don't exist
+    print(f"✓ Loaded health_terms with {len(health_terms)} words")
+except ImportError as e:
+    print(f"✗ Failed to load health_terms: {e}")
     health_terms = {}
+
+try:
+    from health_terms_2 import health_terms as health_terms_2
+    print(f"✓ Loaded health_terms_2 with {len(health_terms_2)} words")
+except ImportError as e:
+    print(f"✗ Failed to load health_terms_2: {e}")
     health_terms_2 = {}
+
+try:
+    from generalwords import general_words
+    print(f"✓ Loaded general_words with {len(general_words)} words")
+except ImportError as e:
+    print(f"✗ Failed to load general_words: {e}")
     general_words = {}
-    
+
+try:
+    from grammar_corrector import correct_grammar
+    print("✓ Loaded grammar_corrector")
+except ImportError as e:
+    print(f"✗ Failed to load grammar_corrector: {e}")
     def correct_grammar(text):
-        return text  # Fallback function
+        return text
 
 # =========================
-# VOCABULARY LOADER - DYNAMICALLY LOAD ALL 45 SYNONYM FILES
+# VOCABULARY LOADER - IMPROVED WITH BETTER ERROR HANDLING
 # =========================
 class VocabularyLoader:
     def __init__(self):
         self.all_synonyms = {}
         self.total_words = 0
+        self.loaded_files_count = 0
+        self.failed_files = []
         self.load_all_vocabulary()
     
     def load_all_vocabulary(self):
-        """Dynamically load all 45 synonym files"""
-        print("Loading vocabulary database...")
+        """Dynamically load all synonym files with better error handling"""
+        print("\n" + "="*60)
+        print("LOADING VOCABULARY DATABASE...")
+        print("="*60)
         
-        # Merge health terms first
-        health_terms.update(health_terms_2)
+        # Start with health terms and general words
         self.all_synonyms.update(health_terms)
-        
-        # Load general words
+        self.all_synonyms.update(health_terms_2)
         self.all_synonyms.update(general_words)
         
-        # Dynamically load all 45 synonym files
-        loaded_files = 0
+        base_words = len(self.all_synonyms)
+        print(f"✓ Base vocabulary: {base_words:,} words (health terms + general words)")
+        
+        # Dynamically load all synonym files
+        self.loaded_files_count = 0
+        total_words_before_synonyms = len(self.all_synonyms)
+        
         for i in range(1, 46):  # 1 to 45
             try:
-                module_name = f"vocabulary.synonyms_{i:02d}"
-                module = importlib.import_module(module_name)
+                module_name = f"synonyms_{i:02d}"
+                full_module_name = f"vocabulary.{module_name}"
+                
+                # Try importing
+                module = importlib.import_module(full_module_name)
                 synonyms_dict = getattr(module, 'synonyms', {})
+                
+                words_before = len(self.all_synonyms)
                 self.all_synonyms.update(synonyms_dict)
-                loaded_files += 1
-                print(f"✓ Loaded {module_name} with {len(synonyms_dict)} words")
+                words_added = len(self.all_synonyms) - words_before
+                
+                self.loaded_files_count += 1
+                print(f"✓ {module_name}: {len(synonyms_dict):>4} words ({words_added:>3} new)")
+                
             except ImportError as e:
-                print(f"✗ Failed to load {module_name}: {e}")
+                error_msg = f"ImportError: {str(e)}"
+                self.failed_files.append((module_name, error_msg))
+                print(f"✗ {module_name}: FAILED - {error_msg}")
             except Exception as e:
-                print(f"✗ Error loading {module_name}: {e}")
+                error_msg = f"Error: {str(e)}"
+                self.failed_files.append((module_name, error_msg))
+                print(f"✗ {module_name}: FAILED - {error_msg}")
         
+        # Calculate statistics
         self.total_words = len(self.all_synonyms)
-        print(f"Vocabulary loading complete!")
-        print(f"Total files loaded: {loaded_files}/45")
-        print(f"Total unique words in database: {self.total_words:,}")
+        words_from_synonyms = self.total_words - total_words_before_synonyms
+        
+        print("="*60)
+        print("VOCABULARY LOADING SUMMARY:")
+        print(f"✓ Files successfully loaded: {self.loaded_files_count}/45")
+        print(f"✓ Total unique words: {self.total_words:,}")
+        print(f"✓ Words from synonym files: {words_from_synonyms:,}")
+        print(f"✓ Words from base vocabulary: {base_words:,}")
+        
+        if self.failed_files:
+            print(f"✗ Failed files: {len(self.failed_files)}")
+            for failed_file, error in self.failed_files[:3]:  # Show first 3 errors
+                print(f"  - {failed_file}: {error}")
+        
+        print("="*60)
         
         return self.total_words, self.all_synonyms
     
@@ -67,12 +119,23 @@ class VocabularyLoader:
         """Get vocabulary statistics for frontend display"""
         return {
             "total_words": self.total_words,
-            "loaded_files": 45,
+            "loaded_files": self.loaded_files_count,
+            "total_files": 45,
             "health_terms": len(health_terms) + len(health_terms_2),
-            "general_words": len(general_words)
+            "general_words": len(general_words),
+            "failed_files": len(self.failed_files),
+            "sample_words": list(self.all_synonyms.keys())[:10] if self.total_words > 0 else []
         }
+    
+    def search_word(self, word):
+        """Search for a word in the vocabulary (for debugging)"""
+        word = word.lower().strip()
+        if word in self.all_synonyms:
+            return self.all_synonyms[word]
+        return None
 
 # Initialize vocabulary loader
+print("Initializing vocabulary loader...")
 vocabulary_loader = VocabularyLoader()
 
 # Simple tokenizer without NLTK
@@ -82,11 +145,12 @@ def simple_tokenize(text):
     return words
 
 # =========================
-# OFFLINE SYNONYM FINDER (USES ONLY LOCAL VOCABULARY)
+# OFFLINE SYNONYM FINDER
 # =========================
 class OfflineSynonymFinder:
     def __init__(self, vocabulary):
         self.vocabulary = vocabulary
+        self.usage_stats = {"found": 0, "not_found": 0}
     
     def get_synonyms(self, word):
         """Get synonyms from local vocabulary only"""
@@ -94,6 +158,7 @@ class OfflineSynonymFinder:
         
         # Direct match in vocabulary
         if word in self.vocabulary:
+            self.usage_stats["found"] += 1
             synonyms = self.vocabulary[word]
             if isinstance(synonyms, str):
                 return [synonyms]
@@ -102,31 +167,18 @@ class OfflineSynonymFinder:
             else:
                 return [str(synonyms)]
         
-        # Try variations
-        variations = [
-            word + 's',  # plural
-            word[:-1] if word.endswith('s') else None,  # singular
-            word + 'ing',
-            word[:-3] if word.endswith('ing') else None,
-            word + 'ed',
-            word[:-2] if word.endswith('ed') else None,
-        ]
-        
-        for variation in variations:
-            if variation and variation in self.vocabulary:
-                synonyms = self.vocabulary[variation]
-                return [synonyms] if isinstance(synonyms, str) else synonyms
-        
+        self.usage_stats["not_found"] += 1
         return []
 
 # =========================
-# PURE REWRITER (ENHANCED WITH VOCABULARY - OFFLINE ONLY)
+# PURE REWRITER
 # =========================
 class PureRewriter:
     def __init__(self):
         self.synonym_finder = OfflineSynonymFinder(vocabulary_loader.all_synonyms)
         self.replacements = vocabulary_loader.all_synonyms
         self.vocabulary_stats = vocabulary_loader.get_vocabulary_stats()
+        print(f"✓ Rewriter initialized with {len(self.replacements):,} words")
 
     def intelligent_word_replacement(self, text):
         words = text.split()
@@ -206,13 +258,20 @@ class PureRewriter:
         return '. '.join(sentences) + '.'
 
     def get_vocabulary_info(self):
-        return self.vocabulary_stats
+        stats = self.vocabulary_stats.copy()
+        stats["synonym_usage"] = self.synonym_finder.usage_stats
+        return stats
+
+    def debug_word(self, word):
+        """Debug function to check if a word is in vocabulary"""
+        return vocabulary_loader.search_word(word)
 
 # Initialize pure rewriter
+print("Initializing pure rewriter...")
 pure_rewriter = PureRewriter()
 
 # =========================
-# EXTREME REWRITER FUNCTION
+# REWRITER FUNCTIONS
 # =========================
 def extreme_rewriter(original_text):
     clean_text = original_text.strip().strip('"').strip("'")
@@ -231,13 +290,10 @@ def extreme_rewriter(original_text):
     try:
         result = correct_grammar(result)
     except:
-        pass  # Skip if grammar corrector not available
+        pass
     
     return result
 
-# =========================
-# SIMILARITY CALCULATION (NO NLTK)
-# =========================
 def calculate_similarity(original, rewritten):
     original_words = set(simple_tokenize(original))
     rewritten_words = set(simple_tokenize(rewritten))
@@ -246,9 +302,6 @@ def calculate_similarity(original, rewritten):
         return 0
     return len(common_words) / len(original_words) * 100
 
-# =========================
-# GUARANTEE LOW SIMILARITY
-# =========================
 def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
     best_result = None
     best_similarity = 100
@@ -262,28 +315,44 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=10):
             return rewritten, similarity
     return best_result, best_similarity
 
-# =========================
-# VOCABULARY STATISTICS ENDPOINT
-# =========================
 def get_vocabulary_stats():
     return pure_rewriter.get_vocabulary_info()
+
+def debug_vocabulary():
+    """Debug function to check vocabulary status"""
+    return vocabulary_loader.get_vocabulary_stats()
 
 # Test when run directly
 if __name__ == "__main__":
     stats = get_vocabulary_stats()
     print("\n" + "="*50)
-    print("VOCABULARY DATABASE STATISTICS")
+    print("FINAL VOCABULARY DATABASE STATISTICS")
     print("="*50)
     print(f"Total Unique Words: {stats['total_words']:,}")
     print(f"Synonym Files Loaded: {stats['loaded_files']}/45")
     print(f"Health Terms: {stats['health_terms']:,}")
     print(f"General Words: {stats['general_words']:,}")
+    
+    if stats['failed_files'] > 0:
+        print(f"Failed Files: {stats['failed_files']}")
+    
+    print(f"Sample Words: {', '.join(stats['sample_words'])}")
     print("="*50)
     
-    # Test
+    # Test the rewriter
     test_text = "The quick brown fox jumps over the lazy dog."
     print(f"\nTest Text: {test_text}")
     rewritten = extreme_rewriter(test_text)
     print(f"Rewritten: {rewritten}")
     similarity = calculate_similarity(test_text, rewritten)
     print(f"Similarity: {similarity:.1f}%")
+    
+    # Test vocabulary lookup
+    test_words = ["quick", "fox", "jumps", "dog"]
+    print(f"\nVocabulary Lookup Test:")
+    for word in test_words:
+        result = pure_rewriter.debug_word(word)
+        if result:
+            print(f"  ✓ '{word}': {result}")
+        else:
+            print(f"  ✗ '{word}': Not found")
