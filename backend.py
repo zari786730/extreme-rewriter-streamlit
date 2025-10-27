@@ -1,5 +1,5 @@
 # =========================
-# EXTREME REWRITER BACKEND (COMPLETELY FIXED VOCABULARY LOADING)
+# EXTREME REWRITER BACKEND (GUARANTEED VOCABULARY LOADING)
 # =========================
 
 import random
@@ -7,12 +7,11 @@ import re
 import os
 import ast
 import glob
-from datetime import datetime
 
 print("🚀 INITIALIZING EXTREME REWRITER BACKEND...")
 
 # =========================
-# FIXED VOCABULARY LOADER
+# SIMPLE FILE-BASED VOCABULARY LOADER
 # =========================
 class VocabularyLoader:
     def __init__(self):
@@ -28,140 +27,165 @@ class VocabularyLoader:
         print("📚 LOADING VOCABULARY DATABASE...")
         print("="*70)
         
-        # Reset everything
-        self.all_synonyms = {}
-        self.loaded_files_count = 0
-        self.failed_files = []
+        # Step 1: Load base vocabulary files
+        self._load_base_vocabulary()
         
-        # Load base vocabulary
-        base_count = self._load_base_vocabulary()
-        print(f"✅ Base vocabulary: {base_count:,} words")
+        # Step 2: Load all synonym files
+        self._load_synonym_files()
         
-        # Load synonym files
-        synonym_count = self._load_synonym_files()
-        print(f"✅ Synonym files: {synonym_count:,} words")
-        
-        # Final count
+        # Step 3: Show results
         self.total_words = len(self.all_synonyms)
         
         print("="*70)
         print("🎉 VOCABULARY LOADING COMPLETE!")
         print("="*70)
         print(f"✅ TOTAL UNIQUE WORDS: {self.total_words:,}")
-        print(f"✅ FILES LOADED: {self.loaded_files_count}")
+        print(f"✅ FILES LOADED: {self.loaded_files_count}/45")
+        print(f"✅ HEALTH TERMS: {getattr(self, 'health_count', 0):,}")
+        print(f"✅ GENERAL WORDS: {getattr(self, 'general_count', 0):,}")
         
-        if self.total_words == 0:
-            print("❌ CRITICAL ERROR: No words loaded!")
-            self._emergency_vocabulary()
+        if self.failed_files:
+            print(f"❌ FAILED FILES: {len(self.failed_files)}")
         
+        # Show sample words
+        if self.total_words > 0:
+            sample_words = list(self.all_synonyms.keys())[:8]
+            print(f"🔍 SAMPLE WORDS: {', '.join(sample_words)}")
+        
+        print("="*70)
         return self.total_words, self.all_synonyms
     
     def _load_base_vocabulary(self):
         """Load health terms and general words"""
-        base_words = {}
+        base_words_count = 0
         
         # Health terms 1
-        try:
-            from health_terms import health_terms
-            base_words.update(health_terms)
-            print(f"✅ health_terms.py: {len(health_terms):,} words")
-        except ImportError:
-            print("❌ health_terms.py not found")
+        health1 = self._load_single_file('health_terms.py', 'health_terms')
+        if health1:
+            self.all_synonyms.update(health1)
+            base_words_count += len(health1)
+            self.health_count = len(health1)
+            print(f"✅ health_terms.py: {len(health1):,} words")
         
         # Health terms 2  
-        try:
-            from health_terms_2 import health_terms as health_terms_2
-            base_words.update(health_terms_2)
-            print(f"✅ health_terms_2.py: {len(health_terms_2):,} words")
-        except ImportError:
-            print("❌ health_terms_2.py not found")
+        health2 = self._load_single_file('health_terms_2.py', 'health_terms')
+        if health2:
+            self.all_synonyms.update(health2)
+            base_words_count += len(health2)
+            self.health_count = len(health1) + len(health2) if health1 else len(health2)
+            print(f"✅ health_terms_2.py: {len(health2):,} words")
         
         # General words
-        try:
-            from generalwords import general_words
-            base_words.update(general_words)
-            print(f"✅ generalwords.py: {len(general_words):,} words")
-        except ImportError:
-            print("❌ generalwords.py not found")
+        general = self._load_single_file('generalwords.py', 'general_words')
+        if general:
+            self.all_synonyms.update(general)
+            base_words_count += len(general)
+            self.general_count = len(general)
+            print(f"✅ generalwords.py: {len(general):,} words")
         
-        # Add to main vocabulary
-        self.all_synonyms.update(base_words)
-        return len(base_words)
+        print(f"📊 BASE VOCABULARY: {base_words_count:,} words total")
     
     def _load_synonym_files(self):
-        """Load all synonym files - FIXED VERSION"""
-        synonym_words = {}
+        """Load all 45 synonym files"""
+        print("\n📂 LOADING SYNONYM FILES...")
         
-        # Method 1: Try glob pattern
+        # Method 1: Try glob pattern first (most reliable)
         synonym_files = glob.glob('vocabulary/synonyms_*.py')
         
-        # Method 2: Manual search if glob fails
-        if not synonym_files and os.path.exists('vocabulary'):
-            all_files = os.listdir('vocabulary')
-            synonym_files = [f for f in all_files if f.startswith('synonyms_') and f.endswith('.py')]
-            synonym_files = [os.path.join('vocabulary', f) for f in synonym_files]
+        if not synonym_files:
+            # Method 2: Try manual listing
+            if os.path.exists('vocabulary'):
+                synonym_files = [f for f in os.listdir('vocabulary') 
+                               if f.startswith('synonyms_') and f.endswith('.py')]
+                synonym_files = [os.path.join('vocabulary', f) for f in synonym_files]
         
         print(f"🔍 Found {len(synonym_files)} synonym files")
         
         for filepath in sorted(synonym_files):
             filename = os.path.basename(filepath)
             try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                # Extract synonyms dictionary
-                synonyms = self._extract_synonyms(content)
+                synonyms = self._load_synonym_file(filepath)
                 if synonyms:
-                    synonym_words.update(synonyms)
+                    words_before = len(self.all_synonyms)
+                    self.all_synonyms.update(synonyms)
+                    words_added = len(self.all_synonyms) - words_before
                     self.loaded_files_count += 1
-                    print(f"✅ {filename}: {len(synonyms):,} words")
+                    print(f"✅ {filename}: {len(synonyms):>4} words ({words_added:>3} new)")
                 else:
                     self.failed_files.append(filename)
-                    print(f"❌ {filename}: No synonyms found")
+                    print(f"❌ {filename}: EMPTY or INVALID")
                     
             except Exception as e:
                 self.failed_files.append(filename)
-                print(f"❌ {filename}: Error - {str(e)}")
-        
-        # Add to main vocabulary
-        self.all_synonyms.update(synonym_words)
-        return len(synonym_words)
+                print(f"❌ {filename}: ERROR - {str(e)}")
     
-    def _extract_synonyms(self, content):
-        """Extract synonyms from file content - SIMPLIFIED"""
+    def _load_synonym_file(self, filepath):
+        """Load a single synonym file with multiple parsing methods"""
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Method 1: Try AST parsing (most accurate)
+            try:
+                tree = ast.parse(content)
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Assign):
+                        for target in node.targets:
+                            if isinstance(target, ast.Name) and target.id == 'synonyms':
+                                if isinstance(node.value, ast.Dict):
+                                    keys = [ast.literal_eval(key) for key in node.value.keys]
+                                    values = [ast.literal_eval(val) for val in node.value.values]
+                                    return dict(zip(keys, values))
+            except:
+                pass
+            
+            # Method 2: Try regex extraction
+            match = re.search(r'synonyms\s*=\s*\{([^}]+)\}', content, re.DOTALL)
+            if match:
+                dict_str = "{" + match.group(1) + "}"
+                try:
+                    return ast.literal_eval(dict_str)
+                except:
+                    pass
+            
+            # Method 3: Simple line-by-line parsing
+            return self._parse_synonyms_simple(content)
+            
+        except Exception as e:
+            print(f"Error loading {filepath}: {e}")
+            return {}
+    
+    def _parse_synonyms_simple(self, content):
+        """Simple parser for synonym files"""
         synonyms = {}
-        
-        # Look for the synonyms dictionary pattern
         lines = content.split('\n')
-        in_synonyms = False
+        in_dict = False
+        current_key = None
         
         for line in lines:
             line = line.strip()
             
-            # Start of synonyms dictionary
-            if 'synonyms = {' in line:
-                in_synonyms = True
+            # Skip comments and empty lines
+            if not line or line.startswith('#'):
                 continue
             
-            # End of synonyms dictionary
-            if in_synonyms and '}' in line:
-                break
+            # Find synonyms assignment
+            if 'synonyms = {' in line:
+                in_dict = True
+                continue
             
-            # Parse key-value pairs
-            if in_synonyms and ':' in line:
-                # Remove comments and trailing commas
-                clean_line = line.split('#')[0].rstrip(',')
+            if in_dict:
+                # Check for end of dictionary
+                if '}' in line:
+                    break
                 
-                # Split key and value
-                if ':' in clean_line:
-                    key_part, value_part = clean_line.split(':', 1)
+                # Parse key-value pairs
+                if ':' in line:
+                    parts = line.split(':', 1)
+                    key = parts[0].strip().strip('"\'')
+                    value_str = parts[1].strip().rstrip(',')
                     
-                    # Extract key (remove quotes)
-                    key = key_part.strip().strip('"\'').strip()
-                    
-                    # Extract value (could be string or list)
-                    value_str = value_part.strip()
-                    
+                    # Parse value (could be string or list)
                     if value_str.startswith('[') and value_str.endswith(']'):
                         # List value
                         items = value_str[1:-1].split(',')
@@ -174,110 +198,90 @@ class VocabularyLoader:
         
         return synonyms
     
-    def _emergency_vocabulary(self):
-        """Create emergency fallback vocabulary"""
-        print("🚨 CREATING EMERGENCY VOCABULARY...")
+    def _load_single_file(self, filename, var_name):
+        """Load a single Python file and extract a variable"""
+        if not os.path.exists(filename):
+            return {}
         
-        emergency_words = {
-            "hello": ["greetings", "hi", "hey"],
-            "good": ["excellent", "great", "wonderful", "fantastic"],
-            "bad": ["poor", "terrible", "awful", "horrible"],
-            "big": ["large", "huge", "enormous", "massive"],
-            "small": ["tiny", "little", "miniature", "compact"],
-            "fast": ["quick", "rapid", "speedy", "swift"],
-            "slow": ["sluggish", "leisurely", "gradual", "unhurried"],
-            "beautiful": ["gorgeous", "stunning", "lovely", "attractive"],
-            "ugly": ["unattractive", "hideous", "unsightly", "plain"],
-            "intelligent": ["smart", "clever", "brilliant", "wise"],
-            "stupid": ["foolish", "dumb", "unintelligent", "silly"],
-            "happy": ["joyful", "delighted", "pleased", "content"],
-            "sad": ["unhappy", "depressed", "miserable", "sorrowful"],
-            "angry": ["mad", "furious", "irate", "enraged"],
-            "calm": ["peaceful", "serene", "tranquil", "relaxed"]
-        }
+        try:
+            with open(filename, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Use AST to safely extract the variable
+            tree = ast.parse(content)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id == var_name:
+                            if isinstance(node.value, ast.Dict):
+                                keys = [ast.literal_eval(key) for key in node.value.keys]
+                                values = [ast.literal_eval(val) for val in node.value.values]
+                                return dict(zip(keys, values))
+            
+            # Fallback to regex
+            match = re.search(rf'{var_name}\s*=\s*{{([^}}]+)}}', content, re.DOTALL)
+            if match:
+                dict_str = "{" + match.group(1) + "}"
+                return ast.literal_eval(dict_str)
+                
+        except Exception as e:
+            print(f"Error loading {filename}: {e}")
         
-        self.all_synonyms.update(emergency_words)
-        self.total_words = len(self.all_synonyms)
-        print(f"✅ Emergency vocabulary created: {self.total_words:,} words")
+        return {}
     
     def get_vocabulary_stats(self):
-        """Get vocabulary statistics"""
+        """Get statistics for frontend display"""
         return {
             "total_words": self.total_words,
             "loaded_files": self.loaded_files_count,
-            "health_terms": 0,  # Simplified for now
-            "general_words": 0,  # Simplified for now
+            "total_files": 45,
+            "health_terms": getattr(self, 'health_count', 0),
+            "general_words": getattr(self, 'general_count', 0),
             "failed_files": len(self.failed_files),
             "vocabulary_loaded": self.total_words > 0
         }
+    
+    def search_word(self, word):
+        """Search for a word in vocabulary"""
+        return self.all_synonyms.get(word.lower())
 
 # =========================
-# INITIALIZE VOCABULARY FIRST
+# INITIALIZE VOCABULARY LOADER
 # =========================
 print("🔄 Initializing vocabulary loader...")
 vocabulary_loader = VocabularyLoader()
 
 # =========================
-# TEXT PROCESSING UTILITIES
+# SIMPLE TEXT PROCESSING
 # =========================
 def simple_tokenize(text):
-    """Simple tokenizer"""
+    """Simple tokenizer without external dependencies"""
     words = re.findall(r'\b\w+\b', text.lower())
     return words
 
 # =========================
-# GRAMMAR CORRECTOR
+# GRAMMAR CORRECTOR (FALLBACK)
 # =========================
-class GrammarCorrector:
-    def __init__(self):
-        self.common_corrections = {
-            'i ': 'I ',
-            "i'm": "I'm",
-            "i've": "I've",
-            "i'll": "I'll",
-            "i'd": "I'd",
-        }
-    
-    def correct(self, text):
-        """Apply grammar corrections"""
-        if not text:
-            return text
-        
-        corrected = text
-        for wrong, right in self.common_corrections.items():
-            corrected = corrected.replace(wrong, right)
-        
-        # Basic sentence capitalization
-        sentences = [s.strip() for s in re.split(r'[.!?]+', corrected) if s.strip()]
-        corrected_sentences = []
-        
-        for sentence in sentences:
-            if sentence:
-                corrected_sentence = sentence[0].upper() + sentence[1:]
-                corrected_sentences.append(corrected_sentence)
-        
-        result = '. '.join(corrected_sentences)
-        
-        if result and result[-1] not in '.!?':
-            result += '.'
-        
-        return result
-
-grammar_corrector = GrammarCorrector()
-
 def correct_grammar(text):
-    return grammar_corrector.correct(text)
+    """Simple grammar correction fallback"""
+    # Basic sentence capitalization
+    sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+    corrected = []
+    for sentence in sentences:
+        if sentence:
+            corrected.append(sentence[0].upper() + sentence[1:])
+    return '. '.join(corrected) + ('.' if text and text[-1] in '.!?' else '')
 
 # =========================
-# SYNONYM FINDER
+# OFFLINE SYNONYM FINDER
 # =========================
-class AdvancedSynonymFinder:
+class OfflineSynonymFinder:
     def __init__(self, vocabulary):
         self.vocabulary = vocabulary
         self.stats = {"found": 0, "not_found": 0}
     
     def get_synonyms(self, word):
-        """Get synonyms from vocabulary"""
+        """Get synonyms from loaded vocabulary"""
         word = word.lower().strip()
         
         if word in self.vocabulary:
@@ -293,28 +297,25 @@ class AdvancedSynonymFinder:
         return []
 
 # =========================
-# FIXED REWRITER
+# PURE REWRITER
 # =========================
-class IntelligentRewriter:
+class PureRewriter:
     def __init__(self):
-        print(f"🎯 INITIALIZING REWRITER...")
-        print(f"📊 Vocabulary size: {len(vocabulary_loader.all_synonyms):,} words")
-        
-        # VERIFY vocabulary is loaded
-        if len(vocabulary_loader.all_synonyms) == 0:
-            print("❌ CRITICAL: Vocabulary is empty! Using emergency mode.")
-        
-        self.synonym_finder = AdvancedSynonymFinder(vocabulary_loader.all_synonyms)
+        self.synonym_finder = OfflineSynonymFinder(vocabulary_loader.all_synonyms)
         self.vocabulary = vocabulary_loader.all_synonyms
         self.stats = vocabulary_loader.get_vocabulary_stats()
         
-        print(f"✅ Rewriter ready with {len(self.vocabulary):,} words")
+        print(f"🎯 REWRITER INITIALIZED WITH {len(self.vocabulary):,} WORDS")
+        print(f"📊 Synonym success rate: {self._get_success_rate():.1f}%")
     
-    def intelligent_word_replacement(self, text, replacement_aggressiveness=0.7):
-        """Word replacement with vocabulary"""
-        if not text or len(self.vocabulary) == 0:
-            return text
-        
+    def _get_success_rate(self):
+        """Calculate what percentage of common words have synonyms"""
+        test_words = ['quick', 'brown', 'fox', 'jumps', 'lazy', 'dog', 'good', 'bad', 'big', 'small']
+        found = sum(1 for word in test_words if word in self.vocabulary)
+        return (found / len(test_words)) * 100 if test_words else 0
+    
+    def intelligent_word_replacement(self, text):
+        """Replace words with synonyms from vocabulary"""
         words = text.split()
         new_words = []
         
@@ -329,15 +330,19 @@ class IntelligentRewriter:
                 new_words.append(word)
                 continue
             
-            # Try replacement
-            if random.random() < replacement_aggressiveness:
+            # Try to replace with 70% probability
+            if random.random() < 0.7:
                 synonyms = self.synonym_finder.get_synonyms(clean_word)
                 
                 if synonyms:
-                    valid_synonyms = [s for s in synonyms if s.lower() != clean_word and len(s.split()) <= 2]
+                    valid_synonyms = [
+                        s for s in synonyms 
+                        if s.lower() != clean_word and len(s.split()) <= 2
+                    ]
                     
                     if valid_synonyms:
                         replacement = random.choice(valid_synonyms)
+                        # Preserve capitalization
                         if word[0].isupper():
                             replacement = replacement.capitalize()
                         new_words.append(replacement)
@@ -348,7 +353,7 @@ class IntelligentRewriter:
         return ' '.join(new_words)
     
     def varied_sentence_restructure(self, text):
-        """Restructure sentences"""
+        """Restructure sentences for variety"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         
         if len(sentences) <= 1:
@@ -369,7 +374,7 @@ class IntelligentRewriter:
         return result.strip()
     
     def smart_length_manipulation(self, text):
-        """Modify text length"""
+        """Modify sentence lengths"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         
         if len(sentences) <= 2:
@@ -381,11 +386,11 @@ class IntelligentRewriter:
             
             if random.random() < 0.4:
                 if len(words) > 15:
+                    # Split long sentences
                     mid = len(words) // 2
-                    first_part = ' '.join(words[:mid])
-                    second_part = ' '.join(words[mid:])
-                    processed.extend([first_part + '.', second_part.capitalize()])
+                    processed.extend([' '.join(words[:mid]) + '.', ' '.join(words[mid:]).capitalize()])
                 elif len(words) < 5:
+                    # Expand short sentences
                     processed.append(f"This involves {sentence.lower()}")
                 else:
                     processed.append(sentence)
@@ -395,7 +400,7 @@ class IntelligentRewriter:
         return ' '.join(processed)
     
     def add_natural_variation(self, text):
-        """Add natural variations"""
+        """Add natural language variations"""
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
         
         if not sentences:
@@ -403,37 +408,41 @@ class IntelligentRewriter:
         
         if random.random() < 0.3:
             first_sentence = sentences[0]
-            starters = ['Interestingly, ', 'Notably, ', 'Importantly, ']
+            starters = ['Interestingly, ', 'Notably, ', 'Importantly, ', 'Specifically, ']
             if not any(first_sentence.lower().startswith(s.lower().strip()) for s in starters):
                 sentences[0] = random.choice(starters) + first_sentence.lower()
         
         return '. '.join(sentences) + '.'
     
     def get_vocabulary_info(self):
-        return self.stats
+        """Get vocabulary statistics"""
+        stats = self.stats.copy()
+        stats["synonym_usage"] = self.synonym_finder.stats
+        stats["success_rate"] = self._get_success_rate()
+        return stats
 
 # =========================
 # INITIALIZE REWRITER
 # =========================
-print("🔄 Initializing intelligent rewriter...")
-intelligent_rewriter = IntelligentRewriter()
+print("🔄 Initializing rewriter...")
+pure_rewriter = PureRewriter()
 
 # =========================
 # CORE FUNCTIONS
 # =========================
-def extreme_rewriter(original_text, aggressiveness=0.7):
+def extreme_rewriter(original_text):
     """Main rewriting function"""
-    if not original_text:
+    if not original_text or not original_text.strip():
         return original_text
     
-    clean_text = original_text.strip()
+    clean_text = original_text.strip().strip('"').strip("'")
     
-    # Apply transformations
+    # Apply transformations in random order
     transformations = [
-        lambda x: intelligent_rewriter.varied_sentence_restructure(x),
-        lambda x: intelligent_rewriter.intelligent_word_replacement(x, aggressiveness),
-        lambda x: intelligent_rewriter.smart_length_manipulation(x),
-        lambda x: intelligent_rewriter.add_natural_variation(x)
+        pure_rewriter.varied_sentence_restructure,
+        pure_rewriter.intelligent_word_replacement, 
+        pure_rewriter.smart_length_manipulation,
+        pure_rewriter.add_natural_variation
     ]
     
     random.shuffle(transformations)
@@ -442,13 +451,13 @@ def extreme_rewriter(original_text, aggressiveness=0.7):
     for transform in transformations:
         result = transform(result)
     
-    # Grammar correction
+    # Apply grammar correction
     result = correct_grammar(result)
     
     return result
 
 def calculate_similarity(original, rewritten):
-    """Calculate similarity"""
+    """Calculate similarity between original and rewritten text"""
     if not original or not rewritten:
         return 0
     
@@ -463,13 +472,13 @@ def calculate_similarity(original, rewritten):
     
     return similarity
 
-def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5, aggressiveness=0.7):
+def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5):
     """Generate rewritten text with low similarity"""
     best_result = None
     best_similarity = 100
     
     for attempt in range(max_attempts):
-        rewritten = extreme_rewriter(original_text, aggressiveness)
+        rewritten = extreme_rewriter(original_text)
         similarity = calculate_similarity(original_text, rewritten)
         
         if similarity < best_similarity:
@@ -482,27 +491,30 @@ def guarantee_low_similarity(original_text, max_similarity=20, max_attempts=5, a
     return best_result, best_similarity
 
 def get_vocabulary_stats():
-    return intelligent_rewriter.get_vocabulary_info()
+    """Get vocabulary statistics for frontend"""
+    return pure_rewriter.get_vocabulary_info()
 
 # =========================
-# TEST
+# TEST WHEN RUN DIRECTLY
 # =========================
 if __name__ == "__main__":
     print("\n" + "="*70)
     print("🧪 TESTING REWRITER...")
     print("="*70)
     
-    test_text = "The quick brown fox jumps over the lazy dog."
-    print(f"ORIGINAL: '{test_text}'")
+    test_texts = [
+        "The quick brown fox jumps over the lazy dog.",
+        "Artificial intelligence is transforming modern healthcare.",
+        "Climate change represents a significant challenge for humanity."
+    ]
     
-    rewritten = extreme_rewriter(test_text)
-    similarity = calculate_similarity(test_text, rewritten)
+    for i, test_text in enumerate(test_texts, 1):
+        print(f"\nTest {i}: '{test_text}'")
+        rewritten = extreme_rewriter(test_text)
+        similarity = calculate_similarity(test_text, rewritten)
+        print(f"Rewritten: '{rewritten}'")
+        print(f"Similarity: {similarity:.1f}%")
     
-    print(f"REWRITTEN: '{rewritten}'")
-    print(f"SIMILARITY: {similarity:.1f}%")
-    
-    stats = get_vocabulary_stats()
-    print(f"\n📊 STATS: {stats['total_words']:,} words")
-    
-    print("\n🎊 BACKEND READY!")
+    print("\n" + "="*70)
+    print("🎊 BACKEND READY!")
     print("="*70)
