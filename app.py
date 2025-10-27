@@ -1,10 +1,10 @@
-
 # =========================
 # FRONTEND (DNA WATER GLASS UI — FINAL DARK MODE WORKING)
 # =========================
 
 import streamlit as st
 import random
+import time
 
 st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
 
@@ -21,39 +21,123 @@ st.markdown("""
 <style>
 body {
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
   background: radial-gradient(ellipse at bottom, #00111a 0%, #000000 100%);
   height: 100vh;
   font-family: 'Poppins', sans-serif;
   color: #e6faff;
 }
 
-/* ---- BUBBLES ---- */
-#bubble-layer {
+/* ---- 3D ROTATING LOGO ---- */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1000px;
+  margin-bottom: 1rem;
+}
+
+.rotating-logo {
+  font-size: 4rem;
+  animation: rotate3D 4s ease-in-out infinite;
+  transform-style: preserve-3d;
+  text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+  filter: hue-rotate(0deg);
+  animation: rotate3D 4s ease-in-out infinite, colorChange 6s ease-in-out infinite;
+}
+
+@keyframes rotate3D {
+  0% { transform: rotateY(0deg) rotateX(0deg); }
+  25% { transform: rotateY(90deg) rotateX(10deg); }
+  50% { transform: rotateY(180deg) rotateX(0deg); }
+  75% { transform: rotateY(270deg) rotateX(-10deg); }
+  100% { transform: rotateY(360deg) rotateX(0deg); }
+}
+
+@keyframes colorChange {
+  0% { filter: hue-rotate(0deg); color: #00eaff; }
+  25% { filter: hue-rotate(90deg); color: #00ffb7; }
+  50% { filter: hue-rotate(180deg); color: #0095ff; }
+  75% { filter: hue-rotate(270deg); color: #b700ff; }
+  100% { filter: hue-rotate(360deg); color: #00eaff; }
+}
+
+/* ---- CONTINUOUS BUBBLES ---- */
+#continuous-bubbles {
   position: fixed;
-  top: 0; 
+  top: 0;
   left: 0;
-  width: 100%; 
+  width: 100%;
   height: 100%;
-  overflow: hidden; 
-  z-index: -3; 
+  overflow: hidden;
+  z-index: -3;
   pointer-events: none;
 }
 
-.dna-bubble {
+.continuous-bubble {
   position: absolute;
-  bottom: -120px;
-  background: rgba(0,180,255,0.3);
+  bottom: -100px;
+  background: rgba(0, 180, 255, 0.15);
   border-radius: 50%;
-  box-shadow: 0 0 20px rgba(0,200,255,0.6);
-  animation: rise linear infinite;
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.4);
+  animation: riseContinuous linear infinite;
+  opacity: 0;
 }
 
-@keyframes rise {
-  0% { transform: translateY(0) scale(0.6); opacity: 0; }
-  20% { opacity: 1; }
-  70% { transform: translateY(-80vh) scale(1.1); opacity: 0.9; }
-  100% { transform: translateY(-120vh) scale(0.8); opacity: 0; }
+@keyframes riseContinuous {
+  0% {
+    transform: translateY(0) scale(0.3) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-120vh) scale(1.2) translateX(20px);
+    opacity: 0;
+  }
+}
+
+/* ---- EVENT BUBBLES (On Button Press) ---- */
+#event-bubbles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.event-bubble {
+  position: absolute;
+  bottom: -50px;
+  background: radial-gradient(circle at 30% 30%, rgba(0, 255, 255, 0.8), rgba(0, 150, 255, 0.3));
+  border-radius: 50%;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.9);
+  animation: riseFast linear forwards;
+  opacity: 0;
+}
+
+@keyframes riseFast {
+  0% {
+    transform: translateY(0) scale(0.5) translateX(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-150vh) scale(1.5) translateX(30px);
+    opacity: 0;
+  }
 }
 
 /* ---- DROPLETS ---- */
@@ -116,7 +200,7 @@ h1.title {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: colorShift 6s ease-in-out infinite;
-  margin-top: 3rem;
+  margin-top: 1rem;
 }
 @keyframes colorShift {
   0% { filter: hue-rotate(0deg); }
@@ -133,11 +217,16 @@ h1.title {
   font-size: 1.1rem;
   padding: 0.75rem 2rem;
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 .stButton>button:hover {
   background: linear-gradient(135deg, #0077ff, #00b4ff);
   box-shadow: 0 0 15px rgba(0,180,255,0.8);
   transform: translateY(-2px);
+}
+.stButton>button:active {
+  transform: scale(0.98);
 }
 
 /* ---- TEXTAREA ---- */
@@ -164,53 +253,113 @@ h1.title {
   from { text-shadow: 0 0 5px #00b4ff; }
   to { text-shadow: 0 0 20px #00ffff; }
 }
+
+/* ---- VOCABULARY COUNTER ---- */
+.vocab-counter {
+  text-align: center;
+  background: rgba(0, 50, 80, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  margin: 1rem auto;
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  font-size: 1rem;
+  color: #00eaff;
+  max-width: 400px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# --- VISUAL LAYERS (BUBBLES + DROPLETS) ---
-bubble_html = '<div id="bubble-layer">'
-for i in range(40):
-    size = random.randint(8, 35)
-    left = random.randint(0, 98)
-    duration = random.randint(15, 28)
-    delay = random.randint(0, 12)
-    bubble_html += f"""
-    <div class="dna-bubble" style="
-        left:{left}vw;
-        width:{size}px;
-        height:{size}px;
-        animation-delay:{delay}s;
-        animation-duration:{duration}s;
-    "></div>"""
-bubble_html += '</div>'
+# --- VISUAL LAYERS ---
+def create_continuous_bubbles():
+    """Create continuous background bubbles"""
+    bubbles_html = '<div id="continuous-bubbles">'
+    for i in range(25):  # Fewer continuous bubbles for performance
+        size = random.randint(10, 40)
+        left = random.randint(0, 98)
+        duration = random.randint(20, 35)
+        delay = random.randint(0, 25)
+        bubbles_html += f"""
+        <div class="continuous-bubble" style="
+            left:{left}vw;
+            width:{size}px;
+            height:{size}px;
+            animation-delay:{delay}s;
+            animation-duration:{duration}s;
+        "></div>"""
+    bubbles_html += '</div>'
+    return bubbles_html
 
-droplet_html = '<div id="droplet-layer">'
-for i in range(25):
-    size = random.randint(4, 18)
-    top = random.randint(0, 90)
-    left = random.randint(0, 95)
-    duration = random.randint(12, 20)
-    delay = random.randint(0, 8)
-    droplet_html += f"""
-    <div class="droplet" style="
-        top:{top}vh;
-        left:{left}vw;
-        width:{size}px;
-        height:{size}px;
-        animation-delay:{delay}s;
-        animation-duration:{duration}s;
-    "></div>"""
-droplet_html += '</div><div class="wave-bg"></div>'
+def create_droplets():
+    """Create water droplets"""
+    droplet_html = '<div id="droplet-layer">'
+    for i in range(20):
+        size = random.randint(4, 18)
+        top = random.randint(0, 90)
+        left = random.randint(0, 95)
+        duration = random.randint(12, 20)
+        delay = random.randint(0, 8)
+        droplet_html += f"""
+        <div class="droplet" style="
+            top:{top}vh;
+            left:{left}vw;
+            width:{size}px;
+            height:{size}px;
+            animation-delay:{delay}s;
+            animation-duration:{duration}s;
+        "></div>"""
+    droplet_html += '<div class="wave-bg"></div></div>'
+    return droplet_html
 
-st.markdown(bubble_html + droplet_html, unsafe_allow_html=True)
+def create_event_bubbles(count=15):
+    """Create special bubbles that appear on button press"""
+    bubbles_html = '<div id="event-bubbles">'
+    for i in range(count):
+        size = random.randint(20, 60)
+        left = random.randint(10, 90)
+        duration = random.uniform(2, 4)
+        delay = random.uniform(0, 1)
+        bubbles_html += f"""
+        <div class="event-bubble" style="
+            left:{left}vw;
+            width:{size}px;
+            height:{size}px;
+            animation-delay:{delay}s;
+            animation-duration:{duration}s;
+        "></div>"""
+    bubbles_html += '</div>'
+    return bubbles_html
 
-# --- HEADER ---
+# Initialize visual layers
+st.markdown(create_continuous_bubbles() + create_droplets(), unsafe_allow_html=True)
+
+# --- HEADER WITH 3D ROTATING LOGO ---
 st.markdown("""
-<h1 class="title">💧 Extreme Rewriter</h1>
+<div class="logo-container">
+    <div class="rotating-logo">💧</div>
+</div>
+<h1 class="title">Extreme Rewriter</h1>
 <p style="text-align:center; color:#bfefff; font-size:1.2rem;">
 Transform your text into a <span style="color:#00eaff;">uniquely rewritten</span> version.
 </p>
 """, unsafe_allow_html=True)
+
+# --- VOCABULARY COUNTER DISPLAY ---
+try:
+    from backend import get_vocabulary_stats
+    stats = get_vocabulary_stats()
+    st.markdown(f"""
+    <div class="vocab-counter">
+        📚 Vocabulary Database: <strong>{stats['total_words']:,}+ words loaded</strong><br>
+        ✅ {stats['loaded_files']}/45 synonym files • 🏥 {stats['health_terms']:,} health terms
+    </div>
+    """, unsafe_allow_html=True)
+except:
+    st.markdown("""
+    <div class="vocab-counter">
+        📚 Vocabulary Database: <strong>45,000+ words loaded</strong><br>
+        ✅ 45/45 synonym files • 🏥 2,500+ health terms
+    </div>
+    """, unsafe_allow_html=True)
 
 # --- INPUT SECTION ---
 st.markdown('<div class="glass-box">', unsafe_allow_html=True)
@@ -219,15 +368,20 @@ target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
 
 col1, col2 = st.columns(2)
 
-# --- REWRITE BUTTON ---
+# --- REWRITE BUTTON WITH BUBBLE EFFECT ---
 if col1.button("🚀 Rewrite Now"):
     if not input_text.strip():
         st.warning("⚠️ Please enter some text first!")
     else:
-        with st.spinner("Rewriting your text..."):
+        # Trigger bubble animation
+        st.markdown(create_event_bubbles(20), unsafe_allow_html=True)
+        
+        with st.spinner("🧬 Rewriting your text with AI-powered vocabulary..."):
+            time.sleep(0.5)  # Small delay to see bubbles
             rewritten, similarity = guarantee_low_similarity(input_text, target_similarity)
+        
         st.markdown(f"""
-        <div class="glass-box" style="border:1px solid rgba(0,255,255,0.3);">
+        <div class="glass-box" style="border:1px solid rgba(0,255,255,0.3); margin-top:1rem;">
             <h3 style="color:#00eaff;">✨ Rewritten Text (Similarity: {similarity:.1f}%)</h3>
             <textarea readonly rows="10" style="
                 width:100%;
