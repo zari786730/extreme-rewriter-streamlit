@@ -6,15 +6,40 @@ import streamlit as st
 import random
 import time
 
+# IMPORT BACKEND FUNCTIONS
+from backend import extreme_rewriter, calculate_similarity, get_vocabulary_stats
+
 st.set_page_config(page_title="Extreme Rewriter", page_icon="💧", layout="wide")
 
 # --- REWRITE FUNCTION (TRUE BACKEND CALL) ---
-# This version uses the real rewriting logic from your backend
-def guarantee_low_similarity(text, target):
+def guarantee_low_similarity(text, target_similarity=20, max_attempts=5):
     """Generate rewritten text using the true backend extreme_rewriter() logic."""
-    rewritten = extreme_rewriter(text)
-    similarity = calculate_similarity(text, rewritten)
-    return rewritten, similarity
+    best_result = None
+    best_similarity = 100
+    
+    for attempt in range(max_attempts):
+        try:
+            rewritten = extreme_rewriter(text)
+            similarity = calculate_similarity(text, rewritten)
+            
+            if similarity < best_similarity:
+                best_result = rewritten
+                best_similarity = similarity
+            
+            # If we meet the target similarity, return early
+            if similarity <= target_similarity:
+                return rewritten, similarity
+                
+        except Exception as e:
+            st.error(f"Attempt {attempt + 1} failed: {str(e)}")
+            continue
+    
+    # Return the best we found
+    if best_result:
+        return best_result, best_similarity
+    else:
+        # Fallback if all attempts fail
+        return "Error: Could not rewrite text. Please try again.", 100
 
 # --- CSS STYLES ---
 st.markdown("""
@@ -345,7 +370,6 @@ Transform your text into a <span style="color:#00eaff;">uniquely rewritten</span
 
 # --- VOCABULARY COUNTER DISPLAY ---
 try:
-    from backend import get_vocabulary_stats
     stats = get_vocabulary_stats()
     st.markdown(f"""
     <div class="vocab-counter">
@@ -353,7 +377,7 @@ try:
         ✅ {stats['loaded_files']}/45 synonym files • 🏥 {stats['health_terms']:,} health terms
     </div>
     """, unsafe_allow_html=True)
-except:
+except Exception as e:
     st.markdown("""
     <div class="vocab-counter">
         📚 Vocabulary Database: <strong>45,000+ words loaded</strong><br>
@@ -363,8 +387,10 @@ except:
 
 # --- INPUT SECTION ---
 st.markdown('<div class="glass-box">', unsafe_allow_html=True)
-input_text = st.text_area("🧬 Enter text:", height=180, label_visibility="collapsed")
-target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1)
+input_text = st.text_area("🧬 Enter text:", height=180, label_visibility="collapsed", 
+                         placeholder="Enter your text here to rewrite it using our massive vocabulary database...")
+target_similarity = st.slider("🎯 Target Similarity (%)", 5, 50, 20, step=1, 
+                             help="Lower percentage means more different from original text")
 
 col1, col2 = st.columns(2)
 
