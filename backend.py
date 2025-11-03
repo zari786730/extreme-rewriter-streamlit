@@ -1,28 +1,17 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import nltk
 from nltk.corpus import wordnet
 import re
 import random
 import json
-from collections import defaultdict
+from typing import List, Tuple, Dict
 import os
 
-# Download required NLTK data
-try:
-    nltk.data.find('corpora/wordnet')
-except LookupError:
-    nltk.download('wordnet')
-
-try:
-    nltk.data.find('taggers/averaged_perceptron_tagger')
-except LookupError:
-    nltk.download('averaged_perceptron_tagger')
-
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
+# Download NLTK data
+nltk.download('wordnet', quiet=True)
+nltk.download('averaged_perceptron_tagger', quiet=True)
+nltk.download('punkt', quiet=True)
 
 app = Flask(__name__)
 CORS(app)
@@ -30,249 +19,299 @@ CORS(app)
 class UniversalTextEnhancer:
     def __init__(self):
         self.synonym_cache = {}
-        self.scientific_terms = self.load_scientific_terms()
+        self.protected_terms = self._load_protected_terms()
+        self.quality_checks = self._load_quality_checks()
         
-    def load_scientific_terms(self):
-        """Load domain-specific terminology to preserve accuracy"""
+    def _load_protected_terms(self) -> set:
+        """Load terms that should never be changed"""
+        protected = {
+            # Scientific
+            'p53', 'dna', 'rna', 'apoptosis', 'genome', 'protein', 'cell',
+            'tumor', 'cancer', 'gene', 'mutated', 'genetic', 'mutation',
+            'molecular', 'cellular', 'biological', 'therapy', 'clinical',
+            'medical', 'carcinoma', 'sarcoma', 'leukemia', 'lymphoma',
+            
+            # Technical
+            'algorithm', 'software', 'hardware', 'programming', 'database',
+            'api', 'framework', 'javascript', 'python', 'java',
+            
+            # Academic
+            'research', 'study', 'analysis', 'methodology', 'hypothesis',
+            'theory', 'experiment', 'data', 'results', 'conclusion',
+            
+            # Business
+            'company', 'business', 'market', 'customer', 'product',
+            'service', 'revenue', 'profit', 'strategy',
+            
+            # Common critical words
+            'because', 'however', 'moreover', 'therefore', 'although',
+            'while', 'since', 'although', 'unless', 'until'
+        }
+        return {term.lower() for term in protected}
+    
+    def _load_quality_checks(self) -> Dict:
+        """Quality control parameters"""
         return {
-            # Medical/Scientific terms that should NOT be changed
-            'p53': 'p53', 'dna': 'DNA', 'rna': 'RNA', 'apoptosis': 'apoptosis',
-            'genome': 'genome', 'protein': 'protein', 'cell': 'cell',
-            'tumor': 'tumor', 'cancer': 'cancer', 'gene': 'gene',
-            'mutated': 'mutated', 'genetic': 'genetic', 'mutation': 'mutation',
-            'therapist': 'therapist', 'medical': 'medical', 'clinical': 'clinical',
-            'molecular': 'molecular', 'cellular': 'cellular', 'biological': 'biological',
-            
-            # Academic terms
-            'research': 'research', 'study': 'study', 'analysis': 'analysis',
-            'methodology': 'methodology', 'hypothesis': 'hypothesis',
-            
-            # Technical terms that should be preserved
-            'algorithm': 'algorithm', 'programming': 'programming',
-            'software': 'software', 'hardware': 'hardware'
+            'max_sentence_length': 50,
+            'min_sentence_length': 3,
+            'max_paragraph_length': 500,
+            'synonym_quality_threshold': 0.7,
+            'max_changes_per_sentence': 3
         }
     
-    def is_protected_term(self, word):
-        """Check if word is a protected scientific/technical term"""
-        return word.lower() in self.scientific_terms
-    
-    def get_contextual_synonyms(self, word, pos_tag):
-        """Get contextually appropriate synonyms with POS filtering"""
-        if self.is_protected_term(word):
+    def get_high_quality_synonyms(self, word: str, pos: str) -> List[str]:
+        """Get only high-quality, context-appropriate synonyms"""
+        if word.lower() in self.protected_terms:
             return []
             
-        if word in self.synonym_cache:
-            return self.synonym_cache[word]
+        cache_key = f"{word}_{pos}"
+        if cache_key in self.synonym_cache:
+            return self.synonym_cache[cache_key]
         
         synonyms = set()
-        for syn in wordnet.synsets(word):
-            # Filter by part of speech
-            if self.match_pos(syn.pos(), pos_tag):
-                for lemma in syn.lemmas():
+        for synset in wordnet.synsets(word):
+            # Filter by part of speech and quality
+            if self._is_good_synonym(synset, word, pos):
+                for lemma in synset.lemmas():
                     synonym = lemma.name().replace('_', ' ').lower()
-                    if (synonym != word.lower() and 
-                        len(synonym.split()) == 1 and
-                        len(synonym) > 2 and
-                        not any(char.isdigit() for char in synonym)):
+                    if self._validate_synonym(synonym, word):
                         synonyms.add(synonym)
         
-        # Filter to most common synonyms
-        filtered = list(synonyms)[:5]
-        self.synonym_cache[word] = filtered
-        return filtered
+        # Limit and cache results
+        result = list(synonyms)[:5]
+        self.synonym_cache[cache_key] = result
+        return result
     
-    def match_pos(self, wordnet_pos, nltk_pos):
-        """Match WordNet POS tags with NLTK POS tags"""
+    def _is_good_synonym(self, synset, original_word: str, pos: str) -> bool:
+        """Check if synonym is appropriate"""
         pos_mapping = {
-            'n': ['NN', 'NNS', 'NNP', 'NNPS'],  # Nouns
-            'v': ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ'],  # Verbs
-            'a': ['JJ', 'JJR', 'JJS'],  # Adjectives
-            'r': ['RB', 'RBR', 'RBS']   # Adverbs
+            'n': ['NN', 'NNS', 'NNP', 'NNPS'],
+            'v': ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ'],
+            'a': ['JJ', 'JJR', 'JJS'],
+            'r': ['RB', 'RBR', 'RBS']
         }
         
+        # Check POS match
         for wn_pos, nltk_tags in pos_mapping.items():
-            if wordnet_pos == wn_pos and nltk_pos in nltk_tags:
+            if synset.pos() == wn_pos and pos in nltk_tags:
                 return True
         return False
     
-    def enhance_sentence_flow(self, sentence):
-        """Improve sentence structure and flow"""
-        words = nltk.word_tokenize(sentence)
-        if len(words) <= 5:  # Don't change very short sentences
+    def _validate_synonym(self, synonym: str, original: str) -> bool:
+        """Validate synonym quality"""
+        # Basic checks
+        if (synonym == original.lower() or
+            len(synonym) <= 2 or
+            any(char.isdigit() for char in synonym) or
+            len(synonym.split()) > 1):
+            return False
+        
+        # Quality checks
+        if len(synonym) / len(original) > 2.0:  # Too long
+            return False
+            
+        if len(synonym) / len(original) < 0.5:  # Too short
+            return False
+            
+        return True
+    
+    def enhance_sentence_structure(self, sentence: str) -> str:
+        """Intelligently enhance sentence structure"""
+        if len(sentence.split()) < 4:  # Don't change short sentences
             return sentence
             
+        words = nltk.word_tokenize(sentence)
         tagged = nltk.pos_tag(words)
         
         enhanced_words = []
-        i = 0
         changes_made = 0
-        max_changes = max(2, len(words) // 10)  # Limit changes per sentence
         
-        while i < len(tagged) and changes_made < max_changes:
-            word, pos = tagged[i]
+        for i, (word, pos) in enumerate(tagged):
+            # Decide whether to replace this word
+            should_replace = (
+                random.random() < 0.3 and  # 30% chance
+                changes_made < self.quality_checks['max_changes_per_sentence'] and
+                pos in ['JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS', 'VB', 'VBD', 'VBG', 'VBN'] and
+                word.lower() not in self.protected_terms and
+                len(word) > 3  # Don't replace very short words
+            )
             
-            # Only replace common words (not proper nouns, etc.)
-            if (pos in ['JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ'] and
-                not self.is_protected_term(word) and
-                random.random() < 0.25):  # 25% chance per eligible word
-                
-                synonyms = self.get_contextual_synonyms(word, pos)
+            if should_replace:
+                synonyms = self.get_high_quality_synonyms(word, pos)
                 if synonyms:
                     enhanced_words.append(random.choice(synonyms))
                     changes_made += 1
-                    i += 1
                     continue
             
             enhanced_words.append(word)
-            i += 1
         
         return ' '.join(enhanced_words)
     
-    def restructure_paragraph(self, text):
-        """Improve paragraph structure"""
+    def improve_paragraph_flow(self, text: str) -> str:
+        """Improve overall paragraph structure and flow"""
         sentences = nltk.sent_tokenize(text)
+        
         if len(sentences) <= 1:
-            return text
+            return self.enhance_sentence_structure(text)
         
         enhanced_sentences = []
-        
-        # Vary sentence starters for middle sentences
         transition_words = [
             'Additionally,', 'Furthermore,', 'Moreover,', 'However,',
-            'Therefore,', 'Consequently,', 'Interestingly,', 'Notably,'
+            'Therefore,', 'Consequently,', 'Interestingly,', 'Notably,',
+            'Specifically,', 'Generally,'
         ]
         
         for i, sentence in enumerate(sentences):
-            enhanced_sentence = self.enhance_sentence_flow(sentence)
+            enhanced_sentence = self.enhance_sentence_structure(sentence)
             
-            # Add transition words to some sentences (not first, not all)
-            if i > 0 and i < len(sentences) - 1 and random.random() < 0.3:
+            # Add variety to sentence starters (but not to first sentence)
+            if i > 0 and random.random() < 0.4:  # 40% chance
                 transition = random.choice(transition_words)
-                enhanced_sentence = f"{transition} {enhanced_sentence[0].lower() + enhanced_sentence[1:]}"
+                # Ensure proper capitalization after transition
+                if enhanced_sentence and enhanced_sentence[0].isupper():
+                    enhanced_sentence = enhanced_sentence[0].lower() + enhanced_sentence[1:]
+                enhanced_sentence = f"{transition} {enhanced_sentence}"
             
             enhanced_sentences.append(enhanced_sentence)
         
         return ' '.join(enhanced_sentences)
     
-    def fix_grammar_and_punctuation(self, text):
-        """Fix common grammar and punctuation issues"""
-        # Fix spaces before punctuation
+    def clean_and_format(self, text: str) -> str:
+        """Clean and properly format text"""
+        # Fix spacing around punctuation
         text = re.sub(r'\s+([.,!?;])', r'\1', text)
-        
-        # Ensure space after punctuation
         text = re.sub(r'([.,!?;])([A-Za-z])', r'\1 \2', text)
         
         # Fix multiple spaces
         text = re.sub(r' +', ' ', text)
         
-        # Fix capitalization after punctuation
+        # Ensure proper capitalization
         sentences = nltk.sent_tokenize(text)
         corrected_sentences = []
         
         for sentence in sentences:
             if sentence.strip():
-                # Ensure first character is uppercase
+                # Capitalize first letter
                 corrected = sentence[0].upper() + sentence[1:]
                 corrected_sentences.append(corrected)
             else:
                 corrected_sentences.append(sentence)
         
-        return ' '.join(corrected_sentences)
+        return ' '.join(corrected_sentences).strip()
     
-    def humanize_text(self, text):
-        """Main method to humanize text while preserving meaning"""
+    def calculate_enhancement_metrics(self, original: str, enhanced: str) -> Dict:
+        """Calculate enhancement metrics"""
+        orig_words = original.split()
+        enh_words = enhanced.split()
+        
+        return {
+            'original_length': len(original),
+            'enhanced_length': len(enhanced),
+            'original_words': len(orig_words),
+            'enhanced_words': len(enh_words),
+            'change_percentage': round(abs(len(enh_words) - len(orig_words)) / len(orig_words) * 100, 2),
+            'readability_score': self.calculate_readability(enhanced)
+        }
+    
+    def calculate_readability(self, text: str) -> float:
+        """Simple readability score"""
+        sentences = nltk.sent_tokenize(text)
+        words = text.split()
+        
+        if not sentences or not words:
+            return 0
+            
+        avg_sentence_length = len(words) / len(sentences)
+        avg_word_length = sum(len(word) for word in words) / len(words)
+        
+        # Lower score = easier to read
+        readability = (avg_sentence_length * 0.4) + (avg_word_length * 0.6)
+        return round(readability, 2)
+    
+    def enhance_text(self, text: str, intensity: float = 0.5) -> Dict:
+        """Main enhancement method"""
         if not text or not text.strip():
-            return text
+            return {
+                'success': False,
+                'error': 'No text provided'
+            }
         
         try:
-            # Step 1: Restructure paragraphs for better flow
-            humanized = self.restructure_paragraph(text)
+            # Step 1: Clean input
+            cleaned_text = self.clean_and_format(text)
             
-            # Step 2: Fix grammar and punctuation
-            humanized = self.fix_grammar_and_punctuation(humanized)
+            # Step 2: Enhance based on intensity
+            if intensity < 0.3:
+                # Light enhancement - just clean and minor changes
+                enhanced_text = self.enhance_sentence_structure(cleaned_text)
+            elif intensity > 0.7:
+                # Heavy enhancement - full restructuring
+                enhanced_text = self.improve_paragraph_flow(cleaned_text)
+            else:
+                # Moderate enhancement
+                enhanced_text = self.improve_paragraph_flow(cleaned_text)
             
-            # Step 3: Ensure proper spacing and formatting
-            humanized = re.sub(r'\s+', ' ', humanized).strip()
+            # Step 3: Final cleaning
+            final_text = self.clean_and_format(enhanced_text)
             
-            return humanized
+            # Step 4: Calculate metrics
+            metrics = self.calculate_enhancement_metrics(text, final_text)
+            
+            return {
+                'success': True,
+                'original_text': text,
+                'enhanced_text': final_text,
+                'metrics': metrics,
+                'message': 'Text enhanced successfully'
+            }
             
         except Exception as e:
-            # If processing fails, return original with basic cleaning
-            print(f"Enhancement error: {e}")
-            return self.fix_grammar_and_punctuation(text)
+            return {
+                'success': False,
+                'error': f'Enhancement failed: {str(e)}',
+                'original_text': text,
+                'enhanced_text': text  # Return original as fallback
+            }
 
-# Initialize the enhancer
+# Initialize enhancer
 enhancer = UniversalTextEnhancer()
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
+# API Routes
 @app.route('/api/enhance', methods=['POST'])
-def enhance_text():
+def api_enhance():
+    """Main enhancement endpoint"""
     try:
         data = request.get_json()
         
         if not data or 'text' not in data:
             return jsonify({
                 'success': False,
-                'error': 'No text provided in request'
+                'error': 'No text provided'
             }), 400
         
         text = data['text'].strip()
+        intensity = min(max(float(data.get('intensity', 0.5)), 0.1), 1.0)
         
-        if not text:
-            return jsonify({
-                'success': False,
-                'error': 'Text cannot be empty'
-            }), 400
+        result = enhancer.enhance_text(text, intensity)
         
-        # Get enhancement parameters
-        aggression = data.get('aggression', 0.5)  # 0.1 to 1.0
-        preserve_terms = data.get('preserve_terms', True)
-        
-        # Enhance the text
-        enhanced_text = enhancer.humanize_text(text)
-        
-        # Calculate statistics
-        original_words = len(text.split())
-        enhanced_words = len(enhanced_text.split())
-        change_percentage = abs(enhanced_words - original_words) / original_words * 100
-        
-        return jsonify({
-            'success': True,
-            'original_text': text,
-            'enhanced_text': enhanced_text,
-            'statistics': {
-                'original_length': len(text),
-                'enhanced_length': len(enhanced_text),
-                'original_words': original_words,
-                'enhanced_words': enhanced_words,
-                'change_percentage': round(change_percentage, 2)
-            },
-            'message': 'Text enhanced successfully'
-        })
-        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 500
+            
     except Exception as e:
         return jsonify({
             'success': False,
-            'error': f'Processing error: {str(e)}'
+            'error': f'API error: {str(e)}'
         }), 500
 
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    return jsonify({
-        'status': 'healthy',
-        'service': 'Universal Text Enhancer',
-        'version': '1.0.0'
-    })
-
 @app.route('/api/batch-enhance', methods=['POST'])
-def batch_enhance():
-    """Enhance multiple texts at once"""
+def api_batch_enhance():
+    """Enhance multiple texts"""
     try:
         data = request.get_json()
         texts = data.get('texts', [])
+        intensity = min(max(float(data.get('intensity', 0.5)), 0.1), 1.0)
         
         if not texts:
             return jsonify({
@@ -282,23 +321,30 @@ def batch_enhance():
         
         results = []
         for text in texts:
-            enhanced = enhancer.humanize_text(text)
-            results.append({
-                'original': text,
-                'enhanced': enhanced
-            })
+            if isinstance(text, str) and text.strip():
+                result = enhancer.enhance_text(text.strip(), intensity)
+                results.append(result)
         
         return jsonify({
             'success': True,
             'results': results,
             'total_processed': len(results)
-        })
+        }), 200
         
     except Exception as e:
         return jsonify({
             'success': False,
             'error': f'Batch processing error: {str(e)}'
         }), 500
+
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'Universal Text Enhancer',
+        'version': '2.0.0'
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
