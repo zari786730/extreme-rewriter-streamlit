@@ -1,5 +1,5 @@
 # =========================
-# UNIVERSALLY INTELLIGENT REWRITER BACKEND
+# UNIVERSAL INTELLIGENT REWRITER BACKEND
 # =========================
 
 import random
@@ -7,105 +7,37 @@ import re
 import os
 import glob
 
-print("🌍 INITIALIZING UNIVERSALLY INTELLIGENT REWRITER...")
+print("🌐 INITIALIZING UNIVERSAL INTELLIGENT REWRITER...")
 
 # =========================
-# AUTOMATIC TERM DETECTION
-# =========================
-class IntelligentTermDetector:
-    def __init__(self):
-        self.common_words = self._load_common_words()
-        self.problematic_suffixes = {
-            'ology', 'itis', 'ectomy', 'phobia', 'ism', 'ist', 'genic', 'nomic',
-            'lysis', 'zyme', 'some', 'blast', 'cyte', 'phage', 'troph'
-        }
-        
-    def _load_common_words(self):
-        """Load the most common English words"""
-        return {
-            'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
-            'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
-            'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
-            'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what',
-            'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me',
-            'when', 'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know', 'take',
-            'people', 'into', 'year', 'your', 'good', 'some', 'could', 'them', 'see',
-            'other', 'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over',
-            'think', 'also', 'back', 'after', 'use', 'two', 'how', 'our', 'work',
-            'first', 'well', 'way', 'even', 'new', 'want', 'because', 'any', 'these',
-            'give', 'day', 'most', 'us'
-        }
-    
-    def should_protect_term(self, word, context_words=None):
-        """Intelligently decide if a word should be protected from changes"""
-        word_lower = word.lower()
-        
-        # 1. Always protect very common words (they're usually correct as-is)
-        if word_lower in self.common_words:
-            return True
-            
-        # 2. Protect words with scientific-looking suffixes
-        if any(word_lower.endswith(suffix) for suffix in self.problematic_suffixes):
-            return True
-            
-        # 3. Protect capitalized proper nouns (except sentence starters)
-        if (word[0].isupper() and len(word) > 3 and 
-            not (context_words and context_words[0] == word)):
-            return True
-            
-        # 4. Protect words with numbers or special formats
-        if any(char.isdigit() for char in word):
-            return True
-            
-        # 5. Protect hyphenated words (often technical terms)
-        if '-' in word:
-            return True
-            
-        # 6. Protect very long words (often technical)
-        if len(word) > 12:
-            return True
-            
-        # 7. Protect acronyms (all caps)
-        if word.isupper() and len(word) <= 5:
-            return True
-            
-        return False
-
-# =========================
-# CONTEXT-AWARE VOCABULARY LOADER
+# UNIVERSAL VOCABULARY LOADER
 # =========================
 class UniversalVocabularyLoader:
     def __init__(self):
         self.all_synonyms = {}
-        self.term_detector = IntelligentTermDetector()
         self.load_all_vocabulary()
 
     def load_all_vocabulary(self):
-        """Load vocabulary from all available files"""
+        """Load all synonym files"""
         print("\n" + "="*70)
-        print("📚 LOADING UNIVERSAL VOCABULARY...")
+        print("📚 LOADING VOCABULARY DATABASE...")
         print("="*70)
 
-        self._load_synonym_files()
+        synonym_files = []
         
-        self.total_words = len(self.all_synonyms)
-        print(f"✅ LOADED {self.total_words:,} WORDS")
-        return self.total_words
-
-    def _load_synonym_files(self):
-        """Load synonym files from multiple locations"""
-        possible_paths = [
-            'vocabulary/synonyms_*.py',
-            'synonyms_*.py', 
-            'Library/synonyms_*.py',
-            '*.py'  # Fallback
+        # Check multiple possible locations
+        possible_locations = [
+            'vocabulary/',
+            'Library/',
+            '',
+            'synonyms/'
         ]
         
-        synonym_files = []
-        for pattern in possible_paths:
+        for location in possible_locations:
+            pattern = os.path.join(location, 'synonyms_*.py')
             files = glob.glob(pattern)
-            synonym_files.extend([f for f in files if 'synonyms_' in f])
-        
+            synonym_files.extend(files)
+
         # Remove duplicates
         synonym_files = list(set(synonym_files))
         
@@ -117,7 +49,7 @@ class UniversalVocabularyLoader:
                 with open(filepath, 'r', encoding='utf-8') as f:
                     content = f.read()
 
-                synonyms = self._safe_parse_synonyms(content)
+                synonyms = self._parse_synonyms(content)
                 if synonyms:
                     self.all_synonyms.update(synonyms)
                     print(f"✅ {filename}: {len(synonyms):,} words")
@@ -125,8 +57,12 @@ class UniversalVocabularyLoader:
             except Exception as e:
                 print(f"❌ {filename}: Error - {str(e)}")
 
-    def _safe_parse_synonyms(self, content):
-        """Safe parsing of synonym files"""
+        self.total_words = len(self.all_synonyms)
+        print(f"🎯 TOTAL VOCABULARY: {self.total_words:,} words")
+        return self.total_words
+
+    def _parse_synonyms(self, content):
+        """Simple and reliable synonym parsing"""
         synonyms = {}
         lines = content.split('\n')
         in_dict = False
@@ -143,7 +79,7 @@ class UniversalVocabularyLoader:
                 
             if in_dict and ':' in line:
                 try:
-                    # Extract key-value pair
+                    # Extract key and value
                     key_part, value_part = line.split(':', 1)
                     key = key_part.strip().strip('"\'')
                     
@@ -159,202 +95,321 @@ class UniversalVocabularyLoader:
         return synonyms
 
 # =========================
-# UNIVERSAL INTELLIGENT REWRITER
+# UNIVERSAL CONTEXT ANALYZER
 # =========================
-class UniversalIntelligentRewriter:
+class UniversalContextAnalyzer:
     def __init__(self):
-        self.vocab_loader = UniversalVocabularyLoader()
-        self.term_detector = IntelligentTermDetector()
+        self.never_change_words = self._get_never_change_words()
+        self.safe_to_change_words = self._get_safe_to_change_words()
+    
+    def _get_never_change_words(self):
+        """Words that should NEVER be changed"""
+        return {
+            # Articles and basic connectors
+            'a', 'an', 'the', 'and', 'or', 'but', 'if', 'of', 'in', 'on', 'at', 
+            'to', 'for', 'with', 'by', 'from', 'up', 'down', 'about', 'over', 
+            'under', 'through', 'during', 'before', 'after', 'between',
+            
+            # Common verbs (too fundamental)
+            'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 
+            'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
+            
+            # Pronouns
+            'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her',
+            'us', 'them', 'my', 'your', 'his', 'her', 'its', 'our', 'their',
+            
+            # Basic question words
+            'what', 'when', 'where', 'why', 'how', 'which', 'who', 'whom'
+        }
+    
+    def _get_safe_to_change_words(self):
+        """Word categories that are SAFE to change"""
+        return {
+            # Common adjectives
+            'happy', 'sad', 'good', 'bad', 'big', 'small', 'fast', 'slow',
+            'beautiful', 'ugly', 'smart', 'dumb', 'rich', 'poor', 'strong', 'weak',
+            'hot', 'cold', 'new', 'old', 'young', 'tall', 'short', 'long',
+            'heavy', 'light', 'dark', 'bright', 'clean', 'dirty', 'easy', 'hard',
+            'simple', 'complex', 'important', 'funny', 'serious', 'quiet', 'loud',
+            
+            # Common verbs (action-oriented)
+            'run', 'walk', 'talk', 'speak', 'say', 'tell', 'think', 'know',
+            'see', 'look', 'watch', 'hear', 'listen', 'eat', 'drink', 'sleep',
+            'work', 'play', 'read', 'write', 'learn', 'teach', 'help', 'give',
+            'take', 'make', 'create', 'build', 'break', 'fix', 'buy', 'sell',
+            'start', 'stop', 'begin', 'end', 'open', 'close',
+            
+            # Common nouns
+            'house', 'home', 'car', 'book', 'friend', 'family', 'school', 'work',
+            'city', 'country', 'world', 'life', 'time', 'day', 'night', 'year',
+            'water', 'food', 'money', 'job', 'problem', 'solution', 'idea',
+            'person', 'man', 'woman', 'child', 'people', 'place', 'thing'
+        }
+    
+    def can_change_word(self, word, is_first_word=False):
+        """
+        UNIVERSAL DECISION: Can this word be safely changed?
+        Returns: True (safe), False (never change), None (use default rules)
+        """
+        word_lower = word.lower()
+        clean_word = re.sub(r'[^\w]', '', word_lower)
         
-        print(f"🎯 UNIVERSAL REWRITER READY")
-        print(f"   📊 Vocabulary: {len(self.vocab_loader.all_synonyms):,} words")
+        # NEVER change these words
+        if clean_word in self.never_change_words:
+            return False
+        
+        # ALWAYS safe to change these words
+        if clean_word in self.safe_to_change_words:
+            return True
+        
+        # Default rules for unknown words
+        return self._default_word_rules(word, clean_word, is_first_word)
+    
+    def _default_word_rules(self, word, clean_word, is_first_word):
+        """Default rules for words not in our lists"""
+        # Don't change very short words
+        if len(clean_word) <= 2:
+            return False
+        
+        # Don't change words that look technical/scientific
+        if self._looks_technical(word, clean_word):
+            return False
+        
+        # Don't change proper nouns (except first word of sentence)
+        if word[0].isupper() and not is_first_word:
+            return False
+        
+        # Don't change acronyms
+        if word.isupper() and len(word) <= 5:
+            return False
+        
+        # Don't change words with numbers or hyphens
+        if any(c in word for c in '-0123456789'):
+            return False
+        
+        # Safe to change common-looking words
+        if len(clean_word) <= 8 and clean_word.isalpha():
+            return True
+        
+        # Default: don't change unknown words
+        return False
+    
+    def _looks_technical(self, word, clean_word):
+        """Check if word looks technical/scientific"""
+        # Long words often technical
+        if len(clean_word) > 10:
+            return True
+        
+        # Words with scientific suffixes
+        technical_suffixes = {'ology', 'itis', 'ectomy', 'phobia', 'ism', 'zyme'}
+        if any(clean_word.endswith(suffix) for suffix in technical_suffixes):
+            return True
+        
+        # Words with scientific prefixes
+        technical_prefixes = {'bio', 'chem', 'neuro', 'psych', 'electro'}
+        if any(clean_word.startswith(prefix) for prefix in technical_prefixes):
+            return True
+        
+        return False
 
-    def universal_rewrite(self, text):
-        """Intelligently rewrite ANY text while preserving meaning and technical terms"""
+# =========================
+# UNIVERSAL REWRITER ENGINE
+# =========================
+class UniversalRewriterEngine:
+    def __init__(self, vocabulary_loader):
+        self.vocabulary = vocabulary_loader.all_synonyms
+        self.context_analyzer = UniversalContextAnalyzer()
+        
+        print(f"🚀 UNIVERSAL REWRITER ENGINE READY")
+        print(f"   📊 Vocabulary: {len(self.vocabulary):,} words")
+
+    def rewrite_text(self, text, replacement_rate=0.3):
+        """
+        Universal text rewriting that works on ANY content
+        replacement_rate: 0.1-0.9 how aggressive to be (default: 30%)
+        """
         if not text or len(text.strip()) < 5:
             return text
             
-        sentences = self._split_sentences(text)
-        rewritten_sentences = []
-        
-        for sentence in sentences:
-            if sentence.strip():
-                rewritten = self._rewrite_sentence(sentence)
-                rewritten_sentences.append(rewritten)
-        
-        result = ' '.join(rewritten_sentences)
-        return self._cleanup_text(result)
-    
-    def _split_sentences(self, text):
-        """Split text into sentences"""
-        # Simple sentence splitting
-        sentences = []
-        current = ""
-        
-        for char in text:
-            current += char
-            if char in '.!?':
-                sentences.append(current.strip())
-                current = ""
-        
-        if current.strip():
-            sentences.append(current.strip())
-            
-        return sentences
-
-    def _rewrite_sentence(self, sentence):
-        """Rewrite a single sentence intelligently"""
-        words = re.findall(r"[\w']+|[.,!?;]", sentence)
+        words = text.split()
         new_words = []
         replaced_count = 0
+        total_changeable = 0
         
         for i, word in enumerate(words):
-            # Skip punctuation
-            if word in '.!?;,':
-                new_words.append(word)
-                continue
-                
-            clean_word = re.sub(r'[^\w]', '', word.lower())
+            is_first_word = (i == 0)
             
-            # Get context for intelligent decision
-            context_words = words[max(0, i-2):min(len(words), i+2)]
+            # Check if we can change this word
+            change_decision = self.context_analyzer.can_change_word(word, is_first_word)
             
-            # INTELLIGENT DECISION: Should we protect this word?
-            if self.term_detector.should_protect_term(word, context_words):
-                new_words.append(word)
-                continue
+            if change_decision is True:  # Safe to change
+                total_changeable += 1
                 
-            # Get synonyms for non-protected words
-            synonyms = self.vocab_loader.all_synonyms.get(clean_word, [])
-            if isinstance(synonyms, str):
-                synonyms = [synonyms]
+                # Decide whether to actually replace it
+                should_replace = (
+                    random.random() < replacement_rate and
+                    replaced_count / max(1, total_changeable) < 0.5  # Max 50% of changeable words
+                )
                 
-            # Filter good synonyms
-            good_synonyms = [s for s in synonyms if self._is_good_replacement(clean_word, s)]
+                if should_replace:
+                    new_word = self._get_replacement(word)
+                    if new_word != word:
+                        new_words.append(new_word)
+                        replaced_count += 1
+                        continue
             
-            # Decide whether to replace
-            should_replace = (
-                good_synonyms and 
-                random.random() < 0.5 and  # 50% chance
-                replaced_count / len([w for w in words if w not in '.!?;,']) < 0.3  # Max 30% replacement
-            )
+            # Keep original word
+            new_words.append(word)
             
-            if should_replace:
-                replacement = random.choice(good_synonyms)
-                
-                # Preserve original formatting
-                if word[0].isupper():
-                    replacement = replacement.capitalize()
-                    
-                new_words.append(replacement)
-                replaced_count += 1
-            else:
-                new_words.append(word)
-                
-        return ' '.join(new_words)
-
+        result = ' '.join(new_words)
+        return self._cleanup_text(result)
+    
+    def _get_replacement(self, original_word):
+        """Get a replacement word that makes sense"""
+        clean_original = re.sub(r'[^\w]', '', original_word.lower())
+        synonyms = self.vocabulary.get(clean_original, [])
+        
+        if not synonyms:
+            return original_word
+        
+        # Filter good replacements
+        good_replacements = []
+        for synonym in synonyms:
+            if self._is_good_replacement(clean_original, synonym):
+                good_replacements.append(synonym)
+        
+        if not good_replacements:
+            return original_word
+        
+        # Choose a replacement
+        replacement = random.choice(good_replacements)
+        
+        # Preserve original formatting
+        if original_word[0].isupper():
+            replacement = replacement.capitalize()
+        
+        # Preserve trailing punctuation
+        if not original_word[-1].isalnum():
+            replacement += original_word[-1]
+            
+        return replacement
+    
     def _is_good_replacement(self, original, synonym):
-        """Check if synonym is appropriate"""
+        """Check if synonym is a good replacement"""
         # Don't replace with same word
         if synonym.lower() == original.lower():
             return False
-            
-        # Don't replace with multi-word phrases
+        
+        # Don't use multi-word phrases
         if ' ' in synonym:
             return False
-            
-        # Don't replace with much longer words
-        if len(synonym) > len(original) + 5:
-            return False
-            
-        # Don't replace with very short words
-        if len(synonym) < 3:
-            return False
-            
-        return True
-
-    def _cleanup_text(self, text):
-        """Clean up the final text"""
-        # Ensure proper spacing around punctuation
-        text = re.sub(r'\s+([.,!?])', r'\1', text)
-        text = re.sub(r'([.,!?])(\w)', r'\1 \2', text)
         
-        # Capitalize first letter
+        # Don't use much longer words
+        if len(synonym) > len(original) + 4:
+            return False
+        
+        # Don't use much shorter words
+        if len(synonym) < len(original) - 3:
+            return False
+        
+        return True
+    
+    def _cleanup_text(self, text):
+        """Basic text cleanup"""
+        # Fix spacing around punctuation
+        text = re.sub(r'\s+([.,!?;])', r'\1', text)
+        text = re.sub(r'([.,!?;])(\w)', r'\1 \2', text)
+        
+        # Ensure first letter is capitalized
         if text and text[0].isalpha():
             text = text[0].upper() + text[1:]
             
         return text
 
     def analyze_text(self, text):
-        """Analyze what the rewriter would protect/change"""
-        words = re.findall(r"[\w']+", text)
+        """Analyze what would be changed"""
+        words = text.split()
         analysis = {
             'total_words': len(words),
-            'protected_words': [],
-            'changeable_words': []
+            'never_change': [],
+            'safe_to_change': [],
+            'unknown': []
         }
         
         for i, word in enumerate(words):
-            context = words[max(0, i-2):min(len(words), i+2)]
-            if self.term_detector.should_protect_term(word, context):
-                analysis['protected_words'].append(word)
+            is_first_word = (i == 0)
+            decision = self.context_analyzer.can_change_word(word, is_first_word)
+            
+            if decision is False:
+                analysis['never_change'].append(word)
+            elif decision is True:
+                analysis['safe_to_change'].append(word)
             else:
-                analysis['changeable_words'].append(word)
+                analysis['unknown'].append(word)
                 
         return analysis
 
 # =========================
 # INITIALIZE UNIVERSAL REWRITER
 # =========================
-print("🔄 Initializing universal rewriter...")
-universal_rewriter = UniversalIntelligentRewriter()
+print("🔄 Loading vocabulary...")
+vocab_loader = UniversalVocabularyLoader()
+print("🔄 Initializing rewriter engine...")
+universal_rewriter = UniversalRewriterEngine(vocab_loader)
 
 # =========================
 # CORE API FUNCTIONS
 # =========================
-def rewrite_text_intelligent(original_text):
+def rewrite_text_universal(original_text, aggression=0.3):
     """
-    Universal intelligent text rewriting
-    - Automatically detects and protects technical terms
-    - Only changes appropriate words
-    - Preserves meaning and readability
+    Universal text rewriting - works on ANY content
+    Args:
+        original_text: Text to rewrite
+        aggression: 0.1-0.9 how aggressive to be with replacements
     """
-    return universal_rewriter.universal_rewrite(original_text)
+    return universal_rewriter.rewrite_text(original_text, aggression)
 
-def analyze_text_intelligent(text):
+def analyze_text_content(text):
     """See what would be protected vs changed"""
     return universal_rewriter.analyze_text(text)
 
-def get_rewriter_stats():
+def get_system_info():
+    """Get system information"""
     return {
-        "vocabulary_size": len(universal_rewriter.vocab_loader.all_synonyms),
-        "type": "Universal Intelligent Rewriter",
+        "vocabulary_size": len(universal_rewriter.vocabulary),
+        "rewriter_type": "Universal Context-Aware",
+        "status": "Ready",
         "capabilities": [
-            "Automatic technical term detection",
-            "Scientific term protection", 
-            "Context-aware replacements",
+            "Automatic technical term protection",
+            "Safe word replacement only",
+            "Universal content handling",
             "Meaning preservation"
         ]
     }
 
 # =========================
-# TEST WITH YOUR DNA TEXT
+# TEST WITH VARIOUS CONTENT
 # =========================
 if __name__ == "__main__":
     print("\n" + "="*70)
     print("🧪 TESTING UNIVERSAL REWRITER...")
     print("="*70)
 
-    dna_text = "Deoxyribonucleic acid, commonly known as DNA, is the hereditary material that carries the genetic instructions."
-    
-    print("🔍 ANALYSIS:")
-    analysis = analyze_text_intelligent(dna_text)
-    print(f"Protected: {analysis['protected_words']}")
-    print(f"Changeable: {analysis['changeable_words']}")
-    
-    print(f"\n📝 ORIGINAL: {dna_text}")
-    rewritten = rewrite_text_intelligent(dna_text)
-    print(f"🔁 REWRITTEN: {rewritten}")
-    
-    print("\n🎊 UNIVERSAL INTELLIGENT BACKEND READY!")
+    test_cases = [
+        "The quick brown fox jumps over the lazy dog.",
+        "DNA replication occurs during cell division in living organisms.",
+        "The company reported strong financial results this quarter.",
+        "Machine learning algorithms can process large datasets efficiently."
+    ]
+
+    for original in test_cases:
+        print(f"\n📝 ORIGINAL:  {original}")
+        
+        analysis = analyze_text_content(original)
+        print(f"🔍 ANALYSIS: {len(analysis['safe_to_change'])} safe, {len(analysis['never_change'])} protected")
+        
+        rewritten = rewrite_text_universal(original)
+        print(f"🔁 REWRITTEN: {rewritten}")
+
+    print("\n🎊 UNIVERSAL REWRITER BACKEND READY!")
     print("="*70)
