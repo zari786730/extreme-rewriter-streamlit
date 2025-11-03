@@ -6,7 +6,6 @@ import random
 import re
 import os
 import glob
-import nltk
 from collections import Counter
 
 print("🧠 INITIALIZING INTELLIGENT REWRITER BACKEND...")
