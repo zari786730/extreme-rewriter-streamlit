@@ -1,4 +1,95 @@
 # =========================
+# BACKEND INTEGRATION ONLY
+# =========================
+
+import requests
+import json
+
+class BackendIntegration:
+    def __init__(self, base_url="http://localhost:5000"):
+        self.base_url = base_url
+    
+    def enhance_text(self, text: str, intensity: float = 0.5):
+        """Connect to your existing backend"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/enhance",
+                json={
+                    "text": text,
+                    "intensity": intensity
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {
+                    "success": False,
+                    "error": f"Backend error: {response.status_code}",
+                    "enhanced_text": text
+                }
+                
+        except Exception as e:
+            return {
+                "success": False, 
+                "error": f"Cannot connect to backend: {str(e)}",
+                "enhanced_text": text
+            }
+
+# Initialize backend connection
+backend = BackendIntegration()
+
+# =========================
+# REPLACE YOUR BUTTON ACTION CODE WITH THIS:
+# =========================
+
+# FIND THIS IN YOUR EXISTING CODE:
+"""
+if col_btn1.button("🚀 **Start DNA Rewriting**", use_container_width=True):
+    if not input_text.strip():
+        st.warning("Please enter text...")
+    else:
+        # YOUR EXISTING PROCESSING CODE
+"""
+
+# REPLACE WITH:
+if col_btn1.button("🚀 **Start DNA Rewriting**", use_container_width=True):
+    if not input_text.strip():
+        st.warning("Please enter text...")
+    else:
+        # Show progress
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        # Processing animation
+        for i in range(5):
+            progress_bar.progress((i + 1) * 20)
+            steps = ["Analyzing...", "Processing...", "Rewriting...", "Optimizing...", "Finalizing..."]
+            status_text.text(f"🔄 {steps[i]}")
+            time.sleep(0.3)
+        
+        # Call your backend
+        result = backend.enhance_text(input_text, intensity=0.7)
+        
+        progress_bar.progress(100)
+        status_text.empty()
+        
+        if result["success"]:
+            enhanced_text = result["enhanced_text"]
+            
+            # Display results
+            st.success("✅ Text enhanced successfully!")
+            st.text_area("Enhanced Text", value=enhanced_text, height=200)
+            
+            # Show metrics if available
+            if "metrics" in result:
+                st.metric("Similarity", f"{result['metrics'].get('similarity', 0)}%")
+        else:
+            st.error(f"❌ Error: {result.get('error', 'Unknown error')}")
+
+
+# =========================
 # FRONTEND (DNA MOLECULE UI - PREMIUM ENHANCED VERSION)
 # =========================
 
