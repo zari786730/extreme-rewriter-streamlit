@@ -1,272 +1,304 @@
-# =========================
-# STEP 4: FINAL INTELLIGENT BACKEND (REPLACEMENT)
-# =========================
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+import nltk
+from nltk.corpus import wordnet
+import re
+import random
+import json
+from collections import defaultdict
+import os
 
-print("🚀 STEP 4: DEPLOYING FINAL INTELLIGENT BACKEND...")
+# Download required NLTK data
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
 
-# =========================
-# FINAL UNIVERSAL INTELLIGENT REWRITER
-# =========================
+try:
+    nltk.data.find('taggers/averaged_perceptron_tagger')
+except LookupError:
+    nltk.download('averaged_perceptron_tagger')
 
-class FinalIntelligentRewriter:
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+
+app = Flask(__name__)
+CORS(app)
+
+class UniversalTextEnhancer:
     def __init__(self):
-        self.vocabulary = {}
-        self.word_frequencies = {}
-        self.academic_words = {}
-        self.scientific_terms = set()
+        self.synonym_cache = {}
+        self.scientific_terms = self.load_scientific_terms()
         
-        self._load_all_intelligence_data()
-        self._load_all_vocabulary_files()
-        
-        print("🎯 FINAL INTELLIGENT REWRITER READY")
-        print(f"   📊 Vocabulary: {len(self.vocabulary):,} words")
-        print(f"   🧠 Intelligence Data: Loaded")
-        print(f"   🛡️  Protected Terms: {len(self.scientific_terms)}")
-    
-    def _load_all_intelligence_data(self):
-        """Load all intelligence data"""
-        # Word frequencies
-        try:
-            with open('word_frequencies.txt', 'r', encoding='utf-8') as f:
-                for line in f:
-                    parts = line.strip().split()
-                    if len(parts) >= 2:
-                        word = parts[0].lower()
-                        try:
-                            self.word_frequencies[word] = int(parts[1])
-                        except:
-                            continue
-        except:
-            print("⚠️  Could not load word frequencies")
-        
-        # Academic words
-        try:
-            with open('academic_words.json', 'r') as f:
-                import json
-                self.academic_words = json.load(f)
-        except:
-            print("⚠️  Could not load academic words")
-        
-        # Scientific terms
-        try:
-            with open('scientific_terms.json', 'r') as f:
-                import json
-                self.scientific_terms = set(json.load(f))
-        except:
-            print("⚠️  Could not load scientific terms")
-    
-    def _load_all_vocabulary_files(self):
-        """Load all your synonym files"""
-        import glob
-        import os
-        
-        synonym_files = []
-        
-        # Check all locations
-        locations = ['vocabulary/', 'Library/', '', 'synonyms/']
-        for location in locations:
-            pattern = os.path.join(location, 'synonyms_*.py')
-            files = glob.glob(pattern)
-            synonym_files.extend(files)
-        
-        synonym_files = list(set(synonym_files))
-        print(f"📂 Loading {len(synonym_files)} synonym files...")
-        
-        for filepath in sorted(synonym_files):
-            try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                file_synonyms = self._parse_synonyms(content)
-                if file_synonyms:
-                    self.vocabulary.update(file_synonyms)
-                    
-            except Exception as e:
-                continue
-    
-    def _parse_synonyms(self, content):
-        """Parse synonyms from file content"""
-        synonyms = {}
-        lines = content.split('\n')
-        in_dict = False
-        
-        for line in lines:
-            line = line.strip()
+    def load_scientific_terms(self):
+        """Load domain-specific terminology to preserve accuracy"""
+        return {
+            # Medical/Scientific terms that should NOT be changed
+            'p53': 'p53', 'dna': 'DNA', 'rna': 'RNA', 'apoptosis': 'apoptosis',
+            'genome': 'genome', 'protein': 'protein', 'cell': 'cell',
+            'tumor': 'tumor', 'cancer': 'cancer', 'gene': 'gene',
+            'mutated': 'mutated', 'genetic': 'genetic', 'mutation': 'mutation',
+            'therapist': 'therapist', 'medical': 'medical', 'clinical': 'clinical',
+            'molecular': 'molecular', 'cellular': 'cellular', 'biological': 'biological',
             
-            if 'synonyms = {' in line:
-                in_dict = True
-                continue
-                
-            if in_dict and '}' in line:
-                break
-                
-            if in_dict and ':' in line:
-                try:
-                    key_part, value_part = line.split(':', 1)
-                    key = key_part.strip().strip('"\'')
-                    
-                    value_str = value_part.strip().rstrip(',')
-                    if value_str.startswith('[') and value_str.endswith(']'):
-                        items = value_str[1:-1].split(',')
-                        values = [item.strip().strip('"\'') for item in items if item.strip()]
-                        synonyms[key] = values
-                except:
-                    continue
-        
-        return synonyms
+            # Academic terms
+            'research': 'research', 'study': 'study', 'analysis': 'analysis',
+            'methodology': 'methodology', 'hypothesis': 'hypothesis',
+            
+            # Technical terms that should be preserved
+            'algorithm': 'algorithm', 'programming': 'programming',
+            'software': 'software', 'hardware': 'hardware'
+        }
     
-    def get_smart_synonyms(self, word, context=""):
-        """Get intelligent synonyms"""
-        word_lower = word.lower().strip()
-        
-        # NEVER change scientific terms
-        if word_lower in self.scientific_terms:
+    def is_protected_term(self, word):
+        """Check if word is a protected scientific/technical term"""
+        return word.lower() in self.scientific_terms
+    
+    def get_contextual_synonyms(self, word, pos_tag):
+        """Get contextually appropriate synonyms with POS filtering"""
+        if self.is_protected_term(word):
             return []
+            
+        if word in self.synonym_cache:
+            return self.synonym_cache[word]
         
-        # Get basic synonyms
-        synonyms = self.vocabulary.get(word_lower, [])
-        if isinstance(synonyms, str):
-            synonyms = [synonyms]
+        synonyms = set()
+        for syn in wordnet.synsets(word):
+            # Filter by part of speech
+            if self.match_pos(syn.pos(), pos_tag):
+                for lemma in syn.lemmas():
+                    synonym = lemma.name().replace('_', ' ').lower()
+                    if (synonym != word.lower() and 
+                        len(synonym.split()) == 1 and
+                        len(synonym) > 2 and
+                        not any(char.isdigit() for char in synonym)):
+                        synonyms.add(synonym)
         
-        if not synonyms:
-            return []
-        
-        # Filter intelligently
-        filtered = []
-        for synonym in synonyms:
-            if self._is_good_replacement(word_lower, synonym, context):
-                filtered.append(synonym)
-        
+        # Filter to most common synonyms
+        filtered = list(synonyms)[:5]
+        self.synonym_cache[word] = filtered
         return filtered
     
-    def _is_good_replacement(self, original, synonym, context):
-        """Check if replacement makes sense"""
-        if synonym.lower() == original.lower():
-            return False
+    def match_pos(self, wordnet_pos, nltk_pos):
+        """Match WordNet POS tags with NLTK POS tags"""
+        pos_mapping = {
+            'n': ['NN', 'NNS', 'NNP', 'NNPS'],  # Nouns
+            'v': ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ'],  # Verbs
+            'a': ['JJ', 'JJR', 'JJS'],  # Adjectives
+            'r': ['RB', 'RBR', 'RBS']   # Adverbs
+        }
         
-        if ' ' in synonym:
-            return False
-        
-        if len(synonym) > len(original) + 4:
-            return False
-        
-        # Use frequency data if available
-        if self.word_frequencies:
-            synonym_freq = self.word_frequencies.get(synonym.lower(), 0)
-            original_freq = self.word_frequencies.get(original.lower(), 0)
-            
-            if original_freq > 1000 and synonym_freq < 100:
-                return False
-        
-        return True
+        for wn_pos, nltk_tags in pos_mapping.items():
+            if wordnet_pos == wn_pos and nltk_pos in nltk_tags:
+                return True
+        return False
     
-    def rewrite_text(self, text, aggression=0.3):
-        """Main rewriting function - USE THIS IN YOUR APP"""
-        if not text:
-            return text
+    def enhance_sentence_flow(self, sentence):
+        """Improve sentence structure and flow"""
+        words = nltk.word_tokenize(sentence)
+        if len(words) <= 5:  # Don't change very short sentences
+            return sentence
             
-        import random
-        import re
+        tagged = nltk.pos_tag(words)
         
-        words = text.split()
-        new_words = []
+        enhanced_words = []
+        i = 0
+        changes_made = 0
+        max_changes = max(2, len(words) // 10)  # Limit changes per sentence
         
-        for i, word in enumerate(words):
-            clean_word = re.sub(r'[^\w]', '', word.lower())
+        while i < len(tagged) and changes_made < max_changes:
+            word, pos = tagged[i]
             
-            # Get context
-            start = max(0, i-2)
-            end = min(len(words), i+3)
-            context = ' '.join(words[start:end])
-            
-            synonyms = self.get_smart_synonyms(clean_word, context)
-            
-            should_replace = (
-                synonyms and 
-                random.random() < aggression and
-                len([w for w in new_words if w != word]) / len(words) < 0.4
-            )
-            
-            if should_replace:
-                replacement = random.choice(synonyms)
+            # Only replace common words (not proper nouns, etc.)
+            if (pos in ['JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ'] and
+                not self.is_protected_term(word) and
+                random.random() < 0.25):  # 25% chance per eligible word
                 
-                if word[0].isupper():
-                    replacement = replacement.capitalize()
-                if not word[-1].isalnum():
-                    replacement += word[-1]
-                    
-                new_words.append(replacement)
-            else:
-                new_words.append(word)
-        
-        result = ' '.join(new_words)
-        
-        # Cleanup
-        result = re.sub(r'\s+([.,!?;])', r'\1', result)
-        result = re.sub(r'([.,!?;])(\w)', r'\1 \2', result)
-        
-        if result and result[0].isalpha():
-            result = result[0].upper() + result[1:]
+                synonyms = self.get_contextual_synonyms(word, pos)
+                if synonyms:
+                    enhanced_words.append(random.choice(synonyms))
+                    changes_made += 1
+                    i += 1
+                    continue
             
-        return result
-
-# =========================
-# INITIALIZE FINAL BACKEND
-# =========================
-
-print("🔄 Initializing final intelligent backend...")
-final_rewriter = FinalIntelligentRewriter()
-
-# =========================
-# API FUNCTIONS FOR YOUR APP
-# =========================
-
-def extreme_rewriter(original_text, aggression=0.3):
-    """
-    REPLACE YOUR CURRENT FUNCTION WITH THIS
-    """
-    return final_rewriter.rewrite_text(original_text, aggression)
-
-def get_vocabulary_stats():
-    """Get vocabulary statistics"""
-    return {
-        "total_words": len(final_rewriter.vocabulary),
-        "intelligence_data": "Loaded",
-        "scientific_terms_protected": len(final_rewriter.scientific_terms),
-        "status": "Intelligent Rewriting Active"
-    }
-
-# =========================
-# TEST FINAL VERSION
-# =========================
-
-def test_final_system():
-    """Test the complete system"""
-    print("\n" + "="*70)
-    print("🎯 TESTING FINAL INTELLIGENT SYSTEM...")
-    print("="*70)
+            enhanced_words.append(word)
+            i += 1
+        
+        return ' '.join(enhanced_words)
     
-    test_cases = [
-        "DNA replication occurs during cell division in living organisms.",
-        "The quick brown fox jumps over the lazy dog.",
-        "The study found important results that demonstrate significant findings.",
-        "Protein synthesis involves transcription and translation processes."
-    ]
+    def restructure_paragraph(self, text):
+        """Improve paragraph structure"""
+        sentences = nltk.sent_tokenize(text)
+        if len(sentences) <= 1:
+            return text
+        
+        enhanced_sentences = []
+        
+        # Vary sentence starters for middle sentences
+        transition_words = [
+            'Additionally,', 'Furthermore,', 'Moreover,', 'However,',
+            'Therefore,', 'Consequently,', 'Interestingly,', 'Notably,'
+        ]
+        
+        for i, sentence in enumerate(sentences):
+            enhanced_sentence = self.enhance_sentence_flow(sentence)
+            
+            # Add transition words to some sentences (not first, not all)
+            if i > 0 and i < len(sentences) - 1 and random.random() < 0.3:
+                transition = random.choice(transition_words)
+                enhanced_sentence = f"{transition} {enhanced_sentence[0].lower() + enhanced_sentence[1:]}"
+            
+            enhanced_sentences.append(enhanced_sentence)
+        
+        return ' '.join(enhanced_sentences)
     
-    for i, original in enumerate(test_cases, 1):
-        print(f"\n🧪 TEST {i}:")
-        print(f"📝 ORIGINAL:  {original}")
-        rewritten = extreme_rewriter(original)
-        print(f"🔁 REWRITTEN: {rewritten}")
+    def fix_grammar_and_punctuation(self, text):
+        """Fix common grammar and punctuation issues"""
+        # Fix spaces before punctuation
+        text = re.sub(r'\s+([.,!?;])', r'\1', text)
+        
+        # Ensure space after punctuation
+        text = re.sub(r'([.,!?;])([A-Za-z])', r'\1 \2', text)
+        
+        # Fix multiple spaces
+        text = re.sub(r' +', ' ', text)
+        
+        # Fix capitalization after punctuation
+        sentences = nltk.sent_tokenize(text)
+        corrected_sentences = []
+        
+        for sentence in sentences:
+            if sentence.strip():
+                # Ensure first character is uppercase
+                corrected = sentence[0].upper() + sentence[1:]
+                corrected_sentences.append(corrected)
+            else:
+                corrected_sentences.append(sentence)
+        
+        return ' '.join(corrected_sentences)
     
-    stats = get_vocabulary_stats()
-    print(f"\n📊 SYSTEM STATS: {stats}")
+    def humanize_text(self, text):
+        """Main method to humanize text while preserving meaning"""
+        if not text or not text.strip():
+            return text
+        
+        try:
+            # Step 1: Restructure paragraphs for better flow
+            humanized = self.restructure_paragraph(text)
+            
+            # Step 2: Fix grammar and punctuation
+            humanized = self.fix_grammar_and_punctuation(humanized)
+            
+            # Step 3: Ensure proper spacing and formatting
+            humanized = re.sub(r'\s+', ' ', humanized).strip()
+            
+            return humanized
+            
+        except Exception as e:
+            # If processing fails, return original with basic cleaning
+            print(f"Enhancement error: {e}")
+            return self.fix_grammar_and_punctuation(text)
 
-# Run final test
-test_final_system()
+# Initialize the enhancer
+enhancer = UniversalTextEnhancer()
 
-print("\n🎊 STEP 4 COMPLETE!")
-print("="*70)
-print("✅ FINAL INTELLIGENT BACKEND READY!")
-print("🔧 REPLACE YOUR CURRENT extreme_rewriter() WITH THIS VERSION")
-print("🚀 YOUR APP NOW HAS AI-LEVEL INTELLIGENCE!")
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/api/enhance', methods=['POST'])
+def enhance_text():
+    try:
+        data = request.get_json()
+        
+        if not data or 'text' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'No text provided in request'
+            }), 400
+        
+        text = data['text'].strip()
+        
+        if not text:
+            return jsonify({
+                'success': False,
+                'error': 'Text cannot be empty'
+            }), 400
+        
+        # Get enhancement parameters
+        aggression = data.get('aggression', 0.5)  # 0.1 to 1.0
+        preserve_terms = data.get('preserve_terms', True)
+        
+        # Enhance the text
+        enhanced_text = enhancer.humanize_text(text)
+        
+        # Calculate statistics
+        original_words = len(text.split())
+        enhanced_words = len(enhanced_text.split())
+        change_percentage = abs(enhanced_words - original_words) / original_words * 100
+        
+        return jsonify({
+            'success': True,
+            'original_text': text,
+            'enhanced_text': enhanced_text,
+            'statistics': {
+                'original_length': len(text),
+                'enhanced_length': len(enhanced_text),
+                'original_words': original_words,
+                'enhanced_words': enhanced_words,
+                'change_percentage': round(change_percentage, 2)
+            },
+            'message': 'Text enhanced successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Processing error: {str(e)}'
+        }), 500
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'service': 'Universal Text Enhancer',
+        'version': '1.0.0'
+    })
+
+@app.route('/api/batch-enhance', methods=['POST'])
+def batch_enhance():
+    """Enhance multiple texts at once"""
+    try:
+        data = request.get_json()
+        texts = data.get('texts', [])
+        
+        if not texts:
+            return jsonify({
+                'success': False,
+                'error': 'No texts provided'
+            }), 400
+        
+        results = []
+        for text in texts:
+            enhanced = enhancer.humanize_text(text)
+            results.append({
+                'original': text,
+                'enhanced': enhanced
+            })
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total_processed': len(results)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Batch processing error: {str(e)}'
+        }), 500
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
