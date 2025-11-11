@@ -1,4 +1,3 @@
-
 # =========================
 # FRONTEND (DNA MOLECULE UI - PREMIUM ENHANCED VERSION)
 # =========================
@@ -14,14 +13,14 @@ try:
 except ImportError as e:
     BACKEND_AVAILABLE = False
     st.error(f"Backend not available: {e}")
-    
+
     # Fallback functions
     def extreme_rewriter(text):
         return text + " (rewritten)"
-    
+
     def calculate_similarity(original, rewritten):
         return random.randint(10, 30)
-    
+
     def get_vocabulary_stats():
         return {
             "total_words": 45000,
@@ -30,7 +29,7 @@ except ImportError as e:
             "general_words": 1200,
             "vocabulary_loaded": True
         }
-    
+
     def guarantee_low_similarity(text, max_similarity=20, max_attempts=3):
         rewritten = extreme_rewriter(text)
         similarity = calculate_similarity(text, rewritten)
@@ -708,7 +707,7 @@ if col_btn1.button("🚀 **Start DNA Rewriting**", use_container_width=True):
     else:
         # Trigger bubble animation
         st.markdown(create_event_bubbles(25), unsafe_allow_html=True)
-        
+
         # Show enhanced progress and rewrite
         with st.spinner("""
         <div style="text-align: center; color: #00eaff;">
@@ -718,7 +717,7 @@ if col_btn1.button("🚀 **Start DNA Rewriting**", use_container_width=True):
         """):
             progress_bar = st.progress(0)
             status_text = st.empty()
-            
+
             # Simulate processing steps
             steps = [
                 "Initializing DNA algorithms...",
@@ -728,16 +727,16 @@ if col_btn1.button("🚀 **Start DNA Rewriting**", use_container_width=True):
                 "Applying transformations...",
                 "Finalizing output..."
             ]
-            
+
             for i, step in enumerate(steps):
                 progress = int((i + 1) / len(steps) * 100)
                 progress_bar.progress(progress)
                 status_text.text(f"🔄 {step}")
                 time.sleep(0.3)
-            
+
             # Perform actual rewriting
             rewritten, similarity = guarantee_low_similarity(input_text, target_similarity, max_attempts)
-        
+
         # Display premium results
         st.markdown(f"""
         <div class="success-box">
